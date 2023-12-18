@@ -7,10 +7,11 @@ use serde_with::OneOrMany;
 
 use std::collections::HashMap;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureType {
     name: String,
+    #[serde(default)]
     short_name: String,
     categories: Vec<String>,
     fixture_key: String,
@@ -18,7 +19,38 @@ pub struct FixtureType {
     modes: Vec<FixtureMode>,
     available_channels: HashMap<String, FixtureChannel>,
 }
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+
+impl FixtureType {
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_short_name(&self) -> &str {
+        &self.short_name
+    }
+
+    pub fn get_categories(&self) -> &[String] {
+        &self.categories
+    }
+
+    pub fn get_fixture_key(&self) -> &str {
+        &self.fixture_key
+    }
+
+    pub fn get_manufacturer_key(&self) -> &str {
+        &self.manufacturer_key
+    }
+
+    pub fn get_modes(&self) -> &[FixtureMode] {
+        &self.modes
+    }
+
+    pub fn get_available_channels(&self) -> &HashMap<String, FixtureChannel> {
+        &self.available_channels
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureMode {
     name: String,
@@ -27,7 +59,7 @@ pub struct FixtureMode {
 }
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureChannel {
     #[serde(default = "zero")]
@@ -46,28 +78,28 @@ fn all() -> u8 {
     255
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NoFunction {
     #[serde(default = "full_range")]
     pub dmx_range: DmxRange,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Maintenance {
     #[serde(default = "full_range")]
     pub dmx_range: DmxRange,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Intensity {
     #[serde(default = "full_range")]
     pub dmx_range: DmxRange,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ColorIntensity {
     #[serde(default = "full_range")]
@@ -75,14 +107,14 @@ pub struct ColorIntensity {
     pub color: DmxColor,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Effect {
     #[serde(default = "full_range")]
     pub dmx_range: DmxRange,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(tag = "type")]
 pub enum FixtureCapability {
     NoFunction(NoFunction),
@@ -95,7 +127,7 @@ pub enum FixtureCapability {
     EffectSpeed,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DmxRange {
     start: u8,
@@ -106,7 +138,7 @@ fn full_range() -> DmxRange {
     DmxRange { start: 0, end: 255 }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 pub enum DmxColor {
     Red,
     Green,

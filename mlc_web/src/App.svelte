@@ -3,6 +3,15 @@
   import viteLogo from "/vite.svg";
   import Counter from "./lib/Counter.svelte";
   import Headbar from "./lib/Headbar.svelte";
+  import Favicon from "./assets/favicon.svg";
+
+  let promise = getFixtureTypes();
+
+  async function getFixtureTypes() {
+    const response = await fetch("/data/get/fixture-types");
+    const data = await response.json();
+    return data;
+  }
 </script>
 
 <main>
@@ -28,6 +37,11 @@
   <p class="read-the-docs">
     Click on the Vite and Svelte logos to learn more
   </p> -->
+  {#await promise}
+    <p>Still Loading</p>
+  {:then data}
+    <code>{JSON.stringify(data, undefined, 4)}</code>
+  {/await}
 </main>
 
 <style>

@@ -2,9 +2,12 @@ use std::{path::PathBuf, sync::Arc};
 
 use rocket::futures::lock::Mutex;
 
+use crate::fixture::FixtureType;
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ProjectI {
     name: String,
+    fixtures: Vec<FixtureType>,
 }
 
 pub struct Project {
@@ -12,6 +15,7 @@ pub struct Project {
 }
 
 impl Project {
+    #[allow(unused)]
     pub async fn save(&self) -> Result<(), &str> {
         self.save_(None).await
     }
@@ -51,6 +55,18 @@ impl Project {
 
         Ok(())
     }
+
+    pub async fn insert_fixture(&self, fixture: FixtureType) {
+        let mut data = self.project.lock().await;
+        if !data.fixtures.contains(&fixture) {
+            data.fixtures.push(fixture);
+        }
+    }
+
+    pub async fn get_fixtures(&self) -> Vec<FixtureType> {
+        let data = self.project.lock().await;
+        data.fixtures.clone()
+    }
 }
 
 impl Default for Project {
@@ -58,6 +74,7 @@ impl Default for Project {
         Self {
             project: Arc::new(Mutex::new(ProjectI {
                 name: "unnamed".to_string(),
+                fixtures: Vec::new(),
             })),
         }
     }
