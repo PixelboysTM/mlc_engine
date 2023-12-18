@@ -1,22 +1,20 @@
-use std::path::{Path, PathBuf};
+mod fixture;
+mod project;
+mod ui_serving;
 
-use rocket::{fs::NamedFile, get, launch, routes};
-
-#[get("/<file..>")]
-async fn files(file: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new("mlc_web/dist/").join(file))
-        .await
-        .ok()
-}
-
-#[get("/")]
-async fn index() -> Option<NamedFile> {
-    NamedFile::open(Path::new("mlc_web/dist/index.html"))
-        .await
-        .ok()
-}
+use project::Project;
+use rocket::launch;
 
 #[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, files])
+async fn rocket() -> _ {
+    let json = include_str!("../../led-nano-par.json");
+    let fix = fixture::parse_ofl_fixture(json).unwrap();
+    println!("{fix:#?}");
+
+    let project = Project::default();
+    if project.load("test").await.is_err() {
+        project.save_as("test").await.unwrap();
+    }
+
+    rocket::build().mount("/", ui_serving::get_routes())
 }
