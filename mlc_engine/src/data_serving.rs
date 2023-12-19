@@ -9,8 +9,13 @@ use rocket::{
     routes, Data, Route, State,
 };
 use rocket_ws::WebSocket;
+use uuid::Uuid;
 
-use crate::{fixture, project::Project};
+use crate::{
+    data_spreader::{DataSender, DataSubscriber},
+    fixture,
+    project::Project,
+};
 
 pub struct InfoRx {
     pub rx: Receiver<Info>,
@@ -20,7 +25,7 @@ pub struct InfoTx {
     pub tx: Sender<Info>,
 }
 
-#[derive(serde::Serialize, Debug)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub enum Info {
     FixtureTypesUpdated,
     ProjectSaved,
@@ -28,21 +33,21 @@ pub enum Info {
 }
 
 #[get("/info")]
-async fn gen_info(ws: WebSocket, rx: &State<InfoRx>) -> rocket_ws::Channel<'_> {
-    let rx = &rx.rx;
+async fn gen_info(ws: WebSocket, rx: &State<DataSubscriber<Info, Uuid>>) -> rocket_ws::Channel<'_> {
+    let rx = rx.subscribe().await;
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
-            while let Ok(msg) = rx.recv() {
-                println!("{:?}", msg);
-                let _ = stream
-                    .send(rocket_ws::Message::Text(
-                        serde_json::to_string(&msg).unwrap(),
-                    ))
-                    .await;
+            loop {
+                while let Some(msg) = rx.recv().await {
+                    println!("{:?}", msg);
+                    let _ = stream
+                        .send(rocket_ws::Message::Text(
+                            serde_json::to_string(&msg).unwrap(),
+                        ))
+                        .await;
+                }
             }
-
-            Ok(())
         })
     })
 }
@@ -69,7 +74,7 @@ async fn get_fixture_types(project: &State<Project>) -> RawJson<String> {
 async fn add_fixture(
     data: Data<'_>,
     project: &State<Project>,
-    info: &State<InfoTx>,
+    info: &State<DataSender<Info>>,
 ) -> Result<(), BadRequest<String>> {
     let s = data.open(2.gibibytes());
     let string = s

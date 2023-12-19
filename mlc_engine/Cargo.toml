@@ -14,3 +14,5 @@ directories = "5.0.1"
 serde_with = "3.4.0"
 rocket_ws = "0.1.0"
 crossbeam = "0.8.2"
+uuid = { version = "1.6.1", features = ["v4"] }
+pollster = { version = "*" }

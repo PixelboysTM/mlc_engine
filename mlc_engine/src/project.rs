@@ -4,6 +4,7 @@ use rocket::futures::lock::Mutex;
 
 use crate::{
     data_serving::{Info, InfoTx},
+    data_spreader::DataSender,
     fixture::FixtureType,
 };
 
@@ -19,15 +20,15 @@ pub struct Project {
 
 impl Project {
     #[allow(unused)]
-    pub async fn save(&self, info: &InfoTx) -> Result<(), &str> {
+    pub async fn save(&self, info: &DataSender<Info>) -> Result<(), &str> {
         self.save_(None, info).await
     }
 
-    pub async fn save_as(&self, name: &str, info: &InfoTx) -> Result<(), &str> {
+    pub async fn save_as(&self, name: &str, info: &DataSender<Info>) -> Result<(), &str> {
         self.save_(Some(name), info).await
     }
 
-    async fn save_(&self, name: Option<&str>, info: &InfoTx) -> Result<(), &str> {
+    async fn save_(&self, name: Option<&str>, info: &DataSender<Info>) -> Result<(), &str> {
         let data: &mut ProjectI = &mut *self.project.lock().await;
         if let Some(new_name) = name {
             data.name = new_name.to_string();
@@ -40,11 +41,11 @@ impl Project {
             Err("Failed creating path")?;
         }
 
-        info.tx.send(Info::ProjectSaved);
+        info.send(Info::ProjectSaved);
 
         Ok(())
     }
-    pub async fn load(&self, name: &str, info: &InfoTx) -> Result<(), &str> {
+    pub async fn load(&self, name: &str, info: &DataSender<Info>) -> Result<(), &str> {
         if let Some(path) = make_path(name) {
             if let Ok(toml_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
@@ -58,16 +59,16 @@ impl Project {
             Err("Failed creating path")?;
         }
 
-        info.tx.send(Info::ProjectLoaded);
+        info.send(Info::ProjectLoaded);
 
         Ok(())
     }
 
-    pub async fn insert_fixture(&self, fixture: FixtureType, info: &InfoTx) {
+    pub async fn insert_fixture(&self, fixture: FixtureType, info: &DataSender<Info>) {
         let mut data = self.project.lock().await;
         if !data.fixtures.contains(&fixture) {
             data.fixtures.push(fixture);
-            info.tx.send(Info::FixtureTypesUpdated);
+            info.send(Info::FixtureTypesUpdated);
         }
     }
 
