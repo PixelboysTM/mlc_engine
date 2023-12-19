@@ -2,7 +2,10 @@ use std::{path::PathBuf, sync::Arc};
 
 use rocket::futures::lock::Mutex;
 
-use crate::fixture::FixtureType;
+use crate::{
+    data_serving::{Info, InfoTx},
+    fixture::FixtureType,
+};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ProjectI {
@@ -16,15 +19,15 @@ pub struct Project {
 
 impl Project {
     #[allow(unused)]
-    pub async fn save(&self) -> Result<(), &str> {
-        self.save_(None).await
+    pub async fn save(&self, info: &InfoTx) -> Result<(), &str> {
+        self.save_(None, info).await
     }
 
-    pub async fn save_as(&self, name: &str) -> Result<(), &str> {
-        self.save_(Some(name)).await
+    pub async fn save_as(&self, name: &str, info: &InfoTx) -> Result<(), &str> {
+        self.save_(Some(name), info).await
     }
 
-    async fn save_(&self, name: Option<&str>) -> Result<(), &str> {
+    async fn save_(&self, name: Option<&str>, info: &InfoTx) -> Result<(), &str> {
         let data: &mut ProjectI = &mut *self.project.lock().await;
         if let Some(new_name) = name {
             data.name = new_name.to_string();
@@ -37,9 +40,11 @@ impl Project {
             Err("Failed creating path")?;
         }
 
+        info.tx.send(Info::ProjectSaved);
+
         Ok(())
     }
-    pub async fn load(&self, name: &str) -> Result<(), &str> {
+    pub async fn load(&self, name: &str, info: &InfoTx) -> Result<(), &str> {
         if let Some(path) = make_path(name) {
             if let Ok(toml_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
@@ -53,13 +58,16 @@ impl Project {
             Err("Failed creating path")?;
         }
 
+        info.tx.send(Info::ProjectLoaded);
+
         Ok(())
     }
 
-    pub async fn insert_fixture(&self, fixture: FixtureType) {
+    pub async fn insert_fixture(&self, fixture: FixtureType, info: &InfoTx) {
         let mut data = self.project.lock().await;
         if !data.fixtures.contains(&fixture) {
             data.fixtures.push(fixture);
+            info.tx.send(Info::FixtureTypesUpdated);
         }
     }
 

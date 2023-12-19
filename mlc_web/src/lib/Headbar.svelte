@@ -1,6 +1,9 @@
 <script lang="ts">
   import svelteLogo from "../assets/svelte.svg";
+  import UploadFixture from "./UploadFixture.svelte";
   import viteLogo from "/vite.svg";
+
+  let showUpload = false;
 </script>
 
 <div>
@@ -16,7 +19,11 @@
       <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
     </a>
   </div>
-  <button>Upload</button>
+  <button on:click={() => (showUpload = true)}>Upload</button>
+
+  {#if showUpload}
+    <UploadFixture on:close={() => (showUpload = false)} />
+  {/if}
 </div>
 
 <style>

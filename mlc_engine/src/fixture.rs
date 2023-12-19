@@ -20,6 +20,7 @@ pub struct FixtureType {
     available_channels: HashMap<String, FixtureChannel>,
 }
 
+#[allow(unused)]
 impl FixtureType {
     pub fn get_name(&self) -> &str {
         &self.name

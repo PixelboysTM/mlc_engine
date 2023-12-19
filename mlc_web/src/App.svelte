@@ -1,9 +1,6 @@
 <script lang="ts">
-  import svelteLogo from "./assets/svelte.svg";
-  import viteLogo from "/vite.svg";
-  import Counter from "./lib/Counter.svelte";
   import Headbar from "./lib/Headbar.svelte";
-  import Favicon from "./assets/favicon.svg";
+  import { info } from "./lib/stores";
 
   let promise = getFixtureTypes();
 
@@ -16,6 +13,7 @@
 
 <main>
   <Headbar></Headbar>
+  {$info}
   <!-- <div>
     <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
       <img src={viteLogo} class="logo" alt="Vite Logo" />

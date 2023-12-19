@@ -1,17 +1,50 @@
 use std::{thread, time::Duration};
 
-use rocket::{get, response::content::RawJson, routes, Route, State};
+use crossbeam::channel::{Receiver, Sender};
+use rocket::{
+    data::ToByteUnit,
+    futures::SinkExt,
+    get, post,
+    response::{content::RawJson, status::BadRequest},
+    routes, Data, Route, State,
+};
 use rocket_ws::WebSocket;
 
-use crate::project::Project;
+use crate::{fixture, project::Project};
+
+pub struct InfoRx {
+    pub rx: Receiver<Info>,
+}
+
+pub struct InfoTx {
+    pub tx: Sender<Info>,
+}
+
+#[derive(serde::Serialize, Debug)]
+pub enum Info {
+    FixtureTypesUpdated,
+    ProjectSaved,
+    ProjectLoaded,
+}
 
 #[get("/info")]
-async fn gen_info(ws: WebSocket) -> rocket_ws::Stream![] {
-    rocket_ws::Stream! {ws =>
-        for await msg in ws {
-            yield msg?;
-        }
-    }
+async fn gen_info(ws: WebSocket, rx: &State<InfoRx>) -> rocket_ws::Channel<'_> {
+    let rx = &rx.rx;
+
+    ws.channel(move |mut stream| {
+        Box::pin(async move {
+            while let Ok(msg) = rx.recv() {
+                println!("{:?}", msg);
+                let _ = stream
+                    .send(rocket_ws::Message::Text(
+                        serde_json::to_string(&msg).unwrap(),
+                    ))
+                    .await;
+            }
+
+            Ok(())
+        })
+    })
 }
 
 #[get("/get/fixture-types")]
@@ -32,6 +65,31 @@ async fn get_fixture_types(project: &State<Project>) -> RawJson<String> {
     )
 }
 
+#[post("/add/fixture", data = "<data>")]
+async fn add_fixture(
+    data: Data<'_>,
+    project: &State<Project>,
+    info: &State<InfoTx>,
+) -> Result<(), BadRequest<String>> {
+    let s = data.open(2.gibibytes());
+    let string = s
+        .into_string()
+        .await
+        .map_err(|_| BadRequest("Failed to read to string".to_string()))?;
+
+    let fix = fixture::parse_ofl_fixture(&string).map_err(|e| BadRequest(e))?;
+
+    project.insert_fixture(fix, &info).await;
+
+    Ok(())
+}
+
+pub fn create_info() -> (InfoRx, InfoTx) {
+    let (tx, rx) = crossbeam::channel::unbounded();
+
+    (InfoRx { rx }, InfoTx { tx })
+}
+
 pub fn get_routes() -> Vec<Route> {
-    routes![gen_info, get_fixture_types]
+    routes![gen_info, get_fixture_types, add_fixture]
 }
