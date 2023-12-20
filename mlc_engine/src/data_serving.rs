@@ -51,16 +51,6 @@ async fn gen_info(
             }
 
             Ok(())
-
-            // while let Ok(msg) = rx.recv().await {
-            //     select! {
-
-            //      _ ={
-            //             }
-            //     }
-            // }
-
-            // Ok(())
         })
     })
 }
@@ -95,9 +85,9 @@ async fn add_fixture(
         .await
         .map_err(|_| BadRequest("Failed to read to string".to_string()))?;
 
-    let fix = fixture::parse_ofl_fixture(&string).map_err(|e| BadRequest(e))?;
+    let fix = fixture::parse_ofl_fixture(&string).map_err(BadRequest)?;
 
-    project.insert_fixture(fix, &info).await;
+    project.insert_fixture(fix, info).await;
 
     Ok(())
 }
