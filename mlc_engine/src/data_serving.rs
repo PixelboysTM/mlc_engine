@@ -1,53 +1,66 @@
 use std::{thread, time::Duration};
 
-use crossbeam::channel::{Receiver, Sender};
 use rocket::{
     data::ToByteUnit,
     futures::SinkExt,
     get, post,
     response::{content::RawJson, status::BadRequest},
-    routes, Data, Route, State,
+    routes,
+    tokio::{select, sync::broadcast::Sender},
+    Data, Route, State,
 };
 use rocket_ws::WebSocket;
-use uuid::Uuid;
 
-use crate::{
-    data_spreader::{DataSender, DataSubscriber},
-    fixture,
-    project::Project,
-};
-
-pub struct InfoRx {
-    pub rx: Receiver<Info>,
-}
-
-pub struct InfoTx {
-    pub tx: Sender<Info>,
-}
+use crate::{fixture, module::Module, project::Project};
 
 #[derive(serde::Serialize, Debug, Clone)]
 pub enum Info {
     FixtureTypesUpdated,
     ProjectSaved,
     ProjectLoaded,
+    SystemShutdown,
 }
 
 #[get("/info")]
-async fn gen_info(ws: WebSocket, rx: &State<DataSubscriber<Info, Uuid>>) -> rocket_ws::Channel<'_> {
-    let rx = rx.subscribe().await;
+async fn gen_info(
+    ws: WebSocket,
+    tx: &State<Sender<Info>>,
+    mut shutdown: rocket::Shutdown,
+) -> rocket_ws::Channel<'_> {
+    let mut rx = tx.subscribe();
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
             loop {
-                while let Some(msg) = rx.recv().await {
-                    println!("{:?}", msg);
-                    let _ = stream
+                select! {
+                    Ok(msg) = rx.recv() => {
+                        println!("{:?}", msg);
+                        let _ = stream
                         .send(rocket_ws::Message::Text(
                             serde_json::to_string(&msg).unwrap(),
-                        ))
-                        .await;
-                }
+                        )).await;
+                    },
+                    _ = &mut shutdown => {
+                        let _ = stream
+                        .send(rocket_ws::Message::Text(
+                            serde_json::to_string(&Info::SystemShutdown).unwrap(),
+                        )).await;
+                        break;
+                    },
+                };
             }
+
+            Ok(())
+
+            // while let Ok(msg) = rx.recv().await {
+            //     select! {
+
+            //      _ ={
+            //             }
+            //     }
+            // }
+
+            // Ok(())
         })
     })
 }
@@ -74,7 +87,7 @@ async fn get_fixture_types(project: &State<Project>) -> RawJson<String> {
 async fn add_fixture(
     data: Data<'_>,
     project: &State<Project>,
-    info: &State<DataSender<Info>>,
+    info: &State<Sender<Info>>,
 ) -> Result<(), BadRequest<String>> {
     let s = data.open(2.gibibytes());
     let string = s
@@ -89,12 +102,14 @@ async fn add_fixture(
     Ok(())
 }
 
-pub fn create_info() -> (InfoRx, InfoTx) {
-    let (tx, rx) = crossbeam::channel::unbounded();
-
-    (InfoRx { rx }, InfoTx { tx })
+fn get_routes() -> Vec<Route> {
+    routes![gen_info, get_fixture_types, add_fixture]
 }
 
-pub fn get_routes() -> Vec<Route> {
-    routes![gen_info, get_fixture_types, add_fixture]
+pub struct DataServingModule;
+
+impl Module for DataServingModule {
+    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+        app.mount("/data", get_routes())
+    }
 }

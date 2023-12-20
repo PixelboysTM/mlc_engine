@@ -1,63 +1,64 @@
 mod data_serving;
-mod data_spreader;
 mod fixture;
+mod module;
 mod project;
-mod side_worker;
 mod ui_serving;
+mod utils;
 
-use data_serving::Info;
-use data_spreader::DataSender;
+use std::net::{IpAddr, Ipv4Addr};
+
+use data_serving::{DataServingModule, Info};
+use module::{Application, Module};
 use project::Project;
-use rocket::{get, launch, routes, State};
+use rocket::{config::Ident, launch, Config};
+use ui_serving::UiServingModule;
 
 #[launch]
 async fn rocket() -> _ {
-    // let (info_rx, info_tx) = data_serving::create_info();
-
-    let side_worker = side_worker::create_side_worker();
-    // side_worker.queue_job(Box::new(Hello(u32::MAX))).await;
-
-    let (w, s, r) = data_spreader::create::<Info, uuid::Uuid>();
-    side_worker.queue_job(Box::new(w)).await;
-
-    let project = Project::default();
-    if project.load("test", &s).await.is_err() {
-        let json = include_str!("../../led-nano-par.json");
-        let fix = fixture::parse_ofl_fixture(json).unwrap();
-        project
-            .insert_fixture(
-                fixture::parse_ofl_fixture(include_str!("../../led-par-56.json")).unwrap(),
-                &s,
-            )
-            .await;
-        project.insert_fixture(fix, &s).await;
-        project.save_as("test", &s).await.unwrap();
-    }
-
-    rocket::build()
-        .manage(project)
-        .manage(side_worker)
-        .manage(r)
-        .manage(s)
-        .mount("/", ui_serving::get_routes())
-        .mount("/data", data_serving::get_routes())
-        .mount("/api", routes![send_msg])
+    Application::create()
+        .mount(MainModule)
+        .mount(UiServingModule)
+        .mount(DataServingModule)
+        .launch()
+    // rocket::build()
+    //     .manage(project)
+    //     .manage(tx)
+    //     .manage(rx)
+    //     .mount("/", ui_serving::get_routes())
+    //     .mount("/data", data_serving::get_routes())
 }
 
-#[get("/")]
-fn send_msg(d: &State<DataSender<Info>>) {
-    d.send(Info::ProjectSaved);
-}
+struct MainModule;
 
-struct Hello(u32);
-impl side_worker::Work for Hello {
-    fn run(&mut self) -> bool {
-        if self.0 > 0 {
-            println!("Hello");
-            self.0 -= 1;
-            true
-        } else {
-            false
-        }
+impl Module for MainModule {
+    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+        let (tx, rx) = rocket::tokio::sync::broadcast::channel::<Info>(100);
+
+        let project = pollster::block_on(async {
+            let project = Project::default();
+            if project.load("test", &tx).await.is_err() {
+                let json = include_str!("../../led-nano-par.json");
+                let fix = fixture::parse_ofl_fixture(json).unwrap();
+                project
+                    .insert_fixture(
+                        fixture::parse_ofl_fixture(include_str!("../../led-par-56.json")).unwrap(),
+                        &tx,
+                    )
+                    .await;
+                project.insert_fixture(fix, &tx).await;
+                project.save_as("test", &tx).await.unwrap();
+            }
+
+            project
+        });
+
+        let config = Config {
+            address: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+            cli_colors: true,
+            ident: Ident::try_new("Marvin Lighting Controller").unwrap(),
+            ..Default::default()
+        };
+
+        app.manage(project).manage(tx).manage(rx).configure(config)
     }
 }

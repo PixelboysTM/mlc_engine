@@ -12,8 +12,8 @@ new_uri += loc.pathname + "/data/info";
 
   const socket = new WebSocket(new_uri);
 
-  socket.addEventListener("message", function (event) {
-    set(event.data);
+  socket.addEventListener("message", function (event : MessageEvent<string>) {
+    set(event.data.replaceAll('"', ""));
   });
   return function stop() {
     socket.close();

@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use rocket::{fs::NamedFile, get, routes, Route};
 
+use crate::module::Module;
+
 const OUT_PATH: &str = "out/";
 
 #[get("/<file..>")]
@@ -22,6 +24,14 @@ async fn index() -> Option<NamedFile> {
         .ok()
 }
 
-pub fn get_routes() -> Vec<Route> {
+fn get_routes() -> Vec<Route> {
     routes![index, files]
+}
+
+pub struct UiServingModule;
+
+impl Module for UiServingModule {
+    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+        app.mount("/", get_routes())
+    }
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DisconnectHelper from "./lib/DisconnectHelper.svelte";
   import Headbar from "./lib/Headbar.svelte";
   import { info } from "./lib/stores";
 
@@ -9,10 +10,18 @@
     const data = await response.json();
     return data;
   }
+
+  let s = info.subscribe((data) => {
+    console.log(data);
+    if (data == "FixtureTypesUpdated") {
+      promise = getFixtureTypes();
+    }
+  });
 </script>
 
 <main>
   <Headbar></Headbar>
+  <DisconnectHelper></DisconnectHelper>
   {$info}
   <!-- <div>
     <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
