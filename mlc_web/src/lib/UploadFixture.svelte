@@ -38,7 +38,8 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="bg">
   <div class="inner">
-    <div>Paste OFL JSON and click Upload</div>
+    <h3>Upload Fixture Definition</h3>
+    <p>Paste AGLight JSON and click Upload</p>
     <textarea bind:this={inputJson} rows="40" cols="100" />
     <div class="btns">
       <button on:click={upload}>Upload</button>
@@ -58,6 +59,12 @@
     left: 0;
     z-index: 1000;
   }
+  h3 {
+    margin: 0;
+  }
+  p {
+    margin: 0.5rem 0;
+  }
   div.inner {
     position: absolute;
     top: 50%;
@@ -66,11 +73,21 @@
     color: #ffffff;
     background-color: #4a4a4a;
     border-radius: 2rem;
-    padding: 2rem;
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
   }
   textarea {
     resize: none;
+  }
+
+  div.btns {
+    display: flex;
+    justify-content: flex-start;
+
+    padding-top: 0.25rem;
+  }
+  div.btns button {
+    margin-right: 0.5rem;
   }
 </style>

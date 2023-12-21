@@ -2,8 +2,15 @@
   import svelteLogo from "../assets/svelte.svg";
   import UploadFixture from "./UploadFixture.svelte";
   import viteLogo from "/vite.svg";
+  import FaUpload from "svelte-icons/fa/FaUpload.svelte";
+  import FaSave from "svelte-icons/fa/FaSave.svelte";
+  import GoGear from "svelte-icons/go/GoGear.svelte";
+  import FaEdit from "svelte-icons/fa/FaEdit.svelte";
+  import FaLightbulb from "svelte-icons/fa/FaLightbulb.svelte";
 
   let showUpload = false;
+
+  export let pane: "configure" | "program" | "show" = "configure";
 </script>
 
 <div>
@@ -12,14 +19,34 @@
     ></span
   >
   <div class="tabs">
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+    <button
+      class="icon configure {pane == 'configure' ? 'selected' : ''}"
+      title="Configure"
+      on:click={() => (pane = "configure")}><GoGear /></button
+    >
+    <button
+      class="icon program {pane == 'program' ? 'selected' : ''}"
+      title="Program"
+      on:click={() => (pane = "program")}><FaEdit /></button
+    >
+    <button
+      class="icon show {pane == 'show' ? 'selected' : ''}"
+      title="Show"
+      on:click={() => (pane = "show")}><FaLightbulb /></button
+    >
   </div>
-  <button on:click={() => (showUpload = true)}>Upload</button>
+  <div class="tabs right">
+    <button
+      title="Upload Fixture"
+      class="icon"
+      on:click={() => (showUpload = true)}><FaUpload /></button
+    >
+    <button
+      title="Save Project"
+      class="icon"
+      on:click={() => fetch("/data/save")}><FaSave /></button
+    >
+  </div>
 
   {#if showUpload}
     <UploadFixture on:close={() => (showUpload = false)} />
@@ -73,5 +100,23 @@
   #c:hover {
     background-color: #ff3ee8;
     color: #fff;
+  }
+
+  .icon {
+    width: auto;
+    height: 80%;
+    margin-left: 0.2rem;
+  }
+  div.right {
+    place-content: end;
+  }
+  .selected.configure {
+    color: #ff3e3e;
+  }
+  .selected.program {
+    color: #3eff41;
+  }
+  .selected.show {
+    color: #3e88ff;
   }
 </style>

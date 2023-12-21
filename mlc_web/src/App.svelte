@@ -18,13 +18,24 @@
       promise = getFixtureTypes();
     }
   });
+
+  let pane: "configure" | "program" | "show" = "configure";
 </script>
 
 <main>
-  <Headbar></Headbar>
+  <Headbar bind:pane></Headbar>
   <DisconnectHelper></DisconnectHelper>
   {$info}
   <UniverseExplorer></UniverseExplorer>
+
+  {#if pane === "configure"}
+    <h1>Configure</h1>
+  {:else if pane === "program"}
+    <h1>Program</h1>
+  {:else if pane === "show"}
+    <h1>Show</h1>
+  {/if}
+
   <!-- <div>
     <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
       <img src={viteLogo} class="logo" alt="Vite Logo" />
