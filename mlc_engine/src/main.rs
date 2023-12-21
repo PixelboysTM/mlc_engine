@@ -46,9 +46,9 @@ impl Module for MainModule {
                 //     )
                 //     .await;
                 project.insert_fixture(fix[0].clone(), &tx).await;
+                project.try_patch(&fix[0], 0, true, &tx).await;
                 project.save_as("test", &tx).await.unwrap();
             }
-
             project
         });
 

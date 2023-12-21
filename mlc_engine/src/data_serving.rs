@@ -1,17 +1,23 @@
-use std::{thread, time::Duration};
+use std::{str::FromStr, thread, time::Duration};
 
 use rocket::{
     data::ToByteUnit,
     futures::SinkExt,
     get, post,
-    response::{content::RawJson, status::BadRequest},
+    response::status::{BadRequest, Custom},
     routes,
+    serde::json::Json,
     tokio::{select, sync::broadcast::Sender},
     Data, Route, State,
 };
 use rocket_ws::WebSocket;
+use uuid::Uuid;
 
-use crate::{fixture, module::Module, project::Project};
+use crate::{
+    fixture::{self, UniverseId},
+    module::Module,
+    project::Project,
+};
 
 #[derive(serde::Serialize, Debug, Clone)]
 pub enum Info {
@@ -19,6 +25,8 @@ pub enum Info {
     ProjectSaved,
     ProjectLoaded,
     SystemShutdown,
+    UniversePatchChanged(UniverseId),
+    UniversesUpdated,
 }
 
 #[get("/info")]
@@ -55,21 +63,27 @@ async fn gen_info(
     })
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
+struct FixtureInfo {
+    name: String,
+    id: uuid::Uuid,
+}
+
 #[get("/get/fixture-types")]
-async fn get_fixture_types(project: &State<Project>) -> RawJson<String> {
+async fn get_fixture_types(project: &State<Project>) -> Json<Vec<FixtureInfo>> {
     thread::sleep(Duration::new(1, 0));
 
-    RawJson(
-        serde_json::to_string(
-            &project
-                .inner()
-                .get_fixtures()
-                .await
-                .iter()
-                .map(|f| f.get_name())
-                .collect::<Vec<&str>>(),
-        )
-        .unwrap(),
+    Json(
+        project
+            .inner()
+            .get_fixtures()
+            .await
+            .iter()
+            .map(|f| FixtureInfo {
+                id: *f.get_id(),
+                name: f.get_name().to_string(),
+            })
+            .collect::<Vec<FixtureInfo>>(),
     )
 }
 
@@ -93,8 +107,60 @@ async fn add_fixture(
     Ok(())
 }
 
+#[get("/universes")]
+async fn get_universes(project: &State<Project>) -> Json<Vec<UniverseId>> {
+    let data = project.get_universes().await;
+    Json(data)
+}
+
+#[get("/save")]
+async fn save_project(
+    project: &State<Project>,
+    info: &State<Sender<Info>>,
+) -> Result<(), Custom<&'static str>> {
+    project
+        .save(info)
+        .await
+        .map_err(|e| Custom(rocket::http::Status::InternalServerError, e))
+}
+
+#[get("/patch/<id>/<mode>?<create>")]
+fn patch_fixture(
+    project: &State<Project>,
+    info: &State<Sender<Info>>,
+    id: &str,
+    mode: usize,
+    create: bool,
+) -> Result<Json<String>, String> {
+    println!("{create}");
+    let f_id = Uuid::from_str(id).map_err(|_| "Id is not valid".to_string())?;
+
+    pollster::block_on(async {
+        let fixture = project
+            .get_fixtures()
+            .await
+            .iter()
+            .find(|f| f.get_id() == &f_id)
+            .cloned()
+            .ok_or("Id is not a valid FixtureType".to_string())?;
+
+        project
+            .try_patch(&fixture, mode, create, info)
+            .await
+            .ok_or("Patching failed".to_owned())
+            .map(|_| Json("Patching successful".to_string()))
+    })
+}
+
 fn get_routes() -> Vec<Route> {
-    routes![gen_info, get_fixture_types, add_fixture]
+    routes![
+        gen_info,
+        get_fixture_types,
+        add_fixture,
+        save_project,
+        get_universes,
+        patch_fixture
+    ]
 }
 
 pub struct DataServingModule;

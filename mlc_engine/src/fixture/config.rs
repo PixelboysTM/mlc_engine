@@ -13,6 +13,8 @@ pub struct FixtureType {
     manufacturer: Manufacturer,
     modes: Vec<FixtureMode>,
     available_channels: HashMap<String, FixtureChannel>,
+    #[serde(default)]
+    pub(super) id: uuid::Uuid,
 }
 
 #[allow(unused)]
@@ -40,6 +42,10 @@ impl FixtureType {
     pub fn get_available_channels(&self) -> &HashMap<String, FixtureChannel> {
         &self.available_channels
     }
+
+    pub fn get_id(&self) -> &uuid::Uuid {
+        &self.id
+    }
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
@@ -51,14 +57,6 @@ pub struct FixtureMode {
 }
 
 impl FixtureMode {
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn get_short_name(&self) -> &str {
-        &self.short_name
-    }
-
     pub fn get_channels(&self) -> &[String] {
         &self.channels
     }

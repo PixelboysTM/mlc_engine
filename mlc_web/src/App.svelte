@@ -1,6 +1,7 @@
 <script lang="ts">
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
   import Headbar from "./lib/Headbar.svelte";
+  import UniverseExplorer from "./lib/UniverseExplorer.svelte";
   import { info } from "./lib/stores";
 
   let promise = getFixtureTypes();
@@ -23,6 +24,7 @@
   <Headbar></Headbar>
   <DisconnectHelper></DisconnectHelper>
   {$info}
+  <UniverseExplorer></UniverseExplorer>
   <!-- <div>
     <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
       <img src={viteLogo} class="logo" alt="Vite Logo" />
@@ -51,7 +53,7 @@
   {/await}
 </main>
 
-<style>
+<!-- <style>
   .logo {
     height: 6em;
     padding: 1.5em;
@@ -67,4 +69,4 @@
   .read-the-docs {
     color: #888;
   }
-</style>
+</style> -->

@@ -1,21 +1,22 @@
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use super::{FixtureChannel, FixtureType};
 
-#[derive(Debug)]
-pub struct PatchedFixture<'a> {
-    pub(in crate::fixture) config: &'a FixtureType,
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct PatchedFixture {
+    pub(in crate::fixture) config: FixtureType,
     pub(in crate::fixture) num_channels: u8,
-    pub(in crate::fixture) channels: Vec<Rc<PatchedChannel<'a>>>,
+    pub(in crate::fixture) channels: Vec<PatchedChannel>,
     pub(in crate::fixture) start_channel: UniverseAddress,
 }
 
-#[derive(Debug)]
-pub struct PatchedChannel<'a> {
-    pub(in crate::fixture) config: &'a FixtureChannel,
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct PatchedChannel {
+    pub(in crate::fixture) config: FixtureChannel,
+    pub(in crate::fixture) channel_address: UniverseAddress,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct UniverseAddress {
     add_256: bool,
     adds: u8,
@@ -60,8 +61,8 @@ impl Debug for UniverseAddress {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct DmxUniverse(pub u16);
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
+pub struct UniverseId(pub u16);
 
 #[cfg(test)]
 mod tests {

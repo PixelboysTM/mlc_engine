@@ -1,20 +1,26 @@
-use std::rc::Rc;
-
-use super::{DmxUniverse, FixtureType, PatchedChannel, PatchedFixture, UniverseAddress};
+use super::{FixtureType, PatchedChannel, PatchedFixture, UniverseAddress, UniverseId};
 
 pub const UNIVERSE_SIZE: usize = 512;
 
-#[derive(Debug)]
-pub struct FixtureUniverse<'a> {
-    id: DmxUniverse,
-    channels: [Option<Rc<PatchedChannel<'a>>>; UNIVERSE_SIZE],
-    fixtures: Vec<PatchedFixture<'a>>,
+#[serde_with::serde_as]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct FixtureUniverse {
+    id: UniverseId,
+    #[serde_as(as = "[_;UNIVERSE_SIZE]")]
+    channels: [Option<PatchedChannelIndex>; UNIVERSE_SIZE],
+    fixtures: Vec<PatchedFixture>,
 }
 
-impl<'a> FixtureUniverse<'a> {
-    const INIT: Option<Rc<PatchedChannel<'a>>> = None;
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct PatchedChannelIndex {
+    fixture_index: usize,
+    channel_index: usize,
+}
 
-    pub fn empty(id: DmxUniverse) -> Self {
+impl FixtureUniverse {
+    const INIT: Option<PatchedChannelIndex> = None;
+
+    pub fn empty(id: UniverseId) -> Self {
         FixtureUniverse {
             id,
             channels: [Self::INIT; UNIVERSE_SIZE],
@@ -40,12 +46,12 @@ impl<'a> FixtureUniverse<'a> {
             }
         }
 
-        return false;
+        false
     }
 
     pub fn patch(
         &mut self,
-        fixture: &'a FixtureType,
+        fixture: &FixtureType,
         mode_index: usize,
     ) -> Result<UniverseAddress, &'static str> {
         if !self.can_patch(fixture, mode_index) {
@@ -75,23 +81,27 @@ impl<'a> FixtureUniverse<'a> {
         start_index -= len;
 
         let patched_fixture = PatchedFixture {
-            config: fixture,
+            config: fixture.clone(),
             num_channels: len as u8,
             channels: (0..len)
                 .map(|i| PatchedChannel {
-                    config: &fixture.get_available_channels()
-                        [&fixture.get_modes()[mode_index].get_channels()[i]],
+                    config: fixture.get_available_channels()
+                        [&fixture.get_modes()[mode_index].get_channels()[i]]
+                        .clone(),
+                    channel_address: (start_index + i).into(),
                 })
-                .map(|c| Rc::new(c))
                 .collect(),
             start_channel: start_index.into(),
         };
 
-        for i in 0..len {
-            self.channels[i + start_index] = Some(patched_fixture.channels[i].clone());
-        }
-
+        let fixture_index = self.fixtures.len();
         self.fixtures.push(patched_fixture);
+        for i in 0..len {
+            self.channels[i + start_index] = Some(PatchedChannelIndex {
+                fixture_index,
+                channel_index: i,
+            });
+        }
 
         Ok(start_index.into())
     }
@@ -99,16 +109,16 @@ impl<'a> FixtureUniverse<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::fixture::{DmxUniverse, FixtureType};
+    use crate::fixture::{FixtureType, UniverseId};
 
     use super::FixtureUniverse;
 
     #[test]
     fn test_out() {
         let fixture: FixtureType =
-            serde_json::from_str(include_str!("../../../led-nano-par.json")).unwrap();
+            serde_json::from_str(include_str!("../../../test_fixtures/led_par_56.json")).unwrap();
 
-        let mut universe = FixtureUniverse::empty(DmxUniverse(1));
+        let mut universe = FixtureUniverse::empty(UniverseId(1));
         {
             universe.patch(&fixture, 0).unwrap();
             universe.patch(&fixture, 0).unwrap();
