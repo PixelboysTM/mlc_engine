@@ -8,11 +8,9 @@ use std::collections::HashMap;
 #[serde(rename_all = "camelCase")]
 pub struct FixtureType {
     name: String,
-    #[serde(default)]
-    short_name: String,
     categories: Vec<String>,
     fixture_key: String,
-    manufacturer_key: String,
+    manufacturer: Manufacturer,
     modes: Vec<FixtureMode>,
     available_channels: HashMap<String, FixtureChannel>,
 }
@@ -23,10 +21,6 @@ impl FixtureType {
         &self.name
     }
 
-    pub fn get_short_name(&self) -> &str {
-        &self.short_name
-    }
-
     pub fn get_categories(&self) -> &[String] {
         &self.categories
     }
@@ -35,8 +29,8 @@ impl FixtureType {
         &self.fixture_key
     }
 
-    pub fn get_manufacturer_key(&self) -> &str {
-        &self.manufacturer_key
+    pub fn get_manufacturer(&self) -> &Manufacturer {
+        &self.manufacturer
     }
 
     pub fn get_modes(&self) -> &[FixtureMode] {
@@ -76,8 +70,6 @@ impl FixtureMode {
 pub struct FixtureChannel {
     #[serde(default = "zero")]
     default_value: u8,
-    #[serde(default = "all")]
-    highlight_value: u8,
     #[serde(alias = "capability")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]
     capabilities: Vec<FixtureCapability>,
@@ -85,9 +77,6 @@ pub struct FixtureChannel {
 
 fn zero() -> u8 {
     0
-}
-fn all() -> u8 {
-    255
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
@@ -130,13 +119,13 @@ pub struct Effect {
 #[serde(tag = "type")]
 pub enum FixtureCapability {
     NoFunction(NoFunction),
-    Maintenance(Maintenance),
+    // Maintenance(Maintenance),
     Intensity(Intensity),
     ColorIntensity(ColorIntensity),
-    ColorPreset,
+    // ColorPreset,
     ShutterStrobe,
-    Effect(Effect),
-    EffectSpeed,
+    // Effect(Effect),
+    // EffectSpeed,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
@@ -152,8 +141,18 @@ fn full_range() -> DmxRange {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 pub enum DmxColor {
+    #[serde(alias = "#ff0000")]
     Red,
+    #[serde(alias = "#00ff00")]
     Green,
+    #[serde(alias = "#0000ff")]
     Blue,
+    #[serde(alias = "#ffffff")]
     White,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+pub struct Manufacturer {
+    name: String,
+    website: String,
 }

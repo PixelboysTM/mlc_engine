@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "fixtures": [
+    {
+      "$schema": "https://raw.githubusercontent.com/OpenLightingProject/open-fixture-library/master/schemas/fixture.json",
+      "name": "LED Par 56",
+      "categories": ["Color Changer"],
+      "meta": {
+        "authors": ["Hannes Rüger"],
+        "createDate": "2021-08-05",
+        "lastModifyDate": "2021-08-05"
+      },
+      "links": {
+        "manual": [
+          "https://www.scherloc.com/_media/notice-par56led-10mm.pdf"
+        ],
+        "productPage": [
+          "https://www.musicstore.de/en_US/USD/lightmaXX-LED-Par-56-RGB-Short-Polish-10mm-LEDs/art-LIG0002658-000"
+        ]
+      },
+      "physical": {
+        "dimensions": [220, 210, 220],
+        "weight": 1.4,
+        "power": 22,
+        "DMXconnector": "3-pin",
+        "bulb": {
+          "type": "108x LED"
+        }
+      },
+      "availableChannels": {
+        "Red": {
+          "capabilities": [
+            {
+              "type": "ColorIntensity",
+              "color": "#ff0000"
+            }
+          ],
+          "singleCapability": true
+        },
+        "Green": {
+          "capabilities": [
+            {
+              "type": "ColorIntensity",
+              "color": "#00ff00"
+            }
+          ],
+          "singleCapability": true
+        },
+        "Blue": {
+          "capabilities": [
+            {
+              "type": "ColorIntensity",
+              "color": "#0000ff"
+            }
+          ],
+          "singleCapability": true
+        },
+        "Dimmer": {
+          "capabilities": [
+            {
+              "dmxRange": [0, 189],
+              "type": "Intensity"
+            },
+            {
+              "dmxRange": [190, 250],
+              "type": "ShutterStrobe",
+              "shutterEffect": "Strobe",
+              "speedStart": "slow",
+              "speedEnd": "fast"
+            },
+            {
+              "dmxRange": [251, 255],
+              "type": "NoFunction"
+            }
+          ]
+        }
+      },
+      "modes": [
+        {
+          "name": "4-channel",
+          "shortName": "4ch",
+          "channels": [
+            "Red",
+            "Green",
+            "Blue",
+            "Dimmer"
+          ]
+        }
+      ],
+      "fixtureKey": "led-par-56",
+      "manufacturer": {
+        "name": "lightmaXX",
+        "website": "https://www.musicstore.de/en_DE/EUR/brands/lightmaxx"
+      },
+      "oflURL": "https://open-fixture-library.org/lightmaxx/led-par-56"
+    }
+  ]
+}

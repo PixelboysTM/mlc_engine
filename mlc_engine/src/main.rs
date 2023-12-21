@@ -37,15 +37,15 @@ impl Module for MainModule {
         let project = pollster::block_on(async {
             let project = Project::default();
             if project.load("test", &tx).await.is_err() {
-                let json = include_str!("../../led-nano-par.json");
-                let fix = fixture::parse_ofl_fixture(json).unwrap();
-                project
-                    .insert_fixture(
-                        fixture::parse_ofl_fixture(include_str!("../../led-par-56.json")).unwrap(),
-                        &tx,
-                    )
-                    .await;
-                project.insert_fixture(fix, &tx).await;
+                let json = include_str!("../../test_fixtures/led_par_56.json");
+                let fix = fixture::parse_fixture(json).unwrap();
+                // project
+                //     .insert_fixture(
+                //         fixture::parse_fixture(include_str!("../../led-par-56.json")).unwrap(),
+                //         &tx,
+                //     )
+                //     .await;
+                project.insert_fixture(fix[0].clone(), &tx).await;
                 project.save_as("test", &tx).await.unwrap();
             }
 

@@ -85,9 +85,10 @@ async fn add_fixture(
         .await
         .map_err(|_| BadRequest("Failed to read to string".to_string()))?;
 
-    let fix = fixture::parse_ofl_fixture(&string).map_err(BadRequest)?;
-
-    project.insert_fixture(fix, info).await;
+    let fix = fixture::parse_fixture(&string).map_err(BadRequest)?;
+    for fixture in fix {
+        project.insert_fixture(fixture, info).await;
+    }
 
     Ok(())
 }
