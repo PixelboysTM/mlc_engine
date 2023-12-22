@@ -11,6 +11,29 @@
       active = true;
     }
   }
+
+  let failed = 0;
+  function request_heartbeat() {
+    fetch("/util/heartbeat")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        failed = 0;
+      })
+      .catch((err) => {
+        console.log(err);
+        failed++;
+        if (failed > 5) {
+          active = true;
+        } else {
+          request_heartbeat();
+        }
+      });
+  }
+
+  setInterval(() => {
+    request_heartbeat();
+  }, 10000);
 </script>
 
 {#if active}
@@ -42,8 +65,5 @@
     padding: 2rem;
     display: flex;
     flex-direction: column;
-  }
-  textarea {
-    resize: none;
   }
 </style>

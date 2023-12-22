@@ -1,8 +1,9 @@
 <script lang="ts">
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
   import Headbar from "./lib/Headbar.svelte";
+  import Toast from "./lib/Toast.svelte";
   import UniverseExplorer from "./lib/UniverseExplorer.svelte";
-  import { info } from "./lib/stores";
+  import { info, toastNotifier } from "./lib/stores";
 
   let promise = getFixtureTypes();
 
@@ -16,6 +17,18 @@
     console.log(data);
     if (data == "FixtureTypesUpdated") {
       promise = getFixtureTypes();
+      toastNotifier.push({
+        level: "info",
+        title: "Fixture Info!",
+        msg: "Fixture types updated!",
+      });
+    }
+    if (data == "ProjectSaved") {
+      toastNotifier.push({
+        level: "info",
+        title: "Project Info!",
+        msg: "Project saved succsessfully!",
+      });
     }
   });
 
@@ -25,11 +38,36 @@
 <main>
   <Headbar bind:pane></Headbar>
   <DisconnectHelper></DisconnectHelper>
+  <Toast></Toast>
   {$info}
   <UniverseExplorer></UniverseExplorer>
 
   {#if pane === "configure"}
     <h1>Configure</h1>
+    <button
+      on:click={() =>
+        toastNotifier.push({
+          level: "info",
+          title: "Info!",
+          msg: "This is an info prompt.",
+        })}>Info</button
+    >
+    <button
+      on:click={() =>
+        toastNotifier.push({
+          level: "warning",
+          title: "Warning!",
+          msg: "This is an warning prompt.",
+        })}>Warning</button
+    >
+    <button
+      on:click={() =>
+        toastNotifier.push({
+          level: "error",
+          title: "Error!",
+          msg: "An error occured.",
+        })}>Error</button
+    >
   {:else if pane === "program"}
     <h1>Program</h1>
   {:else if pane === "show"}
