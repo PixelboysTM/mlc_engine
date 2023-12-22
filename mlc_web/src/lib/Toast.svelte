@@ -90,10 +90,10 @@
   }
 
   div.toast.info {
-    background-color: #151111;
+    background-color: #44a44a;
   }
   div.toast.warning {
-    background-color: #ffbf3e;
+    background-color: #ffa83e;
   }
   div.toast.error {
     background-color: #ff3e3e;

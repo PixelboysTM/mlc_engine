@@ -30,13 +30,6 @@
         msg: "Project saved succsessfully!",
       });
     }
-    if (data == "ProjectSaved") {
-      toastNotifier.push({
-        level: "info",
-        title: "Project Info!",
-        msg: "Project saved succsessfully!",
-      });
-    }
   });
 
   let pane: "configure" | "program" | "show" = "configure";
