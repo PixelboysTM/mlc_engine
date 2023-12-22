@@ -10,7 +10,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use data_serving::{DataServingModule, Info};
 use module::{Application, Module};
 use project::Project;
-use rocket::{config::Ident, launch, Config};
+use rocket::{config::Ident, get, launch, routes, serde::json::Json, Config};
 use ui_serving::UiServingModule;
 
 #[launch]
@@ -29,6 +29,11 @@ async fn rocket() -> _ {
 }
 
 struct MainModule;
+
+#[get("/heartbeat")]
+async fn heart_beat() -> Json<&'static str> {
+    Json("alive")
+}
 
 impl Module for MainModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
@@ -59,6 +64,10 @@ impl Module for MainModule {
             ..Default::default()
         };
 
-        app.manage(project).manage(tx).manage(rx).configure(config)
+        app.manage(project)
+            .manage(tx)
+            .manage(rx)
+            .configure(config)
+            .mount("/util", routes![heart_beat])
     }
 }
