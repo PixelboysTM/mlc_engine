@@ -32,6 +32,9 @@
     }
   });
   // https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.8
+  // https://svelte.dev/repl/fd9d2216e7e243d49de8fae39ecc6fe8?version=3.37.0
+  // https://svelte.dev/repl/8c2d03bcc8434a158f01a80fc624c636?version=4.2.2
+  // https://svelte-grid.vercel.app/features
   let pane: "configure" | "program" | "show" = "configure";
 </script>
 
