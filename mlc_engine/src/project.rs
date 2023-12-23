@@ -13,6 +13,7 @@ struct ProjectI {
     name: String,
     fixtures: Vec<FixtureType>,
     universes: HashMap<UniverseId, FixtureUniverse>,
+    settings: Settings,
 }
 
 pub struct Project {
@@ -154,6 +155,18 @@ impl Project {
             None
         }
     }
+
+    pub async fn get_settings(&self) -> Settings {
+        let data = self.project.lock().await;
+        data.settings.clone()
+    }
+
+    pub async fn update_settings(&self, settings: Settings) -> Result<(), &'static str> {
+        let mut data = self.project.lock().await;
+        data.settings = settings;
+
+        Ok(())
+    }
 }
 
 impl Default for Project {
@@ -163,8 +176,20 @@ impl Default for Project {
                 name: "unnamed".to_string(),
                 fixtures: Vec::new(),
                 universes: HashMap::new(),
+                settings: Settings { save_on_quit: true },
             })),
         }
+    }
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct Settings {
+    save_on_quit: bool,
+}
+
+impl Settings {
+    pub fn save_on_quit(&self) -> bool {
+        self.save_on_quit
     }
 }
 

@@ -15,7 +15,8 @@
 
 <div>
   <span
-    ><a id="a" href="/">M</a><a id="b" href="/">L</a><a id="c" href="/">C</a
+    ><a id="a" href="#top">M</a><a id="b" href="#top">L</a><a id="c" href="#top"
+      >C</a
     ></span
   >
   <div class="tabs">

@@ -39,40 +39,44 @@
   <Headbar bind:pane></Headbar>
   <DisconnectHelper></DisconnectHelper>
   <Toast></Toast>
-  {$info}
-  <UniverseExplorer></UniverseExplorer>
+  <!-- {$info} -->
 
-  {#if pane === "configure"}
-    <h1>Configure</h1>
-    <button
-      on:click={() =>
-        toastNotifier.push({
-          level: "info",
-          title: "Info!",
-          msg: "This is an info prompt.",
-        })}>Info</button
-    >
-    <button
-      on:click={() =>
-        toastNotifier.push({
-          level: "warning",
-          title: "Warning!",
-          msg: "This is an warning prompt.",
-        })}>Warning</button
-    >
-    <button
-      on:click={() =>
-        toastNotifier.push({
-          level: "error",
-          title: "Error!",
-          msg: "An error occured.",
-        })}>Error</button
-    >
-  {:else if pane === "program"}
-    <h1>Program</h1>
-  {:else if pane === "show"}
-    <h1>Show</h1>
-  {/if}
+  <div class="panes">
+    {#if pane === "configure"}
+      <div class="configure">
+        <UniverseExplorer></UniverseExplorer>
+        <h1>Configure</h1>
+        <button
+          on:click={() =>
+            toastNotifier.push({
+              level: "info",
+              title: "Info!",
+              msg: "This is an info prompt.",
+            })}>Info</button
+        >
+        <button
+          on:click={() =>
+            toastNotifier.push({
+              level: "warning",
+              title: "Warning!",
+              msg: "This is an warning prompt.",
+            })}>Warning</button
+        >
+        <button
+          on:click={() =>
+            toastNotifier.push({
+              level: "error",
+              title: "Error!",
+              msg: "An error occured.",
+            })}>Error</button
+        >
+      </div>
+    {:else if pane === "program"}
+      <h1>Program</h1>
+    {:else if pane === "show"}
+      <h1>Show</h1>
+    {/if}
+  </div>
 
   <!-- <div>
     <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
@@ -95,11 +99,11 @@
   <p class="read-the-docs">
     Click on the Vite and Svelte logos to learn more
   </p> -->
-  {#await promise}
+  <!-- {#await promise}
     <p>Still Loading</p>
   {:then data}
     <code>{JSON.stringify(data, undefined, 4)}</code>
-  {/await}
+  {/await} -->
 </main>
 
 <!-- <style>
@@ -118,4 +122,15 @@
   .read-the-docs {
     color: #888;
   }
-</style> -->
+</!-->
+
+<style>
+  .panes {
+    width: 100%;
+    height: calc(100vh - 3rem);
+    display: grid;
+    background-color: transparent;
+    align-items: center;
+    justify-items: center;
+  }
+</style>

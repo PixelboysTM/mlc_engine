@@ -67,6 +67,7 @@ async fn gen_info(
 struct FixtureInfo {
     name: String,
     id: uuid::Uuid,
+    modes: Vec<String>,
 }
 
 #[get("/get/fixture-types")]
@@ -82,6 +83,11 @@ async fn get_fixture_types(project: &State<Project>) -> Json<Vec<FixtureInfo>> {
             .map(|f| FixtureInfo {
                 id: *f.get_id(),
                 name: f.get_name().to_string(),
+                modes: f
+                    .get_modes()
+                    .iter()
+                    .map(|m| m.get_name().to_string())
+                    .collect(),
             })
             .collect::<Vec<FixtureInfo>>(),
     )

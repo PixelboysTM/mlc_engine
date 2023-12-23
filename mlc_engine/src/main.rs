@@ -2,6 +2,7 @@ mod data_serving;
 mod fixture;
 mod module;
 mod project;
+mod settings;
 mod ui_serving;
 mod utils;
 
@@ -11,6 +12,7 @@ use data_serving::{DataServingModule, Info};
 use module::{Application, Module};
 use project::Project;
 use rocket::{config::Ident, get, launch, routes, serde::json::Json, Config};
+use settings::SettingsModule;
 use ui_serving::UiServingModule;
 
 #[launch]
@@ -19,6 +21,7 @@ async fn rocket() -> _ {
         .mount(MainModule)
         .mount(UiServingModule)
         .mount(DataServingModule)
+        .mount(SettingsModule)
         .launch()
     // rocket::build()
     //     .manage(project)

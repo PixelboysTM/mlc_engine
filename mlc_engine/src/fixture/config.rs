@@ -60,6 +60,9 @@ impl FixtureMode {
     pub fn get_channels(&self) -> &[String] {
         &self.channels
     }
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
 }
 
 #[serde_as]
