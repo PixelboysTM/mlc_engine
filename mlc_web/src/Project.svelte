@@ -2,42 +2,54 @@
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
   import FaFileUpload from "svelte-icons/fa/FaFileUpload.svelte";
   import FaPlus from "svelte-icons/fa/FaPlus.svelte";
-  // import Headbar from "./lib/Headbar.svelte";
-  // import Toast from "./lib/Toast.svelte";
-  // import UniverseExplorer from "./lib/UniverseExplorer.svelte";
-  // import { info, toastNotifier } from "./lib/stores";
+  import MdOpenInBrowser from "svelte-icons/md/MdOpenInBrowser.svelte";
+  import Grid from "svelte-grid";
+  import gridHelp from "svelte-grid/build/helper/index.mjs";
 
-  // let promise = getFixtureTypes();
+  type ProjectInformation = {
+    name: string;
+    lastSaved: Date;
+  };
 
-  // async function getFixtureTypes() {
-  //   const response = await fetch("/data/get/fixture-types");
-  //   const data = await response.json();
-  //   return data;
-  // }
+  let items = [
+    make_item(0),
+    make_item(1),
+    // make_item(2),
+    // make_item(3),
+    // make_item(4),
+    // make_item(5),
+    // make_item(6),
+    // make_item(7),
+    // make_item(8),
+    // make_item(9),
+    // make_item(10),
+    // make_item(11),
+    // make_item(12),
+    // make_item(13),
+    // make_item(14),
+  ];
 
-  // let s = info.subscribe((data) => {
-  //   console.log(data);
-  //   if (data == "FixtureTypesUpdated") {
-  //     promise = getFixtureTypes();
-  //     toastNotifier.push({
-  //       level: "info",
-  //       title: "Fixture Info!",
-  //       msg: "Fixture types updated!",
-  //     });
-  //   }
-  //   if (data == "ProjectSaved") {
-  //     toastNotifier.push({
-  //       level: "info",
-  //       title: "Project Info!",
-  //       msg: "Project saved succsessfully!",
-  //     });
-  //   }
-  // });
-  // // https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.8
-  // // https://svelte.dev/repl/fd9d2216e7e243d49de8fae39ecc6fe8?version=3.37.0
-  // // https://svelte.dev/repl/8c2d03bcc8434a158f01a80fc624c636?version=4.2.2
-  // // https://svelte-grid.vercel.app/features
-  // let pane: "configure" | "program" | "show" = "configure";
+  function make_item(i: number) {
+    return {
+      5: gridHelp.item({
+        x: i % 5,
+        y: Math.floor(i / 5) * 3,
+        w: 1,
+        h: 3,
+        resizable: false,
+        draggable: false,
+      }),
+      id: i,
+      data: {
+        name: "Project " + i,
+        lastSaved: new Date(),
+      } as ProjectInformation,
+    };
+  }
+  const breakpoint = 1200;
+  const column = 5;
+
+  const cols = [[breakpoint, column]];
 </script>
 
 <svelte:head>
@@ -45,7 +57,8 @@
   <link rel="icon" href="/favicon.ico" />
 </svelte:head>
 <main>
-  <div>
+  <DisconnectHelper></DisconnectHelper>
+  <div class="head">
     <span
       ><a id="a" href="#top">M</a><a id="b" href="#top">L</a><a
         id="c"
@@ -64,106 +77,60 @@
       >
     </div>
   </div>
-
-  <!-- <DisconnectHelper></DisconnectHelper>
-  <Toast></Toast> -->
-  <!-- {$info} -->
-
-  <!-- <div class="panes">
-    {#if pane === "configure"}
-      <div class="configure">
-        <UniverseExplorer></UniverseExplorer>
-        <h1>Configure</h1>
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "info",
-              title: "Info!",
-              msg: "This is an info prompt.",
-            })}>Info</button
-        >
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "warning",
-              title: "Warning!",
-              msg: "This is an warning prompt.",
-            })}>Warning</button
-        >
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "error",
-              title: "Error!",
-              msg: "An error occured.",
-            })}>Error</button
-        >
+  <div class="grid">
+    <Grid {cols} bind:items let:item let:dataItem rowHeight={100}>
+      <div class="project-card">
+        <h4>{dataItem.data.name}</h4>
+        <p>{dataItem.data.lastSaved.toLocaleString()}</p>
+        <button class="icon">Open</button>
       </div>
-    {:else if pane === "program"}
-      <h1>Program</h1>
-    {:else if pane === "show"}
-      <h1>Show</h1>
-    {/if}
-  </div> -->
-
-  <!-- <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+    </Grid>
   </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p> -->
-  <!-- {#await promise}
-    <p>Still Loading</p>
-  {:then data}
-    <code>{JSON.stringify(data, undefined, 4)}</code>
-  {/await} -->
 </main>
 
-<!-- <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</!-->
-
-<!-- <style>
-  .panes {
-    width: 100%;
-    height: calc(100vh - 3rem);
-    display: grid;
-    background-color: transparent;
-    align-items: center;
-    justify-items: center;
-  }
-</style> -->
-
 <style>
+  div.project-card {
+    background-color: #151111;
+    border-radius: 0.5rem;
+    /* margin: 1rem; */
+    color: #fff;
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    place-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+  .project-card h4 {
+    margin: 0rem;
+    padding: 0rem;
+    margin-top: 1rem;
+  }
+  .project-card p {
+    margin: 0rem;
+    padding: 0rem;
+    font-size: medium;
+    margin-bottom: auto;
+  }
+  .project-card button {
+    margin-bottom: 1rem;
+  }
+  div.grid {
+    /* width: 100%; */
+    margin: 0rem;
+    margin-left: auto;
+    margin-right: auto;
+    height: calc(100vh - 3rem);
+    background-color: transparent;
+    display: block;
+    /* overflow: hidden; */
+    padding: 0rem;
+    margin-top: 3rem;
+  }
+
   div {
     width: 100%;
     height: 3rem;
@@ -187,6 +154,29 @@
     margin: 0rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease-in-out;
+  }
+  .head {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    border-bottom: #151311 1px solid;
+    animation: border 10s linear 0s infinite;
+  }
+
+  @keyframes border {
+    0% {
+      border-bottom: #ff4e3e 1px solid;
+    }
+    33% {
+      border-bottom: #3eff41 1px solid;
+    }
+    66% {
+      border-bottom: #3e88ff 1px solid;
+    }
+    100% {
+      border-bottom: #ff4e3e 1px solid;
+    }
   }
 
   #a {
@@ -219,14 +209,5 @@
   }
   div.right {
     place-content: end;
-  }
-  .selected.configure {
-    color: #ff3e3e;
-  }
-  .selected.program {
-    color: #3eff41;
-  }
-  .selected.show {
-    color: #3e88ff;
   }
 </style>
