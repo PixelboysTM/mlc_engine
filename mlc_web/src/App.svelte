@@ -31,7 +31,7 @@
       });
     }
   });
-
+  // https://svelte.dev/repl/8b974ea483c648fba362a1e9f3dbc29f?version=4.2.8
   let pane: "configure" | "program" | "show" = "configure";
 </script>
 
