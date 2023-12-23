@@ -1,6 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
-use rocket::{fs::NamedFile, get, routes, Route};
+use rocket::{fs::NamedFile, futures::lock::Mutex, get, routes, Route, State};
 
 use crate::module::Module;
 
@@ -18,10 +21,16 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/")]
-async fn index() -> Option<NamedFile> {
-    NamedFile::open(Path::new(OUT_PATH).join("index.html"))
-        .await
-        .ok()
+async fn index(project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
+    if project_selection.inner().0.lock().await.is_some() {
+        NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+            .await
+            .ok()
+    } else {
+        NamedFile::open(Path::new(OUT_PATH).join("project.html"))
+            .await
+            .ok()
+    }
 }
 
 fn get_routes() -> Vec<Route> {
@@ -33,5 +42,8 @@ pub struct UiServingModule;
 impl Module for UiServingModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
         app.mount("/", get_routes())
+            .manage(ProjectSelection(Arc::new(Mutex::new(None))))
     }
 }
+
+pub struct ProjectSelection(Arc<Mutex<Option<String>>>);

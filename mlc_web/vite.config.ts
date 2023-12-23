@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         index: "index.html",
         error: "error.html",
+        project: "project.html"
       },
       output: [
         {
