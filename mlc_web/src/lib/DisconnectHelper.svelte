@@ -38,7 +38,7 @@
 
   let inter = setInterval(() => {
     request_heartbeat();
-  }, 2000);
+  }, 5000);
 </script>
 
 {#if active}
