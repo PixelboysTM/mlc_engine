@@ -11,6 +11,10 @@
      * Note that setting allowJs false does not prevent the use
      * of JS in `.svelte` files.
      */
+     "typeRoots": [
+      "node_modules/@types",
+      "src/customTypings"
+     ],
     "allowJs": true,
     "checkJs": true,
     "isolatedModules": true

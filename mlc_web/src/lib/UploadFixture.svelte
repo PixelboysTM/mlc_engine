@@ -40,7 +40,7 @@
   <div class="inner">
     <h3>Upload Fixture Definition</h3>
     <p>Paste AGLight JSON and click Upload</p>
-    <textarea bind:this={inputJson} rows="40" cols="100" />
+    <textarea bind:this={inputJson} rows="35" cols="100" />
     <div class="btns">
       <button on:click={upload}>Upload</button>
       <button on:click={close}>Close</button>

@@ -8,8 +8,13 @@
 
   function handleData(data: string) {
     if (data == "SystemShutdown") {
-      active = true;
+      setActive();
     }
+  }
+
+  function setActive() {
+    active = true;
+    clearInterval(inter);
   }
 
   let failed = 0;
@@ -17,23 +22,23 @@
     fetch("/util/heartbeat")
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         failed = 0;
       })
       .catch((err) => {
         console.log(err);
         failed++;
         if (failed > 5) {
-          active = true;
+          setActive();
         } else {
           request_heartbeat();
         }
       });
   }
 
-  setInterval(() => {
+  let inter = setInterval(() => {
     request_heartbeat();
-  }, 10000);
+  }, 2000);
 </script>
 
 {#if active}

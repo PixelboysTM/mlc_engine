@@ -17,6 +17,7 @@ use crate::{
     fixture::{self, UniverseId},
     module::Module,
     project::Project,
+    settings::ProjectDefinition,
 };
 
 #[derive(serde::Serialize, Debug, Clone)]

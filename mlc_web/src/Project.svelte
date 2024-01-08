@@ -1,19 +1,34 @@
 <script lang="ts">
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
-  import FaFileUpload from "svelte-icons/fa/FaFileUpload.svelte";
-  import FaPlus from "svelte-icons/fa/FaPlus.svelte";
-  import MdOpenInBrowser from "svelte-icons/md/MdOpenInBrowser.svelte";
+  // import FaFileUpload from "svelte-icons/fa/FaFileUpload.svelte";
+  // import FaPlus from "svelte-icons/fa/FaPlus.svelte";
+  import FaSolidFileUpload from "svelte-icons-pack/fa/FaSolidFileUpload";
+  import FaSolidPlus from "svelte-icons-pack/fa/FaSolidPlus";
+  // import MdOpenInBrowser from "svelte-icons/md/MdOpenInBrowser.svelte";
+  import FaSolidFolderOpen from "svelte-icons-pack/fa/FaSolidFolderOpen";
+  import Icon from "svelte-icons-pack/Icon.svelte";
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
 
   type ProjectInformation = {
     name: string;
-    lastSaved: Date;
+    file_name: string;
+    last_edited: string;
   };
 
-  let items = [
-    make_item(0),
-    make_item(1),
+  fetch("/projects/projects-list").then((res) => {
+    res.json().then((data) => {
+      console.log(data);
+      let i = 0;
+      items = data.map((item: ProjectInformation) => {
+        return make_item(i++, item);
+      });
+    });
+  });
+
+  let items: any[] = [
+    // make_item(0),
+    // make_item(1),
     // make_item(2),
     // make_item(3),
     // make_item(4),
@@ -29,7 +44,7 @@
     // make_item(14),
   ];
 
-  function make_item(i: number) {
+  function make_item(i: number, data: ProjectInformation) {
     return {
       5: gridHelp.item({
         x: i % 5,
@@ -39,22 +54,76 @@
         resizable: false,
         draggable: false,
       }),
+      4: gridHelp.item({
+        x: i % 4,
+        y: Math.floor(i / 4) * 3,
+        w: 1,
+        h: 3,
+        resizable: false,
+        draggable: false,
+      }),
+      3: gridHelp.item({
+        x: i % 3,
+        y: Math.floor(i / 3) * 3,
+        w: 1,
+        h: 3,
+        resizable: false,
+        draggable: false,
+      }),
+      2: gridHelp.item({
+        x: i % 2,
+        y: Math.floor(i / 2) * 3,
+        w: 1,
+        h: 3,
+        resizable: false,
+        draggable: false,
+      }),
+      1: gridHelp.item({
+        x: i % 1,
+        y: Math.floor(i / 1) * 3,
+        w: 1,
+        h: 3,
+        resizable: false,
+        draggable: false,
+      }),
       id: i,
-      data: {
-        name: "Project " + i,
-        lastSaved: new Date(),
-      } as ProjectInformation,
+      data: data,
     };
   }
-  const breakpoint = 1200;
-  const column = 5;
 
-  const cols = [[breakpoint, column]];
+  function format_time(timeString: string) {
+    console.log(timeString);
+    let time = new Date(timeString);
+    console.log(time);
+
+    return (
+      time.getDate() +
+      "." +
+      (time.getMonth() + 1) +
+      "." +
+      time.getFullYear() +
+      " " +
+      time.getHours() +
+      ":" +
+      time.getMinutes()
+    );
+  }
+  // const breakpoint = 0;
+  // const column = 5;
+
+  const cols = [
+    [1500, 5],
+    [1200, 4],
+    [950, 3],
+    [600, 2],
+    [400, 1],
+    [0, 0],
+  ];
 </script>
 
 <svelte:head>
   <title>MLC Project Browser</title>
-  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 </svelte:head>
 <main>
   <DisconnectHelper></DisconnectHelper>
@@ -69,11 +138,14 @@
       <h2>Project Browser</h2>
     </div>
     <div class="tabs right">
-      <button title="Import Project" class="icon"><FaFileUpload /></button>
+      <button title="Import Project" class="icon"
+        ><Icon color="white" src={FaSolidFileUpload} /></button
+      >
       <button
         title="Create New Project"
         class="icon"
-        on:click={() => fetch("/data/save")}><FaPlus /></button
+        on:click={() => fetch("/data/save")}
+        ><Icon color="white" src={FaSolidPlus} /></button
       >
     </div>
   </div>
@@ -81,8 +153,21 @@
     <Grid {cols} bind:items let:item let:dataItem rowHeight={100}>
       <div class="project-card">
         <h4>{dataItem.data.name}</h4>
-        <p>{dataItem.data.lastSaved.toLocaleString()}</p>
-        <button class="icon">Open</button>
+        <p>
+          {dataItem.data.file_name}
+        </p>
+        <p>
+          {format_time(dataItem.data.last_edited)}
+        </p>
+        <button
+          on:click={() => {
+            fetch("/projects/load/" + dataItem.data.file_name).then((data) =>
+              window.location.reload()
+            );
+          }}
+          ><Icon color="white" src={FaSolidFolderOpen} />
+          <p class="loadBtn">Open</p></button
+        >
       </div>
     </Grid>
   </div>
@@ -103,6 +188,7 @@
     align-items: center;
     width: 100%;
     height: 100%;
+    touch-action: auto;
   }
   .project-card h4 {
     margin: 0rem;
@@ -164,6 +250,19 @@
     animation: border 10s linear 0s infinite;
   }
 
+  button p.loadBtn {
+    display: none;
+    transition: all 0.75s ease-in-out;
+  }
+
+  button {
+    transition: width 0.75s ease-in-out;
+  }
+
+  button:hover p.loadBtn {
+    display: block;
+  }
+
   @keyframes border {
     0% {
       border-bottom: #ff4e3e 1px solid;
@@ -209,5 +308,46 @@
   }
   div.right {
     place-content: end;
+  }
+
+  button {
+    padding: 1rem;
+    align-items: center;
+    display: flex;
+  }
+
+  /* Extra small devices (phones, 600px and down) */
+  @media only screen and (max-width: 600px) {
+    .tabs h2 {
+      font-size: 1rem;
+    }
+  }
+
+  /* Small devices (portrait tablets and large phones, 600px and up) */
+  @media only screen and (min-width: 600px) {
+    .example {
+      background: green;
+    }
+  }
+
+  /* Medium devices (landscape tablets, 768px and up) */
+  @media only screen and (min-width: 768px) {
+    .example {
+      background: blue;
+    }
+  }
+
+  /* Large devices (laptops/desktops, 992px and up) */
+  @media only screen and (min-width: 992px) {
+    .example {
+      background: orange;
+    }
+  }
+
+  /* Extra large devices (large laptops and desktops, 1200px and up) */
+  @media only screen and (min-width: 1200px) {
+    .example {
+      background: pink;
+    }
   }
 </style>

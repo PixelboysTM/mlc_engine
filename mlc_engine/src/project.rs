@@ -1,16 +1,24 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
+use chrono::{DateTime, Local};
 use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender};
 
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
     send,
+    settings::ProjectDefinition,
 };
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ProjectI {
+    // Common with general Information
     name: String,
+    #[serde(skip)]
+    file_name: String,
+    last_edited: DateTime<Local>,
+
+    // Other stuff
     fixtures: Vec<FixtureType>,
     universes: HashMap<UniverseId, FixtureUniverse>,
     settings: Settings,
@@ -36,10 +44,12 @@ impl Project {
             data.name = new_name.to_string();
         }
 
+        data.last_edited = Local::now();
+
         // let toml_data = toml::to_string(data).map_err(|_| "Failed serializing data")?;
         let json_data =
             serde_json::to_string_pretty(data).map_err(|_| "Failed serializing data")?;
-        if let Some(path) = make_path(name.unwrap_or(&data.name)) {
+        if let Some(path) = make_path(name.unwrap_or(&data.file_name)) {
             std::fs::write(path, json_data).map_err(|_| "Failed writing to file")?;
         } else {
             Err("Failed creating path")?;
@@ -56,7 +66,8 @@ impl Project {
                     // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
                     serde_json::from_str(&json_data).map_err(|_| "Failed deserializing data")?;
                 let mut data = self.project.lock().await;
-                *data = new_data
+                *data = new_data;
+                data.file_name = name.to_string();
             } else {
                 Err("Failed reading file")?;
             }
@@ -167,6 +178,15 @@ impl Project {
 
         Ok(())
     }
+
+    pub async fn get_definition(&self) -> ProjectDefinition {
+        let data = self.project.lock().await;
+        ProjectDefinition {
+            file_name: data.file_name.clone(),
+            last_edited: data.last_edited.clone(),
+            name: data.name.clone(),
+        }
+    }
 }
 
 impl Default for Project {
@@ -174,6 +194,8 @@ impl Default for Project {
         Self {
             project: Arc::new(Mutex::new(ProjectI {
                 name: "unnamed".to_string(),
+                file_name: "unnamed".to_string(),
+                last_edited: DateTime::default(),
                 fixtures: Vec::new(),
                 universes: HashMap::new(),
                 settings: Settings { save_on_quit: true },
@@ -197,7 +219,7 @@ fn get_project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("de", "pixelboystm", "mlc_engine")
 }
 
-fn make_path(name: &str) -> Option<PathBuf> {
+pub fn make_path(name: &str) -> Option<PathBuf> {
     get_project_dirs().map(|d| {
         let dir = d.data_dir();
         std::fs::create_dir_all(dir).unwrap();

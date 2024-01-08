@@ -2,11 +2,14 @@
   import svelteLogo from "../assets/svelte.svg";
   import UploadFixture from "./UploadFixture.svelte";
   import viteLogo from "/vite.svg";
-  import FaUpload from "svelte-icons/fa/FaUpload.svelte";
-  import FaSave from "svelte-icons/fa/FaSave.svelte";
-  import GoGear from "svelte-icons/go/GoGear.svelte";
-  import FaEdit from "svelte-icons/fa/FaEdit.svelte";
-  import FaLightbulb from "svelte-icons/fa/FaLightbulb.svelte";
+  // import FaUpload from "svelte-icons/fa/FaUpload.svelte";
+  import BsCloudUploadFill from "svelte-icons-pack/bs/BsCloudUploadFill";
+  import FiSave from "svelte-icons-pack/fi/FiSave";
+  import BsGearFill from "svelte-icons-pack/bs/BsGearFill";
+  // import BsPencilSquare from "svelte-icons-pack/bs/BsPencilSquare";
+  import BsPencilFill from "svelte-icons-pack/bs/BsPencilFill";
+  import BsLightbulbFill from "svelte-icons-pack/bs/BsLightbulbFill";
+  import Icon from "svelte-icons-pack/Icon.svelte";
 
   let showUpload = false;
 
@@ -23,29 +26,30 @@
     <button
       class="icon configure {pane == 'configure' ? 'selected' : ''}"
       title="Configure"
-      on:click={() => (pane = "configure")}><GoGear /></button
+      on:click={() => (pane = "configure")}><Icon src={BsGearFill} /></button
     >
     <button
       class="icon program {pane == 'program' ? 'selected' : ''}"
       title="Program"
-      on:click={() => (pane = "program")}><FaEdit /></button
+      on:click={() => (pane = "program")}><Icon src={BsPencilFill} /></button
     >
     <button
       class="icon show {pane == 'show' ? 'selected' : ''}"
       title="Show"
-      on:click={() => (pane = "show")}><FaLightbulb /></button
+      on:click={() => (pane = "show")}><Icon src={BsLightbulbFill} /></button
     >
   </div>
   <div class="tabs right">
     <button
       title="Upload Fixture"
       class="icon"
-      on:click={() => (showUpload = true)}><FaUpload /></button
+      on:click={() => (showUpload = true)}
+      ><Icon src={BsCloudUploadFill} /></button
     >
     <button
       title="Save Project"
       class="icon"
-      on:click={() => fetch("/data/save")}><FaSave /></button
+      on:click={() => fetch("/data/save")}><Icon src={FiSave} /></button
     >
   </div>
 
@@ -107,6 +111,7 @@
     width: auto;
     height: 80%;
     margin-left: 0.2rem;
+    color: #fff;
   }
   div.right {
     place-content: end;

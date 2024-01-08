@@ -3,6 +3,7 @@
   import Headbar from "./lib/Headbar.svelte";
   import Toast from "./lib/Toast.svelte";
   import UniverseExplorer from "./lib/UniverseExplorer.svelte";
+  import ConfigurePanel from "./lib/configure/ConfigurePanel.svelte";
   import { info, toastNotifier } from "./lib/stores";
 
   let promise = getFixtureTypes();
@@ -46,7 +47,8 @@
 
   <div class="panes">
     {#if pane === "configure"}
-      <div class="configure">
+      <ConfigurePanel></ConfigurePanel>
+      <!-- <div class="configure">
         <UniverseExplorer></UniverseExplorer>
         <h1>Configure</h1>
         <button
@@ -73,7 +75,7 @@
               msg: "An error occured.",
             })}>Error</button
         >
-      </div>
+      </div> -->
     {:else if pane === "program"}
       <h1>Program</h1>
     {:else if pane === "show"}

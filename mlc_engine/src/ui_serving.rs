@@ -46,4 +46,4 @@ impl Module for UiServingModule {
     }
 }
 
-pub struct ProjectSelection(Arc<Mutex<Option<String>>>);
+pub struct ProjectSelection(pub Arc<Mutex<Option<String>>>);
