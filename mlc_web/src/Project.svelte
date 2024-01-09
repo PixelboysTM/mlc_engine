@@ -141,10 +141,7 @@
       <button title="Import Project" class="icon"
         ><Icon color="white" src={FaSolidFileUpload} /></button
       >
-      <button
-        title="Create New Project"
-        class="icon"
-        on:click={() => fetch("/data/save")}
+      <button title="Create New Project" class="icon"
         ><Icon color="white" src={FaSolidPlus} /></button
       >
     </div>

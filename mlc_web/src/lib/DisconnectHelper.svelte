@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DualRingSpinner from "./misc/DualRingSpinner.svelte";
   import { info } from "./stores";
 
   let active = false;
@@ -45,13 +46,17 @@
   <div class="bg">
     <div class="inner">
       <h3>Backend shutdown please restart and reload!</h3>
+      <div class="center">
+        <DualRingSpinner></DualRingSpinner>
+      </div>
+      <button on:click={() => window.location.reload()}>Reload</button>
     </div>
   </div>
 {/if}
 
 <style>
   div.bg {
-    background-color: #00000061;
+    background-color: #000000e5;
     width: 100%;
     height: 100%;
     position: fixed;
@@ -65,10 +70,20 @@
     left: 50%;
     transform: translate(-50%, -50%);
     color: #ffffff;
-    background-color: #4a4a4a;
+    background-color: #151111;
     border-radius: 2rem;
     padding: 2rem;
     display: flex;
     flex-direction: column;
+  }
+  .center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem;
+  }
+  h3 {
+    margin: 0;
+    padding: 0;
   }
 </style>
