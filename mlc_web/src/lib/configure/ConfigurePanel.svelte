@@ -2,6 +2,7 @@
   import App from "../../App.svelte";
   import FixtureTypeExplorer from "./FixtureTypeExplorer.svelte";
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
+  import FaderPanel from "../common/FaderPanel.svelte";
 
   let projectInfo:
     | undefined
@@ -60,6 +61,7 @@
   </div>
   <div class="faders panel">
     <h3>Faders:</h3>
+    <FaderPanel></FaderPanel>
   </div>
 </div>
 
@@ -105,15 +107,15 @@
   }
   .universe-explorer {
     grid-column: 4 / 11;
-    grid-row: 1 / 10;
+    grid-row: 1 / 9;
   }
   .project-settings {
     grid-column: 11 / 13;
-    grid-row: 1 / 10;
+    grid-row: 1 / 9;
   }
   .faders {
     grid-column: 4 / 13;
-    grid-row: 10 / 13;
+    grid-row: 9 / 13;
   }
   span.pis {
     width: 9ch;
