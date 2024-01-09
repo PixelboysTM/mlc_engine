@@ -3,7 +3,7 @@ use super::{FixtureType, PatchedChannel, PatchedFixture, UniverseAddress, Univer
 pub const UNIVERSE_SIZE: usize = 512;
 
 #[serde_with::serde_as]
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct FixtureUniverse {
     id: UniverseId,
     #[serde_as(as = "[_;UNIVERSE_SIZE]")]
@@ -11,7 +11,7 @@ pub struct FixtureUniverse {
     fixtures: Vec<PatchedFixture>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedChannelIndex {
     fixture_index: usize,
     channel_index: usize,

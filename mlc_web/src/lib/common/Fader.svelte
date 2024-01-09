@@ -1,21 +1,92 @@
 <script lang="ts">
   export let value: number = 0;
   export let name: string = "";
+
+  let isDown = false;
+  let range: HTMLDivElement;
+  function resize(e: MouseEvent){
+    if (!isDown) return;
+    let cur = e.y;
+    let start = range.getBoundingClientRect().y;
+    let end = range.getBoundingClientRect().bottom;
+    let height = range.getBoundingClientRect().height;
+
+
+    let t = (1 - (cur - start) / height) * 255;
+    value =  Math.max(0, Math.min(255, Math.floor(t)));
+  }
+
+  let isEdit = false;
+  let popup: HTMLDivElement;
 </script>
+
+<svelte:body
+        on:mousedown={e => {
+          let box = popup.getBoundingClientRect();
+          if (e.x < box.left || e.x > box.right || e.y < box.top || e.y > box.bottom){
+            isEdit = false;
+          }}}
+        on:mousemove={e => resize(e)}
+        on:mouseup={e => {isDown = false}}
+/>
 
 <div class="fader">
   <div class="fader__name">{name}</div>
-  <div class="range">
-    <div class="filler" style="height: {(1 - value / 255) * 100}%;"></div>
-    <div class="inner" style="height: {(value / 255) * 100}%;"></div>
+  <div class="range" bind:this={range}>
+    <div
+            class="filler"
+            style="height: {(1 - value / 255) * 100}%;"
+            on:mousedown={(e) => isDown = e.button === 0}
+            on:mouseup={(e) => isDown = e.button === 0}
+            on:mousemove={e => resize(e)}
+            role="slider"
+            aria-valuenow={value}
+            aria-valuemin={0}
+            aria-valuemax={255}
+            tabindex={0}
+    />
+    <div
+            class="inner"
+            style="height: {(value / 255) * 100}%;"
+            on:mousedown={(e) => isDown = e.button === 0}
+            on:mousemove={e => resize(e)}
+            on:mouseup={(e) => isDown = e.button === 0}
+            role="slider"
+            aria-valuenow={value}
+            aria-valuemin={0}
+            aria-valuemax={255}
+            tabindex={0}
+    />
   </div>
-  <div class="fader__value" contenteditable="true" bind:innerText={value}>
-    {value}
+  <div
+          class="fader__value"
+          on:click={e => {isEdit = isEdit || e.button === 0; e.preventDefault();}}
+          role="button"
+          tabindex={1}
+          on:keypress
+  >
+    <p>{value}</p>
   </div>
+  {#if isEdit}
+  <div class="fader-popup" bind:this={popup}>
+    <input type="number" bind:value={value} min={0} max={255}>
+  </div>
+    {/if}
 </div>
 
 <style>
-  .fader {
+  input[type=number] {
+    width: 100%;
+  }
+
+  .fader-popup {
+    position: absolute;
+    width: 3rem;
+    transform: translateY(100%);
+  }
+
+
+.fader {
     display: grid;
     flex-direction: column;
     align-items: center;
@@ -35,6 +106,13 @@
     font-weight: 500;
     color: var(--color-text);
     margin-bottom: 0.1rem;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
   }
 
   .range {
@@ -47,10 +125,12 @@
 
   .filler {
     width: 100%;
+    cursor: ns-resize;
   }
   .inner {
     width: 100%;
-    background-color: green;
+    background: linear-gradient(0deg, #fff 0%, #ff3e3e 100%);;
+    cursor: ns-resize;
   }
 
   .fader__value {
@@ -58,5 +138,12 @@
     font-weight: 500;
     color: var(--color-text);
     margin-top: 0.1rem;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
   }
 </style>

@@ -67,7 +67,7 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
 
 #[get("/load/<name>")]
 async fn load_project(
-    name: String,
+    name: &str,
     project: &State<Project>,
     project_selection: &State<ProjectSelection>,
     info: &State<Sender<Info>>,
@@ -76,8 +76,9 @@ async fn load_project(
         return Err("Project already loaded why on this page.".to_string());
     }
 
-    let result = project.load(&name, info.inner()).await;
+    let result = project.load(name, info.inner()).await;
     if result.is_err() {
+        eprintln!("{:?}", result.unwrap_err());
         return result.map_err(|e| e.to_string()).map(|_| "".to_string());
     }
     let mut p = project_selection.0.lock().await;

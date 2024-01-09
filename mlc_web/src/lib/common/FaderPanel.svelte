@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { UIEventHandler } from "svelte/elements";
   import Fader from "./Fader.svelte";
 
   let values: number[] = [];
@@ -6,6 +7,13 @@
     let x = Math.floor(Math.random() * 255);
     values.push(x);
   }
+  let currentUniverse = 0;
+
+  let universes: number[] = [];
+  fetch("/data/universes").then(body => body.json().then(json => {
+    universes = json;
+    currentUniverse = universes.at(0) ?? 1;
+  }));
 
   function makeName(t: number) {
     let name = "";
@@ -18,33 +26,39 @@
     }
     return name;
   }
+
 </script>
 
-<div class="sliders">
+<div class="sliders" >
+  <div class="universe-list">
+    {#each universes as universe}
+      <button>{universe}</button>
+      {/each}
+  </div>
+  <div class="faders">
   {#each values as value, i}
-    <!-- <input
-      type="range"
-      min="0"
-      max="255"
-      bind:value={values[i]}
-      class="slider"
-      orient="vertical"
-    /> -->
     <Fader {value} name={makeName(i + 1)}></Fader>
   {/each}
+  </div>
 </div>
 
 <style>
-  .sliders {
+  .faders {
     display: grid;
     grid-template-columns: repeat(512, 1fr);
     grid-template-rows: 1fr;
     gap: 0.25rem;
     min-height: 0;
     min-width: 0;
-    height: calc(100% - 2rem);
+    height: calc(100%);
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .sliders {
+    height: calc(100% - 2rem);
+    display: flex;
+    gap: 0.5rem;
   }
 
   /* .slider {

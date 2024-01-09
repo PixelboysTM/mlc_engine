@@ -135,7 +135,7 @@
       ></span
     >
     <div class="tabs">
-      <h2>Project Browser</h2>
+      <h2>Project Browser 2</h2>
     </div>
     <div class="tabs right">
       <button title="Import Project" class="icon"

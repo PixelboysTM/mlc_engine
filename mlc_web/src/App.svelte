@@ -48,34 +48,6 @@
   <div class="panes">
     {#if pane === "configure"}
       <ConfigurePanel></ConfigurePanel>
-      <!-- <div class="configure">
-        <UniverseExplorer></UniverseExplorer>
-        <h1>Configure</h1>
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "info",
-              title: "Info!",
-              msg: "This is an info prompt.",
-            })}>Info</button
-        >
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "warning",
-              title: "Warning!",
-              msg: "This is an warning prompt.",
-            })}>Warning</button
-        >
-        <button
-          on:click={() =>
-            toastNotifier.push({
-              level: "error",
-              title: "Error!",
-              msg: "An error occured.",
-            })}>Error</button
-        >
-      </div> -->
     {:else if pane === "program"}
       <h1>Program</h1>
     {:else if pane === "show"}

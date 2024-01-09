@@ -1,8 +1,18 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, num::ParseIntError};
+
+use rocket::request::FromParam;
+use serde::{
+    de::{
+        value::{I32Deserializer, U16Deserializer},
+        Visitor,
+    },
+    Deserialize, Serialize,
+};
+use serde::de::Error;
 
 use super::{FixtureChannel, FixtureType};
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedFixture {
     pub(in crate::fixture) config: FixtureType,
     pub(in crate::fixture) num_channels: u8,
@@ -10,16 +20,58 @@ pub struct PatchedFixture {
     pub(in crate::fixture) start_channel: UniverseAddress,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedChannel {
     pub(in crate::fixture) config: FixtureChannel,
     pub(in crate::fixture) channel_address: UniverseAddress,
 }
 
-#[derive(Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct UniverseAddress {
     add_256: bool,
     adds: u8,
+}
+
+impl Serialize for UniverseAddress {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u16(self.adds as u16 + if self.add_256 { 256 } else { 0 })
+    }
+}
+
+impl<'de> Deserialize<'de> for UniverseAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_u128(UAVisitor)
+    }
+}
+
+struct UAVisitor;
+
+impl<'de> Visitor<'de> for UAVisitor {
+    type Value = UniverseAddress;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("an integer between -2^31 and 2^31")
+    }
+
+    fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        UniverseAddress::create(v).map_err(|e| {
+            eprintln!("{:#?}", e);
+            E::custom(e)
+        })
+    }
+
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E> where E: Error {
+        Ok(UniverseAddress::from(v as usize))
+    }
 }
 
 impl UniverseAddress {
@@ -63,6 +115,14 @@ impl Debug for UniverseAddress {
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 pub struct UniverseId(pub u16);
+
+impl FromParam<'_> for UniverseId {
+    type Error = ParseIntError;
+
+    fn from_param(param: &'_ str) -> Result<Self, Self::Error> {
+        u16::from_str_radix(param, 10).map(|d| UniverseId(d))
+    }
+}
 
 #[cfg(test)]
 mod tests {

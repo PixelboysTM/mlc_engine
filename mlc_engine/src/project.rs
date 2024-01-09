@@ -64,7 +64,7 @@ impl Project {
             if let Ok(json_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
                     // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
-                    serde_json::from_str(&json_data).map_err(|_| "Failed deserializing data")?;
+                    serde_json::from_str(&json_data).map_err(|e| { eprintln!("{:#?}", e); "Failed deserializing data"})?;
                 let mut data = self.project.lock().await;
                 *data = new_data;
                 data.file_name = name.to_string();
@@ -96,6 +96,14 @@ impl Project {
     pub async fn get_universes(&self) -> Vec<UniverseId> {
         let data = self.project.lock().await;
         data.universes.keys().copied().collect()
+    }
+
+    pub async fn get_universe(&self, id: &UniverseId) -> Result<FixtureUniverse, &str> {
+        let data = self.project.lock().await;
+        data.universes
+            .get(id)
+            .ok_or("Universe Id not found")
+            .map(|s| s.clone())
     }
 
     pub async fn try_patch(
@@ -191,13 +199,16 @@ impl Project {
 
 impl Default for Project {
     fn default() -> Self {
+        let mut s = HashMap::new();
+        s.insert(UniverseId(1), FixtureUniverse::empty(UniverseId(1)));
+
         Self {
             project: Arc::new(Mutex::new(ProjectI {
                 name: "unnamed".to_string(),
                 file_name: "unnamed".to_string(),
                 last_edited: DateTime::default(),
                 fixtures: Vec::new(),
-                universes: HashMap::new(),
+                universes: s,
                 settings: Settings { save_on_quit: true },
             })),
         }

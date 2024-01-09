@@ -13,11 +13,11 @@ use rocket::{
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
+use crate::fixture::FixtureUniverse;
 use crate::{
     fixture::{self, UniverseId},
     module::Module,
     project::Project,
-    settings::ProjectDefinition,
 };
 
 #[derive(serde::Serialize, Debug, Clone)]
@@ -118,6 +118,16 @@ async fn get_universes(project: &State<Project>) -> Json<Vec<UniverseId>> {
     Json(data)
 }
 
+#[get("/universes/<id>")]
+async fn get_universe(id: UniverseId, project: &State<Project>) -> Json<Option<FixtureUniverse>> {
+    let data = project.get_universe(&id).await;
+    if let Ok(d) = data {
+        Json(Some(d))
+    } else {
+        Json(None)
+    }
+}
+
 #[get("/save")]
 async fn save_project(
     project: &State<Project>,
@@ -164,7 +174,8 @@ fn get_routes() -> Vec<Route> {
         add_fixture,
         save_project,
         get_universes,
-        patch_fixture
+        patch_fixture,
+        get_universe
     ]
 }
 
