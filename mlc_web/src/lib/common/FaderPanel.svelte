@@ -30,7 +30,7 @@
       class="slider"
       orient="vertical"
     /> -->
-    <Fader {value} name={makeName(i)}></Fader>
+    <Fader {value} name={makeName(i + 1)}></Fader>
   {/each}
 </div>
 

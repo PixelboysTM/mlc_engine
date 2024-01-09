@@ -73,8 +73,6 @@ struct FixtureInfo {
 
 #[get("/get/fixture-types")]
 async fn get_fixture_types(project: &State<Project>) -> Json<Vec<FixtureInfo>> {
-    thread::sleep(Duration::new(1, 0));
-
     Json(
         project
             .inner()
