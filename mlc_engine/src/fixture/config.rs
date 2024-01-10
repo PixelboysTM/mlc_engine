@@ -70,10 +70,10 @@ impl FixtureMode {
 #[serde(rename_all = "camelCase")]
 pub struct FixtureChannel {
     #[serde(default = "zero")]
-    default_value: u8,
+    pub default_value: u8,
     #[serde(alias = "capability")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]
-    capabilities: Vec<FixtureCapability>,
+    pub capabilities: Vec<FixtureCapability>,
 }
 
 fn zero() -> u8 {

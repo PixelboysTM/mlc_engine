@@ -1,8 +1,12 @@
+pub mod feature;
+
 use std::{fmt::Debug, num::ParseIntError};
 
 use rocket::request::FromParam;
 use serde::de::Error;
 use serde::{de::Visitor, Deserialize, Serialize};
+
+use self::feature::FixtureFeature;
 
 use super::{FixtureChannel, FixtureType};
 
@@ -13,6 +17,8 @@ pub struct PatchedFixture {
     pub(in crate::fixture) channels: Vec<PatchedChannel>,
     pub(in crate::fixture) start_channel: UniverseAddress,
     pub(in crate::fixture) name: String,
+    pub(in crate::fixture) mode: usize,
+    pub(in crate::fixture) features: Vec<FixtureFeature>,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]

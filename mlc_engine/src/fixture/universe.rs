@@ -1,4 +1,7 @@
-use super::{FixtureType, PatchedChannel, PatchedFixture, UniverseAddress, UniverseId};
+use super::{
+    feature::find_features, FixtureType, PatchedChannel, PatchedFixture, UniverseAddress,
+    UniverseId,
+};
 
 pub const UNIVERSE_SIZE: usize = 512;
 
@@ -97,6 +100,8 @@ impl FixtureUniverse {
                 fixture.get_name(),
                 fixture.get_modes()[mode_index].get_name()
             ),
+            mode: mode_index,
+            features: find_features(fixture, mode),
         };
 
         let fixture_index = self.fixtures.len();
