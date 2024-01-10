@@ -2,7 +2,7 @@
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
   import Headbar from "./lib/Headbar.svelte";
   import Toast from "./lib/Toast.svelte";
-  import UniverseExplorer from "./lib/UniverseExplorer.svelte";
+  import UniverseExplorer from "./lib/configure/UniverseExplorer.svelte";
   import ConfigurePanel from "./lib/configure/ConfigurePanel.svelte";
   import { info, toastNotifier } from "./lib/stores";
 

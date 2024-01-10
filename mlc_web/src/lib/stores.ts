@@ -1,6 +1,7 @@
-import { readable, writable, type Writable } from "svelte/store";
+import { readable, writable, type Readable, type Writable } from "svelte/store";
 
-export const info = readable("", function start(set) {
+export type InfoKind = "None" | "FixtureTypesUpdated" | "ProjectSaved" | "ProjectLoaded" | "SystemShutdown" | "UniversesUpdated" | {"UniversePatchChanged": number}; 
+export const info: Readable<InfoKind> = readable("None", function start(set) {
   var loc = window.location, new_uri;
 if (loc.protocol === "https:") {
     new_uri = "wss:";
@@ -13,7 +14,7 @@ new_uri += loc.pathname + "/data/info";
   const socket = new WebSocket(new_uri);
 
   socket.addEventListener("message", function (event : MessageEvent<string>) {
-    set(event.data.replaceAll('"', ""));
+    set(JSON.parse(event.data));
   });
   return function stop() {
     socket.close();

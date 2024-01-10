@@ -1,14 +1,8 @@
 use std::{fmt::Debug, num::ParseIntError};
 
 use rocket::request::FromParam;
-use serde::{
-    de::{
-        value::{I32Deserializer, U16Deserializer},
-        Visitor,
-    },
-    Deserialize, Serialize,
-};
 use serde::de::Error;
+use serde::{de::Visitor, Deserialize, Serialize};
 
 use super::{FixtureChannel, FixtureType};
 
@@ -18,6 +12,7 @@ pub struct PatchedFixture {
     pub(in crate::fixture) num_channels: u8,
     pub(in crate::fixture) channels: Vec<PatchedChannel>,
     pub(in crate::fixture) start_channel: UniverseAddress,
+    pub(in crate::fixture) name: String,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -69,7 +64,10 @@ impl<'de> Visitor<'de> for UAVisitor {
         })
     }
 
-    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E> where E: Error {
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
         Ok(UniverseAddress::from(v as usize))
     }
 }
@@ -121,6 +119,17 @@ impl FromParam<'_> for UniverseId {
 
     fn from_param(param: &'_ str) -> Result<Self, Self::Error> {
         u16::from_str_radix(param, 10).map(|d| UniverseId(d))
+    }
+}
+
+impl Ord for UniverseId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+impl PartialOrd for UniverseId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
     }
 }
 

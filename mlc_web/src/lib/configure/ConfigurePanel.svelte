@@ -3,6 +3,7 @@
   import FixtureTypeExplorer from "./FixtureTypeExplorer.svelte";
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
   import FaderPanel from "../common/FaderPanel.svelte";
+  import UniverseExplorer from "./UniverseExplorer.svelte";
 
   let projectInfo:
     | undefined
@@ -55,6 +56,7 @@
   </div>
   <div class="universe-explorer panel">
     <h3>Universe Explorer:</h3>
+    <UniverseExplorer></UniverseExplorer>
   </div>
   <div class="project-settings panel">
     <h3>Project Settings:</h3>
@@ -88,7 +90,8 @@
     width: calc(100% - 2rem);
     /*height: calc(100% - 2rem);*/
     padding: 1rem;
-    padding-top: 0.25rem;
+    padding-top: 0rem;
+    padding-bottom: 0rem;
     border-radius: 0.25rem;
     background-color: #151111;
     overflow: auto;
@@ -127,13 +130,17 @@
     text-align: center;
     margin: 0;
     width: 100%;
-    margin-bottom: 0.25rem;
+    /* margin-bottom: 0.25rem; */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    position: sticky;
+    top: 0px;
+    background-color: #151111;
+    padding-top: 0.25rem;
   }
 
   .center {

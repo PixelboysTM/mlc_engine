@@ -1,6 +1,6 @@
 <script lang="ts">
   import svelteLogo from "../assets/svelte.svg";
-  import UploadFixture from "./UploadFixture.svelte";
+  import UploadFixture from "./configure/UploadFixture.svelte";
   import viteLogo from "/vite.svg";
   // import FaUpload from "svelte-icons/fa/FaUpload.svelte";
   import BsCloudUploadFill from "svelte-icons-pack/bs/BsCloudUploadFill";
@@ -40,12 +40,14 @@
     >
   </div>
   <div class="tabs right">
-    <button
-      title="Upload Fixture"
-      class="icon"
-      on:click={() => (showUpload = true)}
-      ><Icon src={BsCloudUploadFill} /></button
-    >
+    {#if pane == "configure"}
+      <button
+        title="Upload Fixture"
+        class="icon"
+        on:click={() => (showUpload = true)}
+        ><Icon src={BsCloudUploadFill} /></button
+      >
+    {/if}
     <button
       title="Save Project"
       class="icon"

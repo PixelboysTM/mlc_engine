@@ -15,7 +15,41 @@ declare module "fixture-types" {
         num_channels: number;
         channels: PatchedChannel[];
         start_channel: number;
+        name: string;
     }
 
-    export type Option<T> = undefined | T;
+    export interface PatchedChannel {
+        config: FixtureChannel;
+        channel_address: number;
+    }
+
+    export interface FixtureType {
+        name: string;
+        categories: string[];
+        fixture_key: string;
+        manufacturer: Manufacturer;
+        modes: FixtureMode[];
+        available_channels: Map<string, FixtureChannel>;
+        id: string;
+    }
+
+    export interface FixtureMode {
+        name: string;
+        short_name: string;
+        channels: string[];
+    }
+
+    export interface FixtureChannel {
+        default_value: number;
+        capabilities: FixtureCapability[];
+    }
+
+    export type FixtureCapability = any;
+
+    export interface Manufacturer {
+        name: string;
+        website: string;
+    }
+
+    export type Option<T> = null | undefined | T;
 }

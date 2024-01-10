@@ -92,6 +92,11 @@ impl FixtureUniverse {
                 })
                 .collect(),
             start_channel: start_index.into(),
+            name: format!(
+                "{} / {}",
+                fixture.get_name(),
+                fixture.get_modes()[mode_index].get_name()
+            ),
         };
 
         let fixture_index = self.fixtures.len();

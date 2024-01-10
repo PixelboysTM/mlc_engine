@@ -4,16 +4,15 @@
 
   let isDown = false;
   let range: HTMLDivElement;
-  function resize(e: MouseEvent){
+  function resize(e: MouseEvent) {
     if (!isDown) return;
     let cur = e.y;
     let start = range.getBoundingClientRect().y;
     let end = range.getBoundingClientRect().bottom;
     let height = range.getBoundingClientRect().height;
 
-
     let t = (1 - (cur - start) / height) * 255;
-    value =  Math.max(0, Math.min(255, Math.floor(t)));
+    value = Math.max(0, Math.min(255, Math.floor(t)));
   }
 
   let isEdit = false;
@@ -21,72 +20,86 @@
 </script>
 
 <svelte:body
-        on:mousedown={e => {
-          let box = popup.getBoundingClientRect();
-          if (e.x < box.left || e.x > box.right || e.y < box.top || e.y > box.bottom){
-            isEdit = false;
-          }}}
-        on:mousemove={e => resize(e)}
-        on:mouseup={e => {isDown = false}}
+  on:mousedown={(e) => {
+    let box = popup.getBoundingClientRect();
+    if (
+      e.x < box.left ||
+      e.x > box.right ||
+      e.y < box.top ||
+      e.y > box.bottom
+    ) {
+      isEdit = false;
+    }
+  }}
+  on:mousemove={(e) => resize(e)}
+  on:mouseup={(e) => {
+    isDown = false;
+  }}
 />
 
 <div class="fader">
   <div class="fader__name">{name}</div>
   <div class="range" bind:this={range}>
     <div
-            class="filler"
-            style="height: {(1 - value / 255) * 100}%;"
-            on:mousedown={(e) => isDown = e.button === 0}
-            on:mouseup={(e) => isDown = e.button === 0}
-            on:mousemove={e => resize(e)}
-            role="slider"
-            aria-valuenow={value}
-            aria-valuemin={0}
-            aria-valuemax={255}
-            tabindex={0}
+      class="filler"
+      style="height: {(1 - value / 255) * 100}%;"
+      on:mousedown={(e) => (isDown = e.button === 0)}
+      on:mouseup={(e) => (isDown = e.button === 0)}
+      on:mousemove={(e) => resize(e)}
+      role="slider"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={255}
+      tabindex={0}
     />
     <div
-            class="inner"
-            style="height: {(value / 255) * 100}%;"
-            on:mousedown={(e) => isDown = e.button === 0}
-            on:mousemove={e => resize(e)}
-            on:mouseup={(e) => isDown = e.button === 0}
-            role="slider"
-            aria-valuenow={value}
-            aria-valuemin={0}
-            aria-valuemax={255}
-            tabindex={0}
+      class="inner"
+      style="height: {(value / 255) * 100}%;"
+      on:mousedown={(e) => (isDown = e.button === 0)}
+      on:mousemove={(e) => resize(e)}
+      on:mouseup={(e) => (isDown = e.button === 0)}
+      role="slider"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={255}
+      tabindex={0}
     />
   </div>
   <div
-          class="fader__value"
-          on:click={e => {isEdit = isEdit || e.button === 0; e.preventDefault();}}
-          role="button"
-          tabindex={1}
-          on:keypress
+    class="fader__value"
+    on:click={(e) => {
+      isEdit = isEdit || e.button === 0;
+      e.preventDefault();
+    }}
+    role="button"
+    tabindex={1}
+    on:keypress
   >
     <p>{value}</p>
   </div>
   {#if isEdit}
-  <div class="fader-popup" bind:this={popup}>
-    <input type="number" bind:value={value} min={0} max={255}>
-  </div>
-    {/if}
+    <div
+      class="fader-popup"
+      bind:this={popup}
+      style="top: {range.getBoundingClientRect()
+        .top}px; left: {range.getBoundingClientRect().left}px;"
+    >
+      <input type="number" bind:value min={0} max={255} />
+    </div>
+  {/if}
 </div>
 
 <style>
-  input[type=number] {
+  input[type="number"] {
     width: 100%;
   }
 
   .fader-popup {
     position: absolute;
     width: 3rem;
-    transform: translateY(100%);
   }
 
-
-.fader {
+  .fader {
     display: grid;
     flex-direction: column;
     align-items: center;
@@ -112,7 +125,6 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-
   }
 
   .range {
@@ -129,7 +141,7 @@
   }
   .inner {
     width: 100%;
-    background: linear-gradient(0deg, #fff 0%, #ff3e3e 100%);;
+    background: linear-gradient(0deg, #fff 0%, #ff3e3e 100%);
     cursor: ns-resize;
   }
 
@@ -144,6 +156,5 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-
   }
 </style>

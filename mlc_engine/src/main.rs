@@ -11,7 +11,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use data_serving::{DataServingModule, Info};
 use module::{Application, Module};
 use project::Project;
-use rocket::{config::Ident, get, launch, routes, serde::json::Json, Config};
+use rocket::{catch, catchers, config::Ident, get, launch, routes, serde::json::Json, Config};
 use settings::SettingsModule;
 use ui_serving::UiServingModule;
 
@@ -64,13 +64,19 @@ impl Module for MainModule {
             address: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
             cli_colors: true,
             ident: Ident::try_new("Marvin Lighting Controller").unwrap(),
+
             ..Default::default()
         };
 
         app.manage(Project::default())
             .manage(tx)
             .manage(rx)
+            .register("/", catchers![catch_404])
             .configure(config)
             .mount("/util", routes![heart_beat])
     }
+}
+#[catch(404)]
+fn catch_404() -> &'static str {
+    "Resource not available"
 }

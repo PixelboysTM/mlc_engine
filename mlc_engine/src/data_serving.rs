@@ -4,11 +4,11 @@ use rocket::{
     data::ToByteUnit,
     futures::SinkExt,
     get, post,
-    response::status::{BadRequest, Custom},
+    response::status::{self, BadRequest, Custom},
     routes,
     serde::json::Json,
     tokio::{select, sync::broadcast::Sender},
-    Data, Route, State,
+    Data, Responder, Route, State,
 };
 use rocket_ws::WebSocket;
 use uuid::Uuid;
@@ -114,7 +114,8 @@ async fn add_fixture(
 
 #[get("/universes")]
 async fn get_universes(project: &State<Project>) -> Json<Vec<UniverseId>> {
-    let data = project.get_universes().await;
+    let mut data = project.get_universes().await;
+    data.sort();
     Json(data)
 }
 
@@ -139,6 +140,21 @@ async fn save_project(
         .map_err(|e| Custom(rocket::http::Status::InternalServerError, e))
 }
 
+#[derive(Responder)]
+enum PatchResult {
+    #[response(status = 400)]
+    IdInvalid(String),
+
+    #[response(status = 400)]
+    ModeInvalid(String),
+
+    #[response(status = 409)]
+    Failed(String),
+
+    #[response(status = 200)]
+    Succsess(String),
+}
+
 #[get("/patch/<id>/<mode>?<create>")]
 fn patch_fixture(
     project: &State<Project>,
@@ -146,24 +162,38 @@ fn patch_fixture(
     id: &str,
     mode: usize,
     create: bool,
-) -> Result<Json<String>, String> {
+) -> PatchResult {
     println!("{create}");
-    let f_id = Uuid::from_str(id).map_err(|_| "Id is not valid".to_string())?;
+    let f_id = Uuid::from_str(id); //.map_err(|_| "Id is not valid".to_string())?;
+    if f_id.is_err() {
+        return PatchResult::IdInvalid("Id is not valid".to_string());
+    }
 
     pollster::block_on(async {
+        let f_id = f_id.expect("Must be some");
         let fixture = project
             .get_fixtures()
             .await
             .iter()
             .find(|f| f.get_id() == &f_id)
-            .cloned()
-            .ok_or("Id is not a valid FixtureType".to_string())?;
+            .cloned();
+        // .ok_or("Id is not a valid FixtureType".to_string())?;
+        if fixture.is_none() {
+            return PatchResult::IdInvalid("Id is not a valid FixtureType".to_string());
+        }
 
-        project
-            .try_patch(&fixture, mode, create, info)
-            .await
-            .ok_or("Patching failed".to_owned())
-            .map(|_| Json("Patching successful".to_string()))
+        let fixture = fixture.expect("Must be some");
+
+        if mode >= fixture.get_modes().len() {
+            return PatchResult::ModeInvalid("Mode is not available".to_string());
+        }
+
+        let r = project.try_patch(&fixture, mode, create, info).await;
+        if r.is_some() {
+            return PatchResult::Succsess("Patching successful".to_string());
+        }
+
+        return PatchResult::Failed("Patching failed".to_owned());
     })
 }
 
