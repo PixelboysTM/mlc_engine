@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   export let value: number = 0;
   export let name: string = "";
 
@@ -13,6 +15,12 @@
 
     let t = (1 - (cur - start) / height) * 255;
     value = Math.max(0, Math.min(255, Math.floor(t)));
+    dispatchSet();
+  }
+
+  const dispatch = createEventDispatcher();
+  function dispatchSet() {
+    dispatch("set", value);
   }
 
   let isEdit = false;
@@ -84,7 +92,13 @@
       style="top: {range.getBoundingClientRect()
         .top}px; left: {range.getBoundingClientRect().left}px;"
     >
-      <input type="number" bind:value min={0} max={255} />
+      <input
+        type="number"
+        on:change={() => dispatchSet()}
+        bind:value
+        min={0}
+        max={255}
+      />
     </div>
   {/if}
 </div>

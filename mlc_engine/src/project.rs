@@ -1,11 +1,12 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Local};
-use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender};
+use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender, State};
 
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
+    runtime::RuntimeData,
     send,
     settings::ProjectDefinition,
 };
@@ -59,7 +60,12 @@ impl Project {
 
         Ok(())
     }
-    pub async fn load(&self, name: &str, info: &Sender<Info>) -> Result<(), &str> {
+    pub async fn load(
+        &self,
+        name: &str,
+        info: &Sender<Info>,
+        runtime: &RuntimeData,
+    ) -> Result<(), &str> {
         if let Some(path) = make_path(name) {
             if let Ok(json_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
@@ -75,6 +81,7 @@ impl Project {
             Err("Failed creating path")?;
         }
 
+        runtime.adapt(self).await;
         send!(info, Info::ProjectLoaded);
 
         Ok(())

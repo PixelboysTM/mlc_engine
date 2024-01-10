@@ -38,7 +38,7 @@ impl Serialize for UniverseAddress {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_u16(self.adds as u16 + if self.add_256 { 256 } else { 0 })
+        serializer.serialize_u16((*self).into())
     }
 }
 
@@ -106,13 +106,17 @@ impl From<usize> for UniverseAddress {
     }
 }
 
+impl From<UniverseAddress> for u16 {
+    fn from(value: UniverseAddress) -> Self {
+        value.adds as u16 + if value.add_256 { 256 } else { 0 }
+    }
+}
+
 impl Debug for UniverseAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let val: u16 = (*self).into();
         f.debug_struct("UniverseAddress")
-            .field(
-                "adds",
-                &(self.adds as u16 + if self.add_256 { 256 } else { 0 }),
-            )
+            .field("adds", &val)
             .finish()
     }
 }

@@ -10,10 +10,12 @@
   let currentUniverse = 0;
 
   let universes: number[] = [];
-  fetch("/data/universes").then(body => body.json().then(json => {
-    universes = json;
-    currentUniverse = universes.at(0) ?? 1;
-  }));
+  fetch("/data/universes").then((body) =>
+    body.json().then((json) => {
+      universes = json;
+      currentUniverse = universes.at(0) ?? 1;
+    })
+  );
 
   function makeName(t: number) {
     let name = "";
@@ -27,18 +29,90 @@
     return name;
   }
 
+  type RuntimeValueUpdate =
+    | {
+        ValueUpdated: {
+          universe: number;
+          channel_index: number;
+          value: number;
+        };
+      }
+    | {
+        Universe: {
+          values: number[];
+          universe: number;
+        };
+      };
+  function getValuesWs() {
+    var loc = window.location,
+      new_uri;
+    if (loc.protocol === "https:") {
+      new_uri = "wss:";
+    } else {
+      new_uri = "ws:";
+    }
+    new_uri += "//" + loc.host;
+    new_uri += loc.pathname + "/runtime/fader-values/get";
+
+    const socket = new WebSocket(new_uri);
+    socket.addEventListener("message", function (event: MessageEvent<string>) {
+      let data = JSON.parse(event.data) as RuntimeValueUpdate;
+      // console.log(data.ValueUpdated != undefined);
+      if (typeof data === "object" && "ValueUpdated" in data) {
+        values[data.ValueUpdated.channel_index] = data.ValueUpdated.value;
+      } else if (
+        typeof data === "object" &&
+        "Universe" in data &&
+        data.Universe.universe == currentUniverse
+      ) {
+        values = data.Universe.values;
+      }
+    });
+
+    return socket;
+  }
+
+  function setValuesWs() {
+    var loc = window.location,
+      new_uri;
+    if (loc.protocol === "https:") {
+      new_uri = "wss:";
+    } else {
+      new_uri = "ws:";
+    }
+    new_uri += "//" + loc.host;
+    new_uri += loc.pathname + "/runtime/fader-values/set";
+
+    const socket = new WebSocket(new_uri);
+
+    return socket;
+  }
+
+  let getSock = getValuesWs();
+  let setSock = setValuesWs();
+
+  function setBinding(channel: number, value: CustomEvent<number>) {
+    let json = JSON.stringify({
+      universe: currentUniverse,
+      channel: channel,
+      value: value.detail,
+    });
+    console.log(json);
+    setSock.send(json);
+  }
 </script>
 
-<div class="sliders" >
+<div class="sliders">
   <div class="universe-list">
     {#each universes as universe}
       <button>{universe}</button>
-      {/each}
+    {/each}
   </div>
   <div class="faders">
-  {#each values as value, i}
-    <Fader {value} name={makeName(i + 1)}></Fader>
-  {/each}
+    {#each values as value, i}
+      <Fader {value} on:set={(v) => setBinding(i, v)} name={makeName(i + 1)}
+      ></Fader>
+    {/each}
   </div>
 </div>
 
