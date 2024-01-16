@@ -1,12 +1,12 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Local};
-use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender, State};
+use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender};
 
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
-    runtime::RuntimeData,
+    runtime::{endpoints::EndPointConfig, RuntimeData},
     send,
     settings::ProjectDefinition,
 };
@@ -22,7 +22,11 @@ struct ProjectI {
     // Other stuff
     fixtures: Vec<FixtureType>,
     universes: HashMap<UniverseId, FixtureUniverse>,
+
     settings: Settings,
+
+    #[serde(default)]
+    endpoints: EndPointConfig,
 }
 
 pub struct Project {
@@ -204,6 +208,15 @@ impl Project {
             name: data.name.clone(),
         }
     }
+
+    pub async fn get_endpoint_config(&self) -> EndPointConfig {
+        let data = self.project.lock().await;
+        data.endpoints.clone()
+    }
+    pub async fn set_endpoint_config(&self, config: EndPointConfig) {
+        let mut data = self.project.lock().await;
+        data.endpoints = config;
+    }
 }
 
 impl Default for Project {
@@ -221,6 +234,7 @@ impl Default for Project {
                 settings: Settings {
                     save_on_quit: false,
                 },
+                endpoints: EndPointConfig::default(),
             })),
         }
     }

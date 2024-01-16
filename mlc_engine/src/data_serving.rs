@@ -28,6 +28,7 @@ pub enum Info {
     SystemShutdown,
     UniversePatchChanged(UniverseId),
     UniversesUpdated,
+    EndpointConfigChanged,
 }
 
 #[get("/info")]

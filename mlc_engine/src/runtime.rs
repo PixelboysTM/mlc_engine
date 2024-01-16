@@ -1,31 +1,37 @@
 pub mod endpoints;
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use rocket::{
     futures::{SinkExt, StreamExt},
-    get, routes,
+    get, post, routes,
+    serde::json::Json,
     tokio::{
         select,
         sync::{
             broadcast::{self, Receiver, Sender},
             Mutex,
         },
+        time::sleep,
     },
     Shutdown, State,
 };
 use rocket_ws::WebSocket;
 
 use crate::{
+    data_serving::Info,
     fixture::{UniverseAddress, UniverseId, UNIVERSE_SIZE},
     module::Module,
     project::Project,
     send,
 };
 
+use self::endpoints::{EndPointConfig, EndpointData};
+
 #[derive(Debug)]
 struct RuntimeI {
     universe_values: HashMap<UniverseId, [u8; UNIVERSE_SIZE]>,
+    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>,
     sender: Sender<RuntimeUpdate>,
 }
 
@@ -39,22 +45,40 @@ impl RuntimeData {
         RuntimeData {
             inner: Arc::new(Mutex::new(RuntimeI {
                 universe_values: HashMap::new(),
+                end_points: HashMap::new(),
                 sender,
             })),
         }
     }
     pub async fn adapt(&self, project: &Project, clear: bool) {
         let mut data = self.inner.lock().await;
-        let verses = data.universe_values.clone();
-        data.universe_values.clear();
-        for universe in project.get_universes().await {
-            let values = if !clear && verses.contains_key(&universe) {
-                *verses.get(&universe).expect("Testet")
-            } else {
-                [0; UNIVERSE_SIZE]
-            };
-            data.universe_values.insert(universe, values);
-            send!(data.sender, RuntimeUpdate::Universe { universe, values });
+
+        {
+            // Adapt Universes
+            let verses = data.universe_values.clone();
+            data.universe_values.clear();
+            for universe in project.get_universes().await {
+                let values = if !clear && verses.contains_key(&universe) {
+                    *verses.get(&universe).expect("Testet")
+                } else {
+                    [0; UNIVERSE_SIZE]
+                };
+                data.universe_values.insert(universe, values);
+                send!(data.sender, RuntimeUpdate::Universe { universe, values });
+            }
+        }
+
+        {
+            // Adapt Endpoints
+            let c = project.get_endpoint_config().await;
+            for (_, v) in &data.end_points {
+                for vs in v {
+                    send!(vs, EndpointData::Exit);
+                }
+            }
+            sleep(Duration::from_millis(500)).await;
+            let t = c.create_endpoints().await;
+            data.end_points = t;
         }
     }
 
@@ -70,9 +94,32 @@ impl RuntimeData {
                 RuntimeUpdate::ValueUpdated {
                     universe,
                     channel_index: index as usize,
-                    value
+                    value,
                 }
             );
+            self.update_endpoints(universe, channel, value, &data.end_points)
+                .await;
+        }
+    }
+
+    async fn update_endpoints(
+        &self,
+        verse_id: UniverseId,
+        index: UniverseAddress,
+        value: u8,
+        endpoints: &HashMap<UniverseId, Vec<Sender<EndpointData>>>,
+    ) {
+        let point = endpoints.get(&verse_id);
+        if let Some(point) = point {
+            for v in point {
+                send!(
+                    v,
+                    EndpointData::Single {
+                        channel: index,
+                        value
+                    }
+                );
+            }
         }
     }
 
@@ -113,9 +160,15 @@ impl Module for RuntimeModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = broadcast::channel::<RuntimeUpdate>(512);
 
-        app.manage(rx)
-            .manage(RuntimeData::new(tx))
-            .mount("/runtime", routes![get_value_updates, set_value])
+        app.manage(rx).manage(RuntimeData::new(tx)).mount(
+            "/runtime",
+            routes![
+                get_value_updates,
+                set_value,
+                get_endpoint_config,
+                set_endpoint_config
+            ],
+        )
     }
 }
 
@@ -203,4 +256,22 @@ async fn set_value(
             Ok(())
         })
     })
+}
+
+#[get("/endpoints/get")]
+async fn get_endpoint_config(project: &State<Project>) -> Json<EndPointConfig> {
+    let config = project.get_endpoint_config().await;
+    Json(config)
+}
+
+#[post("/endpoints/set", data = "<data>")]
+async fn set_endpoint_config(
+    project: &State<Project>,
+    data: Json<EndPointConfig>,
+    runtime: &State<RuntimeData>,
+    tx: &State<Sender<Info>>,
+) {
+    project.set_endpoint_config(data.0).await;
+    runtime.adapt(project, false).await;
+    send!(tx, Info::EndpointConfigChanged);
 }

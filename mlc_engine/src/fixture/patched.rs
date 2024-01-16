@@ -33,6 +33,13 @@ pub struct UniverseAddress {
     adds: u8,
 }
 
+impl UniverseAddress {
+    pub fn i(&self) -> usize {
+        let u: u16 = (*self).into();
+        u as usize
+    }
+}
+
 impl Serialize for UniverseAddress {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
