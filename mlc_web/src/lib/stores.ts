@@ -22,24 +22,24 @@ new_uri += loc.pathname + "/data/info";
 });
 
 function createToast() {
-  const {subscribe, set, update}: Writable<ToastNotification[]> = writable([]);
+  const {subscribe, set, update}: Writable<ToastNotification | null> = writable(null);
   const history: Writable<ToastNotification[]> = writable([]);
 
   return {
     subscribe,
-    reset: () => set([]),
-    push: (e: ToastNotification) => {update((n) => [...n, e]); history.update((n) => [...n, e])},
-    pull: () => {
-      let element: null | ToastNotification = null;
-      update((n) => {
-        if(n.length > 0){
-          element = n[0];
-        }
-        return [...n.slice(1)];
-      })
+    reset: () => set(null),
+    push: (e: ToastNotification) => {update((n) => e); history.update((n) => [...n, e])},
+    // pull: () => {
+    //   let element: null | ToastNotification = null;
+    //   update((n) => {
+    //     if(n.length > 0){
+    //       element = n[0];
+    //     }
+    //     return [...n.slice(1)];
+    //   })
 
-      return element;
-    }
+    //   return element;
+    // }
   }
 }
 
