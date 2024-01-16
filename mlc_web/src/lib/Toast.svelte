@@ -14,7 +14,7 @@
     handleData();
     interval = setInterval(() => {
       handleData();
-    }, 5000);
+    }, 2000);
   });
 
   function handleData() {

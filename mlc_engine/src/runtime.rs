@@ -1,3 +1,5 @@
+pub mod endpoints;
+
 use std::{collections::HashMap, sync::Arc};
 
 use rocket::{
@@ -41,12 +43,16 @@ impl RuntimeData {
             })),
         }
     }
-    pub async fn adapt(&self, project: &Project) {
+    pub async fn adapt(&self, project: &Project, clear: bool) {
         let mut data = self.inner.lock().await;
-
+        let verses = data.universe_values.clone();
         data.universe_values.clear();
         for universe in project.get_universes().await {
-            let values = [0; UNIVERSE_SIZE];
+            let values = if !clear && verses.contains_key(&universe) {
+                *verses.get(&universe).expect("Testet")
+            } else {
+                [0; UNIVERSE_SIZE]
+            };
             data.universe_values.insert(universe, values);
             send!(data.sender, RuntimeUpdate::Universe { universe, values });
         }
@@ -79,6 +85,10 @@ impl RuntimeData {
     pub async fn initial_states(&self) -> HashMap<UniverseId, [u8; UNIVERSE_SIZE]> {
         let data = self.inner.lock().await;
         data.universe_values.clone()
+    }
+    pub async fn get_universe_values(&self, universe: &UniverseId) -> Option<[u8; UNIVERSE_SIZE]> {
+        let data = self.inner.lock().await;
+        data.universe_values.get(universe).map(|f| f.clone())
     }
 }
 
@@ -129,6 +139,16 @@ async fn get_value_updates(
                     Ok(msg) = rx.recv() => {
                         let _ = stream.send(rocket_ws::Message::text(serde_json::to_string(&msg).unwrap())).await;
                     },
+                    Some(msg) = stream.next() => {
+                    if let Ok(msg) = msg {
+                        let req: UniverseId =
+                            serde_json::from_str(msg.to_text().unwrap()).unwrap();
+                        let data = runtime.get_universe_values(&req).await;
+                        if let Some(data) = data {
+                            stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: req, values: data }).unwrap())).await.unwrap();
+                        }
+                    }
+                },
                     _ = &mut shutdown => {
                         break;
                     }
@@ -168,6 +188,7 @@ async fn set_value(
                 select! {
                     Some(msg) = stream.next() => {
                     if let Ok(msg) = msg {
+                        println!("{}", msg.to_text().unwrap());
                         let req: FaderUpdateRequest =
                             serde_json::from_str(msg.to_text().unwrap()).unwrap();
                         rd.set_value(req.universe, req.channel, req.value).await;

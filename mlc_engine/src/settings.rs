@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use rocket::{
     fairing::{Fairing, Kind},
-    get, routes,
+    get, post, routes,
     serde::json::Json,
     tokio::{fs, sync::broadcast::Sender},
     Route, State,
@@ -15,13 +15,13 @@ use crate::{
     ui_serving::ProjectSelection,
 };
 
-#[get("/get/settings")]
+#[get("/get")]
 async fn get_settings(project: &State<Project>) -> Result<Json<Settings>, String> {
     let settings = project.get_settings().await;
     Ok(Json(settings))
 }
 
-#[get("/update/settings", data = "<settings>")]
+#[post("/update", data = "<settings>")]
 async fn update_settings(
     project: &State<Project>,
     settings: Json<Settings>,

@@ -81,7 +81,7 @@ impl Project {
             Err("Failed creating path")?;
         }
 
-        runtime.adapt(self).await;
+        runtime.adapt(self, true).await;
         send!(info, Info::ProjectLoaded);
 
         Ok(())
@@ -119,6 +119,7 @@ impl Project {
         mode_index: usize,
         create_new_universe: bool,
         info: &Sender<Info>,
+        runtime: &RuntimeData,
     ) -> Option<()> {
         let data: Vec<_> = {
             let d = self
@@ -155,6 +156,7 @@ impl Project {
             };
 
             send!(info, Info::UniversesUpdated);
+            runtime.adapt(self, false).await;
 
             return self
                 .try_patch_to_universe(fixture.clone(), mode_index, new_id, info)
@@ -216,7 +218,9 @@ impl Default for Project {
                 last_edited: DateTime::default(),
                 fixtures: Vec::new(),
                 universes: s,
-                settings: Settings { save_on_quit: true },
+                settings: Settings {
+                    save_on_quit: false,
+                },
             })),
         }
     }

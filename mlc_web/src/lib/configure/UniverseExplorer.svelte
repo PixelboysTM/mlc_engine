@@ -119,7 +119,7 @@
     left: 0;
     top: calc(100% + 10px);
     border-radius: 3px;
-    box-shadow: 0 0 5px 2px rgba(100, 100, 100, 0.6);
+    box-shadow: 0 0 5px 2px #64646499;
     background-color: #151111;
     z-index: 10;
     padding: 8px;
@@ -144,6 +144,7 @@
     flex-direction: row;
     width: 100%;
     height: 2rem;
+    gap: 0.25rem;
     border-bottom: #ff3e3e 1px solid;
   }
   .tab {

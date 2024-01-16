@@ -9,8 +9,10 @@
   function resize(e: MouseEvent) {
     if (!isDown) return;
     let cur = e.y;
+    console.log(e);
+    console.log(range);
+    console.log(range.getBoundingClientRect());
     let start = range.getBoundingClientRect().y;
-    let end = range.getBoundingClientRect().bottom;
     let height = range.getBoundingClientRect().height;
 
     let t = (1 - (cur - start) / height) * 255;

@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { UIEventHandler } from "svelte/elements";
   import Fader from "./Fader.svelte";
+  import { info } from "../stores";
 
   let values: number[] = [];
   for (let i = 0; i < 512; i++) {
-    let x = Math.floor(Math.random() * 255);
-    values.push(x);
+    // let x = Math.floor(Math.random() * 255);
+    values.push(0);
   }
   let currentUniverse = 0;
 
@@ -16,6 +17,17 @@
       currentUniverse = universes.at(0) ?? 1;
     })
   );
+
+  info.subscribe((data) => {
+    if (data == "UniversesUpdated") {
+      fetch("/data/universes").then((body) =>
+        body.json().then((json) => {
+          universes = json;
+          currentUniverse = universes.at(0) ?? 1;
+        })
+      );
+    }
+  });
 
   function makeName(t: number) {
     let name = "";
@@ -100,12 +112,25 @@
     console.log(json);
     setSock.send(json);
   }
+
+  function setUniverse(id: number) {
+    currentUniverse = id;
+    getSock.send(JSON.stringify(id));
+  }
 </script>
 
 <div class="sliders">
   <div class="universe-list">
     {#each universes as universe}
-      <button>{universe}</button>
+      <div
+        class="tab {universe === currentUniverse ? 'selected' : ''}"
+        on:click={() => setUniverse(universe)}
+        role="button"
+        tabindex={0}
+        on:keypress
+      >
+        {universe}
+      </div>
     {/each}
   </div>
   <div class="faders">
@@ -132,7 +157,7 @@
   .sliders {
     height: calc(100% - 2rem);
     display: flex;
-    gap: 0.5rem;
+    gap: 0rem;
   }
 
   /* .slider {
@@ -142,4 +167,30 @@
     height: fit-content;
     padding: 0 5px;
   } */
+
+  .universe-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    height: 100%;
+    width: 2rem;
+    overflow-y: auto;
+    border-right: #ff3e3e 1px solid;
+  }
+
+  .tab {
+    width: 2rem;
+    height: 3rem;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.5rem 0 0 0.5rem;
+    cursor: pointer;
+  }
+  .selected {
+    background-color: #ff3e3e;
+    color: #333;
+  }
 </style>

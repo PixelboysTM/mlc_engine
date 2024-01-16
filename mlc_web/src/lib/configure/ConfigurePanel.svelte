@@ -4,6 +4,8 @@
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
   import FaderPanel from "../common/FaderPanel.svelte";
   import UniverseExplorer from "./UniverseExplorer.svelte";
+  import Project from "../../Project.svelte";
+  import ProjectSettings from "./ProjectSettings.svelte";
 
   let projectInfo:
     | undefined
@@ -60,6 +62,7 @@
   </div>
   <div class="project-settings panel">
     <h3>Project Settings:</h3>
+    <ProjectSettings></ProjectSettings>
   </div>
   <div class="faders panel">
     <h3>Faders:</h3>
@@ -141,6 +144,7 @@
     top: 0px;
     background-color: #151111;
     padding-top: 0.25rem;
+    z-index: 15;
   }
 
   .center {
