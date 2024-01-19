@@ -79,6 +79,13 @@ impl RuntimeData {
             sleep(Duration::from_millis(500)).await;
             let t = c.create_endpoints().await;
             data.end_points = t;
+            for (id, v) in &data.end_points {
+                if let Some(i) = data.universe_values.get(id) {
+                    for vs in v {
+                        send!(vs, EndpointData::Entire { values: i.clone() });
+                    }
+                }
+            }
         }
     }
 
@@ -241,7 +248,6 @@ async fn set_value(
                 select! {
                     Some(msg) = stream.next() => {
                     if let Ok(msg) = msg {
-                        println!("{}", msg.to_text().unwrap());
                         let req: FaderUpdateRequest =
                             serde_json::from_str(msg.to_text().unwrap()).unwrap();
                         rd.set_value(req.universe, req.channel, req.value).await;
