@@ -1,12 +1,16 @@
 mod artnet;
+mod sacn;
 
 use std::collections::HashMap;
 
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
-use crate::fixture::{UniverseAddress, UniverseId};
+use crate::fixture::{UniverseAddress, UniverseId, UNIVERSE_SIZE};
 
-use self::artnet::ArtNetEndpoint;
+use self::{
+    artnet::ArtNetEndpoint,
+    sacn::{SacnEndpoint, Speed},
+};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct EndPointConfig {
@@ -21,6 +25,12 @@ impl Default for EndPointConfig {
     }
 }
 
+macro_rules! register_default {
+    ($type:ty, $rx:expr) => {
+        <$type>::default().register($rx);
+    };
+}
+
 impl EndPointConfig {
     pub async fn create_endpoints(&self) -> HashMap<UniverseId, Vec<Sender<EndpointData>>> {
         let mut points = HashMap::new();
@@ -30,12 +40,17 @@ impl EndPointConfig {
                 let (tx, rx) = rocket::tokio::sync::broadcast::channel::<EndpointData>(500);
                 match items {
                     EPConfigItem::Logger => {
-                        LoggerEndpoint.register(rx);
+                        register_default!(LoggerEndpoint, rx);
                     }
                     EPConfigItem::ArtNet => {
-                        let l = ArtNetEndpoint::default();
-                        l.register(rx);
+                        register_default!(ArtNetEndpoint, rx);
                     }
+                    EPConfigItem::Sacn { universe, speed } => SacnEndpoint {
+                        universe: *universe,
+                        speed: speed.clone(),
+                        ..Default::default()
+                    }
+                    .register(rx),
                 }
                 point.push(tx);
             }
@@ -50,13 +65,14 @@ impl EndPointConfig {
 pub enum EPConfigItem {
     Logger,
     ArtNet,
+    Sacn { universe: u16, speed: Speed },
 }
 
-pub trait Endpoint {
+pub trait Endpoint: Default {
     fn register(self, rx: Receiver<EndpointData>);
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub enum EndpointData {
     Single {
         channel: UniverseAddress,
@@ -66,10 +82,18 @@ pub enum EndpointData {
         channels: Vec<UniverseAddress>,
         values: Vec<u8>,
     },
+    Entire {
+        values: [u8; UNIVERSE_SIZE],
+    },
     Exit,
 }
 
 pub struct LoggerEndpoint;
+impl Default for LoggerEndpoint {
+    fn default() -> Self {
+        Self {}
+    }
+}
 impl Endpoint for LoggerEndpoint {
     fn register(self, mut rx: Receiver<EndpointData>) {
         rocket::tokio::spawn(async move {

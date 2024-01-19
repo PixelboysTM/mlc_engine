@@ -51,6 +51,10 @@ impl Endpoint for ArtNetEndpoint {
                                 }
                                 send(&self.data, &self.connections, &socket).await;
                             }
+                            super::EndpointData::Entire { values } => {
+                                self.data = values;
+                                send(&self.data, &self.connections, &socket).await;
+                            }
                         }
                     },
                     Ok((length, adds)) = socket.recv_from(&mut buffer) => {

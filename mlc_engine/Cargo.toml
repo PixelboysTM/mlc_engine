@@ -17,3 +17,4 @@ uuid = { version = "1.6.1", features = ["v4", "serde"] }
 pollster = { version = "*" }
 chrono = { version = "*", features = ["serde"] }
 artnet_protocol = "0.4.2"
+sacn = "0.4.4"
