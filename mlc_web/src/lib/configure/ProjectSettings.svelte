@@ -1,6 +1,7 @@
 <script lang="ts">
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
   import { toastNotifier } from "../stores";
+  import EndPointMappingPanel from "./EndPointMappingPanel.svelte";
 
   type Settings = {
     save_on_quit: boolean;
@@ -20,14 +21,6 @@
       },
       body: JSON.stringify(settings),
     }).then((r) => (hasChanges = false));
-  }
-
-  function openEndpointMapping() {
-    toastNotifier.push({
-      level: "info",
-      msg: "Not implemented yet",
-      title: "Info",
-    });
   }
 
   let hasChanges: boolean = false;
@@ -62,9 +55,7 @@
       disabled={!hasChanges}
       on:click={() => updateSettings()}>Update</button
     >
-    <button type="button" on:click={() => openEndpointMapping()}
-      >Endpoints</button
-    >
+    <EndPointMappingPanel></EndPointMappingPanel>
   </div>
 </div>
 
