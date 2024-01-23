@@ -64,7 +64,14 @@ impl RuntimeData {
                     [0; UNIVERSE_SIZE]
                 };
                 data.universe_values.insert(universe, values);
-                send!(data.sender, RuntimeUpdate::Universe { universe, values });
+                send!(
+                    data.sender,
+                    RuntimeUpdate::Universe {
+                        universe,
+                        values,
+                        author: 0
+                    }
+                );
             }
         }
 
@@ -89,7 +96,13 @@ impl RuntimeData {
         }
     }
 
-    pub async fn set_value(&self, universe: UniverseId, channel: UniverseAddress, value: u8) {
+    pub async fn set_value(
+        &self,
+        universe: UniverseId,
+        channel: UniverseAddress,
+        value: u8,
+        author: Option<usize>,
+    ) {
         let mut data = self.inner.lock().await;
 
         let values = data.universe_values.get_mut(&universe);
@@ -102,6 +115,7 @@ impl RuntimeData {
                     universe,
                     channel_index: index as usize,
                     value,
+                    author: author.unwrap_or(0)
                 }
             );
             self.update_endpoints(universe, channel, value, &data.end_points)
@@ -153,11 +167,13 @@ pub enum RuntimeUpdate {
         universe: UniverseId,
         channel_index: usize,
         value: u8,
+        author: usize,
     },
     Universe {
         universe: UniverseId,
         #[serde_as(as = "[_;UNIVERSE_SIZE]")]
         values: [u8; UNIVERSE_SIZE],
+        author: usize,
     },
 }
 
@@ -191,7 +207,7 @@ async fn get_value_updates(
     ws.channel(move |mut stream| {
         Box::pin(async move {
             for key in init.keys() {
-                stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: *key, values: init.get(key).expect("In for each").clone() }).unwrap())).await.unwrap();
+                stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: *key, values: init.get(key).expect("In for each").clone(), author: 0 }).unwrap())).await.unwrap();
             }
 
             loop {
@@ -205,7 +221,7 @@ async fn get_value_updates(
                             serde_json::from_str(msg.to_text().unwrap()).unwrap();
                         let data = runtime.get_universe_values(&req).await;
                         if let Some(data) = data {
-                            stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: req, values: data }).unwrap())).await.unwrap();
+                            stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: req, values: data, author: 0 }).unwrap())).await.unwrap();
                         }
                     }
                 },
@@ -225,6 +241,7 @@ struct FaderUpdateRequest {
     universe: UniverseId,
     channel: UniverseAddress,
     value: u8,
+    author: usize,
 }
 
 #[get("/fader-values/set")]
@@ -250,7 +267,7 @@ async fn set_value(
                     if let Ok(msg) = msg {
                         let req: FaderUpdateRequest =
                             serde_json::from_str(msg.to_text().unwrap()).unwrap();
-                        rd.set_value(req.universe, req.channel, req.value).await;
+                        rd.set_value(req.universe, req.channel, req.value, Some(req.author)).await;
                     }
                 },
                     _ = &mut shutdown => {
