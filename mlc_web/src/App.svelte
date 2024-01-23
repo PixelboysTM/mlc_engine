@@ -5,6 +5,7 @@
   import UniverseExplorer from "./lib/configure/UniverseExplorer.svelte";
   import ConfigurePanel from "./lib/configure/ConfigurePanel.svelte";
   import { info, toastNotifier } from "./lib/stores";
+  import ProgramPanel from "./lib/program/ProgramPanel.svelte";
 
   let promise = getFixtureTypes();
 
@@ -49,7 +50,7 @@
     {#if pane === "configure"}
       <ConfigurePanel></ConfigurePanel>
     {:else if pane === "program"}
-      <h1>Program</h1>
+      <ProgramPanel></ProgramPanel>
     {:else if pane === "show"}
       <h1>Show</h1>
     {/if}
