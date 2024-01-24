@@ -6,6 +6,7 @@ use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender};
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
+    runtime::{endpoints::EndPointConfig, RuntimeData},
     send,
     settings::ProjectDefinition,
 };
@@ -21,7 +22,11 @@ struct ProjectI {
     // Other stuff
     fixtures: Vec<FixtureType>,
     universes: HashMap<UniverseId, FixtureUniverse>,
+
     settings: Settings,
+
+    #[serde(default)]
+    endpoints: EndPointConfig,
 }
 
 pub struct Project {
@@ -59,7 +64,12 @@ impl Project {
 
         Ok(())
     }
-    pub async fn load(&self, name: &str, info: &Sender<Info>) -> Result<(), &str> {
+    pub async fn load(
+        &self,
+        name: &str,
+        info: &Sender<Info>,
+        runtime: &RuntimeData,
+    ) -> Result<(), &str> {
         if let Some(path) = make_path(name) {
             if let Ok(json_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
@@ -75,6 +85,7 @@ impl Project {
             Err("Failed creating path")?;
         }
 
+        runtime.adapt(self, true).await;
         send!(info, Info::ProjectLoaded);
 
         Ok(())
@@ -112,6 +123,7 @@ impl Project {
         mode_index: usize,
         create_new_universe: bool,
         info: &Sender<Info>,
+        runtime: &RuntimeData,
     ) -> Option<()> {
         let data: Vec<_> = {
             let d = self
@@ -148,6 +160,7 @@ impl Project {
             };
 
             send!(info, Info::UniversesUpdated);
+            runtime.adapt(self, false).await;
 
             return self
                 .try_patch_to_universe(fixture.clone(), mode_index, new_id, info)
@@ -195,6 +208,15 @@ impl Project {
             name: data.name.clone(),
         }
     }
+
+    pub async fn get_endpoint_config(&self) -> EndPointConfig {
+        let data = self.project.lock().await;
+        data.endpoints.clone()
+    }
+    pub async fn set_endpoint_config(&self, config: EndPointConfig) {
+        let mut data = self.project.lock().await;
+        data.endpoints = config;
+    }
 }
 
 impl Default for Project {
@@ -209,7 +231,10 @@ impl Default for Project {
                 last_edited: DateTime::default(),
                 fixtures: Vec::new(),
                 universes: s,
-                settings: Settings { save_on_quit: true },
+                settings: Settings {
+                    save_on_quit: false,
+                },
+                endpoints: EndPointConfig::default(),
             })),
         }
     }

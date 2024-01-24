@@ -17,11 +17,11 @@
 </script>
 
 <div>
-  <span
-    ><a id="a" href="#top">M</a><a id="b" href="#top">L</a><a id="c" href="#top"
-      >C</a
-    ></span
-  >
+  <span>
+    <p id="a">M</p>
+    <p id="b">L</p>
+    <p id="c">C</p>
+  </span>
   <div class="tabs">
     <button
       class="icon configure {pane == 'configure' ? 'selected' : ''}"
@@ -74,7 +74,13 @@
     align-items: center;
     width: 100%;
   }
-  span a {
+  span {
+    display: flex;
+    /* place-content: center; */
+    align-items: center;
+    width: 100%;
+  }
+  span p {
     font-size: 2rem;
     color: #fff;
     text-decoration: none;
@@ -84,6 +90,8 @@
     margin: 0rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease-in-out;
+    height: 2rem;
+    width: 1rem;
   }
 
   #a {

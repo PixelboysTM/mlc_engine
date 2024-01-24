@@ -22,12 +22,13 @@ pub fn find_features(fixture: &FixtureType, mode: &FixtureMode) -> Vec<FixtureFe
 }
 
 fn search_dimmer(fixture: &FixtureType, channels: &[String]) -> Option<FixtureFeature> {
-    for channel in channels {
-        let cap = fixture.get_available_channels().get(channel);
-        if let Some(cap) = cap {
-            for c in cap.capabilities {
-                c.
-            }
-        }
-    }
+    // for channel in channels {
+    //     let cap = fixture.get_available_channels().get(channel);
+    //     if let Some(cap) = cap {
+    //         for c in cap.capabilities {
+    //             c.
+    //         }
+    //     }
+    // }
+    None
 }

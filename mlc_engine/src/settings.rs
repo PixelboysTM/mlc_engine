@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use rocket::{
     fairing::{Fairing, Kind},
-    get, routes,
+    get, post, routes,
     serde::json::Json,
     tokio::{fs, sync::broadcast::Sender},
     Route, State,
@@ -11,16 +11,17 @@ use crate::{
     data_serving::Info,
     module::Module,
     project::{self, Project, Settings},
+    runtime::RuntimeData,
     ui_serving::ProjectSelection,
 };
 
-#[get("/get/settings")]
+#[get("/get")]
 async fn get_settings(project: &State<Project>) -> Result<Json<Settings>, String> {
     let settings = project.get_settings().await;
     Ok(Json(settings))
 }
 
-#[get("/update/settings", data = "<settings>")]
+#[post("/update", data = "<settings>")]
 async fn update_settings(
     project: &State<Project>,
     settings: Json<Settings>,
@@ -71,12 +72,13 @@ async fn load_project(
     project: &State<Project>,
     project_selection: &State<ProjectSelection>,
     info: &State<Sender<Info>>,
+    runtime: &State<RuntimeData>,
 ) -> Result<String, String> {
     if project_selection.0.lock().await.is_some() {
         return Err("Project already loaded why on this page.".to_string());
     }
 
-    let result = project.load(name, info.inner()).await;
+    let result = project.load(name, info.inner(), &runtime).await;
     if result.is_err() {
         eprintln!("{:?}", result.unwrap_err());
         return result.map_err(|e| e.to_string()).map(|_| "".to_string());

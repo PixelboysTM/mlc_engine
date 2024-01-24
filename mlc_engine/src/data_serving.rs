@@ -1,10 +1,10 @@
-use std::{str::FromStr, thread, time::Duration};
+use std::str::FromStr;
 
 use rocket::{
     data::ToByteUnit,
     futures::SinkExt,
     get, post,
-    response::status::{self, BadRequest, Custom},
+    response::status::{BadRequest, Custom},
     routes,
     serde::json::Json,
     tokio::{select, sync::broadcast::Sender},
@@ -13,7 +13,7 @@ use rocket::{
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
-use crate::fixture::FixtureUniverse;
+use crate::{fixture::FixtureUniverse, runtime::RuntimeData};
 use crate::{
     fixture::{self, UniverseId},
     module::Module,
@@ -28,6 +28,7 @@ pub enum Info {
     SystemShutdown,
     UniversePatchChanged(UniverseId),
     UniversesUpdated,
+    EndpointConfigChanged,
 }
 
 #[get("/info")]
@@ -159,6 +160,7 @@ enum PatchResult {
 fn patch_fixture(
     project: &State<Project>,
     info: &State<Sender<Info>>,
+    runtime: &State<RuntimeData>,
     id: &str,
     mode: usize,
     create: bool,
@@ -188,7 +190,9 @@ fn patch_fixture(
             return PatchResult::ModeInvalid("Mode is not available".to_string());
         }
 
-        let r = project.try_patch(&fixture, mode, create, info).await;
+        let r = project
+            .try_patch(&fixture, mode, create, info, &runtime)
+            .await;
         if r.is_some() {
             return PatchResult::Succsess("Patching successful".to_string());
         }

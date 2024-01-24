@@ -1,77 +1,88 @@
 <script lang="ts">
   import { toastNotifier, type ToastNotification } from "./stores";
+  import { createToaster, melt } from "@melt-ui/svelte";
+  import { flip } from "svelte/animate";
+  import { fly } from "svelte/transition";
 
-  let level: "info" | "warning" | "error" = "info";
-  let title: string = "ToastManager";
-  let msg: string = "Notificationsmanager loaded";
+  // let level: "info" | "warning" | "error" = "info";
+  // let title: string = "ToastManager";
+  // let msg: string = "Notificationsmanager loaded";
 
-  let interval: number | undefined = undefined;
+  // let interval: number | undefined = undefined;
   toastNotifier.subscribe((data) => {
-    if (interval != undefined) {
+    // if (interval != undefined) {
+    //   return;
+    // }
+
+    // handleData();
+    // interval = setInterval(() => {
+    //   handleData();
+    // }, 2000);
+    // handleData();
+    if (data == null) {
       return;
     }
-
-    handleData();
-    interval = setInterval(() => {
-      handleData();
-    }, 5000);
+    addToast({
+      data: data as ToastNotification,
+      // closeDelay: 1000,
+    });
   });
 
-  function handleData() {
-    let data = toastNotifier.pull();
-    if (data == null) {
-      clearInterval(interval);
-      interval = undefined;
-      return;
-    }
-
-    let d: ToastNotification = data;
-
-    level = d.level;
-    title = d.title;
-    msg = d.msg;
-  }
+  const {
+    elements: { content, title, description },
+    helpers: { addToast },
+    states: { toasts },
+    actions: { portal },
+  } = createToaster<ToastNotification>();
 </script>
 
-{#if interval != undefined}
-  <div class="toast {level}">
-    <h4>{title}</h4>
-    <p>{msg}</p>
-  </div>
-{/if}
+<div class="portal" use:portal>
+  {#each $toasts as { id, data } (id)}
+    <div
+      class="toast t-{data.level}"
+      use:melt={$content(id)}
+      animate:flip={{ duration: 500 }}
+      in:fly={{ x: "100%", duration: 150 }}
+      out:fly={{ x: "100%", duration: 150 }}
+    >
+      <h4 use:melt={$title(id)}>
+        {data.title}
+        <span class="dot {data.level}"></span>
+      </h4>
+      <p use:melt={$description(id)}>{data.msg}</p>
+    </div>
+  {/each}
+</div>
 
 <style>
   div.toast {
-    position: fixed;
-    bottom: 0.5rem;
-    right: 0.5rem;
     width: 12rem;
     height: 3rem;
-    background-color: #151111;
+    background-color: #242424;
     color: white;
-    z-index: 1001;
     padding: 0.5rem;
-    border-radius: 1rem;
-    box-shadow: -0.2rem 0.2rem 1rem #2d2d2db3;
-    animation: slideIn 5s linear 0s infinite;
+    border-radius: 0.25rem;
+    /* box-shadow: -0.2rem 0.2rem 1rem #2d2d2db3; */
+    /* border: #ff3e3e 1px solid; */
   }
 
-  @keyframes slideIn {
-    0% {
-      opacity: 0%;
-    }
-    5% {
-      opacity: 100%;
-    }
-    92.5% {
-      opacity: 100%;
-    }
-    97.5% {
-      opacity: 0%;
-    }
-    100% {
-      opacity: 0%;
-    }
+  .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 0.5rem;
+  }
+
+  .portal {
+    position: fixed;
+    bottom: 0.25rem;
+    right: 0.25rem;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    place-items: flex-end;
   }
 
   h4 {
@@ -86,13 +97,23 @@
     font-size: 0.8rem;
   }
 
-  div.toast.info {
+  .info {
     background-color: #44a44a;
   }
-  div.toast.warning {
+  .warning {
     background-color: #ffa83e;
   }
-  div.toast.error {
+  .error {
     background-color: #ff3e3e;
+  }
+
+  .t-info {
+    border: #44a44a 1px solid;
+  }
+  .t-warning {
+    border: #ffa83e 1px solid;
+  }
+  .t-error {
+    border: #ff3e3e 1px solid;
   }
 </style>
