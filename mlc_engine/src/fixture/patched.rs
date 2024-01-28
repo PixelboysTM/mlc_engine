@@ -151,7 +151,7 @@ impl FromParam<'_> for UniverseId {
     type Error = ParseIntError;
 
     fn from_param(param: &'_ str) -> Result<Self, Self::Error> {
-        u16::from_str_radix(param, 10).map(|d| UniverseId(d))
+        param.parse::<u16>().map(UniverseId)
     }
 }
 
@@ -162,7 +162,7 @@ impl Ord for UniverseId {
 }
 impl PartialOrd for UniverseId {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
+        Some(self.cmp(other))
     }
 }
 

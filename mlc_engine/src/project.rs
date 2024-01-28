@@ -1,4 +1,4 @@
-use std::{cell::RefMut, collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Local};
 use rocket::{
@@ -210,7 +210,7 @@ impl Project {
         let data = self.project.lock().await;
         ProjectDefinition {
             file_name: data.file_name.clone(),
-            last_edited: data.last_edited.clone(),
+            last_edited: data.last_edited,
             name: data.name.clone(),
         }
     }

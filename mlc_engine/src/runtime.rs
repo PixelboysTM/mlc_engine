@@ -1,7 +1,12 @@
 pub mod effects;
 pub mod endpoints;
 
-use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    str::FromStr,
+    sync::Arc,
+    time::Duration,
+};
 
 use rocket::{
     futures::{SinkExt, StreamExt},
@@ -88,7 +93,7 @@ impl RuntimeData {
         {
             // Adapt Endpoints
             let c = project.get_endpoint_config().await;
-            for (_, v) in &data.end_points {
+            for v in data.end_points.values() {
                 for vs in v {
                     send!(vs, EndpointData::Exit);
                 }
@@ -99,7 +104,7 @@ impl RuntimeData {
             for (id, v) in &data.end_points {
                 if let Some(i) = data.universe_values.get(id) {
                     for vs in v {
-                        send!(vs, EndpointData::Entire { values: i.clone() });
+                        send!(vs, EndpointData::Entire { values: *i });
                     }
                 }
             }
@@ -193,20 +198,17 @@ impl RuntimeData {
         endpoints: &HashMap<UniverseId, Vec<Sender<EndpointData>>>,
     ) {
         let mut map: HashMap<UniverseId, Vec<(UniverseAddress, u8)>> = HashMap::new();
-        let mut i = 0;
-        for verse_id in verse_ids {
-            if map.contains_key(&verse_id) {
+        for (i, verse_id) in verse_ids.into_iter().enumerate() {
+            if let Entry::Vacant(_) = map.entry(verse_id) {
+                map.insert(verse_id, vec![(indexs[i], values[i])]);
+            } else {
                 map.get_mut(&verse_id)
                     .expect("Checked")
                     .push((indexs[i], values[i]));
-            } else {
-                map.insert(verse_id, vec![(indexs[i], values[i])]);
             }
-
-            i += 1;
         }
         for verse_id in map.keys() {
-            let point = endpoints.get(&verse_id);
+            let point = endpoints.get(verse_id);
             if let Some(point) = point {
                 let cs: Vec<_> = map
                     .get(verse_id)
@@ -245,10 +247,11 @@ impl RuntimeData {
     }
     pub async fn get_universe_values(&self, universe: &UniverseId) -> Option<[u8; UNIVERSE_SIZE]> {
         let data = self.inner.lock().await;
-        data.universe_values.get(universe).map(|f| f.clone())
+        data.universe_values.get(universe).copied()
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[serde_with::serde_as]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum RuntimeUpdate {
@@ -319,7 +322,7 @@ async fn get_value_updates(
     ws.channel(move |mut stream| {
         Box::pin(async move {
             for key in init.keys() {
-                stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: *key, values: init.get(key).expect("In for each").clone(), author: 0 }).unwrap())).await.unwrap();
+                stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: *key, values: *init.get(key).expect("In for each"), author: 0 }).unwrap())).await.unwrap();
             }
 
             loop {

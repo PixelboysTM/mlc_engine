@@ -44,10 +44,8 @@ impl Endpoint for ArtNetEndpoint {
                                 send(&self.data, &self.connections, &socket).await;
                             }
                             super::EndpointData::Multiple{channels, values} => {
-                                let mut index = 0;
-                                for c in channels {
+                                for (index, c) in channels.into_iter().enumerate() {
                                     self.data[c.i()] = values[index];
-                                    index += 1;
                                 }
                                 send(&self.data, &self.connections, &socket).await;
                             }
@@ -63,7 +61,7 @@ impl Endpoint for ArtNetEndpoint {
                             ArtCommand::Poll(_) => {},
                             ArtCommand::PollReply(_) => {
                                 println!("Connecting");
-                                self.connections.push(adds.clone());
+                                self.connections.push(adds);
                                 let command = make_output(&self.data);
                                 let bytes = command.write_to_buffer().unwrap();
                                 socket.send_to(&bytes, &adds).await.unwrap();

@@ -51,15 +51,12 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
 
     let mut projects = vec![];
     let iter = std::fs::read_dir(path).unwrap();
-    for file in iter {
-        if let Ok(f) = file {
-            if f.file_type().unwrap().is_file() && f.file_name().to_string_lossy().ends_with(".mlc")
-            {
-                let data = fs::read_to_string(f.path()).await.unwrap();
-                let mut defintition: ProjectDefinition = serde_json::from_str(&data).unwrap();
-                defintition.file_name = f.file_name().to_string_lossy().replace(".mlc", "");
-                projects.push(defintition);
-            }
+    for f in iter.flatten() {
+        if f.file_type().unwrap().is_file() && f.file_name().to_string_lossy().ends_with(".mlc") {
+            let data = fs::read_to_string(f.path()).await.unwrap();
+            let mut defintition: ProjectDefinition = serde_json::from_str(&data).unwrap();
+            defintition.file_name = f.file_name().to_string_lossy().replace(".mlc", "");
+            projects.push(defintition);
         }
     }
 
@@ -78,7 +75,7 @@ async fn load_project(
         return Err("Project already loaded why on this page.".to_string());
     }
 
-    let result = project.load(name, info.inner(), &runtime).await;
+    let result = project.load(name, info.inner(), runtime).await;
     if result.is_err() {
         eprintln!("{:?}", result.unwrap_err());
         return result.map_err(|e| e.to_string()).map(|_| "".to_string());

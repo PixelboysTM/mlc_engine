@@ -3,7 +3,7 @@ use crate::runtime::{RuntimeData, ToFaderValue};
 use super::{Dimmer, FixtureFeature, Rgb};
 
 pub trait ApplyFeature {
-    async fn apply(&self, req: FeatureSetRequest, runtimeData: &RuntimeData);
+    async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -16,7 +16,7 @@ impl ApplyFeature for Vec<FixtureFeature> {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData) {
         match req {
             FeatureSetRequest::Dimmer { value } => {
-                if let Some(d) = find_dimmer(&self) {
+                if let Some(d) = find_dimmer(self) {
                     println!("FOund Dimmer");
                     runtime_data
                         .set_value(
@@ -29,7 +29,7 @@ impl ApplyFeature for Vec<FixtureFeature> {
                 }
             }
             FeatureSetRequest::Rgb { red, green, blue } => {
-                if let Some(rgb) = find_rgb(&self) {
+                if let Some(rgb) = find_rgb(self) {
                     runtime_data
                         .set_values(
                             vec![

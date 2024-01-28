@@ -57,10 +57,8 @@ impl Endpoint for SacnEndpoint {
                                     // dmx_source.send(self.universe, &self.data).unwrap();
                                 }
                             super::EndpointData::Multiple { channels, values } => {
-                                let mut index = 0;
-                                for c in channels {
+                                for (index, c) in channels.into_iter().enumerate() {
                                     self.data[c.i()] = values[index];
-                                    index += 1;
                                 }
                                 // dmx_source.send(self.universe, &self.data).unwrap();
                             }

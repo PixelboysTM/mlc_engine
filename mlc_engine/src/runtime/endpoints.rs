@@ -12,17 +12,9 @@ use self::{
     sacn::{SacnEndpoint, Speed},
 };
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default)]
 pub struct EndPointConfig {
     endpoints: HashMap<UniverseId, Vec<EPConfigItem>>,
-}
-
-impl Default for EndPointConfig {
-    fn default() -> Self {
-        Self {
-            endpoints: Default::default(),
-        }
-    }
 }
 
 macro_rules! register_default {
@@ -72,6 +64,7 @@ pub trait Endpoint: Default {
     fn register(self, rx: Receiver<EndpointData>);
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum EndpointData {
     Single {
@@ -88,12 +81,8 @@ pub enum EndpointData {
     Exit,
 }
 
+#[derive(Default)]
 pub struct LoggerEndpoint;
-impl Default for LoggerEndpoint {
-    fn default() -> Self {
-        Self {}
-    }
-}
 impl Endpoint for LoggerEndpoint {
     fn register(self, mut rx: Receiver<EndpointData>) {
         rocket::tokio::spawn(async move {

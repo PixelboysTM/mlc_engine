@@ -191,13 +191,13 @@ fn patch_fixture(
         }
 
         let r = project
-            .try_patch(&fixture, mode, create, info, &runtime)
+            .try_patch(&fixture, mode, create, info, runtime)
             .await;
         if r.is_some() {
             return PatchResult::Succsess("Patching successful".to_string());
         }
 
-        return PatchResult::Failed("Patching failed".to_owned());
+        PatchResult::Failed("Patching failed".to_owned())
     })
 }
 

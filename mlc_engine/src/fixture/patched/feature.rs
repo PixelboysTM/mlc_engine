@@ -66,29 +66,24 @@ fn search_dimmer(
     universe_id: UniverseId,
     start_index: UniverseAddress,
 ) -> Option<FixtureFeature> {
-    let mut i = 0;
-    for channel in channels {
+    for (i, channel) in channels.iter().enumerate() {
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                match cap {
-                    FixtureCapability::Intensity(d) => {
-                        return Some(FixtureFeature::Dimmer(Dimmer {
-                            dimmer: FeatureTile {
-                                channel: FeatureChannel(i),
-                                fader: FaderAddress {
-                                    universe: universe_id,
-                                    address: start_index + i,
-                                },
-                                range: d.dmx_range,
+                if let FixtureCapability::Intensity(d) = cap {
+                    return Some(FixtureFeature::Dimmer(Dimmer {
+                        dimmer: FeatureTile {
+                            channel: FeatureChannel(i),
+                            fader: FaderAddress {
+                                universe: universe_id,
+                                address: start_index + i,
                             },
-                        }));
-                    }
-                    _ => {}
+                            range: d.dmx_range,
+                        },
+                    }));
                 }
             }
         }
-        i += 1;
     }
 
     None
@@ -100,17 +95,16 @@ fn search_rgb(
     universe_id: UniverseId,
     start_index: UniverseAddress,
 ) -> Option<FixtureFeature> {
-    let mut i = 0;
     let mut red = None;
     let mut green = None;
     let mut blue = None;
 
-    for channel in channels {
+    for (i, channel) in channels.iter().enumerate() {
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                match cap {
-                    FixtureCapability::ColorIntensity(c) => match c.color {
+                if let FixtureCapability::ColorIntensity(c) = cap {
+                    match c.color {
                         DmxColor::Red if red.is_none() => {
                             red = Some(FeatureTile {
                                 channel: FeatureChannel(i),
@@ -142,12 +136,10 @@ fn search_rgb(
                             })
                         }
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 }
             }
         }
-        i += 1;
     }
 
     if red.is_some() && green.is_some() && blue.is_some() {
