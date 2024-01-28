@@ -25,7 +25,7 @@ use rocket::{
 use rocket_ws::WebSocket;
 
 use crate::{
-    data_serving::Info,
+    data_serving::{Info, ProjectGuard},
     fixture::{
         feature::{
             apply::{ApplyFeature, FeatureSetRequest},
@@ -315,6 +315,7 @@ async fn get_value_updates(
     runtime: &State<RuntimeData>,
     ws: WebSocket,
     mut shutdown: Shutdown,
+    _g: ProjectGuard,
 ) -> rocket_ws::Channel<'_> {
     let mut rx = runtime.subscribe().await;
     let init = runtime.initial_states().await;
@@ -363,6 +364,7 @@ async fn set_value(
     runtime: &State<RuntimeData>,
     ws: WebSocket,
     mut shutdown: Shutdown,
+    _g: ProjectGuard,
 ) -> rocket_ws::Channel<'_> {
     let rd = runtime;
 
@@ -389,7 +391,7 @@ async fn set_value(
 }
 
 #[get("/endpoints/get")]
-async fn get_endpoint_config(project: &State<Project>) -> Json<EndPointConfig> {
+async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json<EndPointConfig> {
     let config = project.get_endpoint_config().await;
     Json(config)
 }
@@ -400,6 +402,7 @@ async fn set_endpoint_config(
     data: Json<EndPointConfig>,
     runtime: &State<RuntimeData>,
     tx: &State<Sender<Info>>,
+    _g: ProjectGuard,
 ) {
     project.set_endpoint_config(data.0).await;
     runtime.adapt(project, false).await;
@@ -413,6 +416,7 @@ async fn set_feature<'a>(
     fix_id: String,
     runtime: &'a State<RuntimeData>,
     project: &'a State<Project>,
+    _g: ProjectGuard,
 ) -> rocket_ws::Channel<'a> {
     let id = uuid::Uuid::from_str(&fix_id);
 

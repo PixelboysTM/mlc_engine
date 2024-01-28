@@ -11,6 +11,7 @@ use rocket_ws::WebSocket;
 use serde_with::serde_as;
 use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
+use crate::data_serving::ProjectGuard;
 use crate::project::Project;
 use crate::{fixture::FaderAddress, module::Module};
 
@@ -85,12 +86,13 @@ pub enum EffectHandlerRequest {
 }
 
 #[get("/effectHandler")]
-fn get_effect_handler<'a>(
+async fn get_effect_handler<'a>(
     ws: WebSocket,
     mut shutdown: Shutdown,
     // runtime: &'a State<RuntimeData>,
     tx: &'a State<Sender<EffectPlayerAction>>,
     project: &'a State<Project>,
+    _g: ProjectGuard,
 ) -> rocket_ws::Channel<'a> {
     ws.channel(move |mut stream| {
         Box::pin(async move {

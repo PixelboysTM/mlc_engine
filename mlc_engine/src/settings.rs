@@ -8,7 +8,7 @@ use rocket::{
 };
 
 use crate::{
-    data_serving::Info,
+    data_serving::{Info, ProjectGuard},
     module::Module,
     project::{self, Project, Settings},
     runtime::RuntimeData,
@@ -16,7 +16,10 @@ use crate::{
 };
 
 #[get("/get")]
-async fn get_settings(project: &State<Project>) -> Result<Json<Settings>, String> {
+async fn get_settings(
+    project: &State<Project>,
+    _g: ProjectGuard,
+) -> Result<Json<Settings>, String> {
     let settings = project.get_settings().await;
     Ok(Json(settings))
 }
@@ -25,6 +28,7 @@ async fn get_settings(project: &State<Project>) -> Result<Json<Settings>, String
 async fn update_settings(
     project: &State<Project>,
     settings: Json<Settings>,
+    _g: ProjectGuard,
 ) -> Result<String, String> {
     project
         .update_settings(settings.0)
@@ -87,7 +91,10 @@ async fn load_project(
 }
 
 #[get("/current")]
-async fn get_current_project(project: &State<Project>) -> Json<ProjectDefinition> {
+async fn get_current_project(
+    project: &State<Project>,
+    _g: ProjectGuard,
+) -> Json<ProjectDefinition> {
     Json(project.get_definition().await)
 }
 

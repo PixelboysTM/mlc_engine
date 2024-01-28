@@ -2,18 +2,22 @@ use std::str::FromStr;
 
 use rocket::{
     data::ToByteUnit,
+    fairing::{Fairing, Kind},
     futures::SinkExt,
-    get, post,
+    get,
+    http::Status,
+    post,
+    request::{self, FromRequest},
     response::status::{BadRequest, Custom},
     routes,
     serde::json::Json,
     tokio::{select, sync::broadcast::Sender},
-    Data, Responder, Route, State,
+    Data, Request, Responder, Route, State,
 };
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
-use crate::{fixture::FixtureUniverse, runtime::RuntimeData};
+use crate::{fixture::FixtureUniverse, runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::{
     fixture::{self, UniverseId},
     module::Module,
@@ -73,7 +77,7 @@ struct FixtureInfo {
 }
 
 #[get("/get/fixture-types")]
-async fn get_fixture_types(project: &State<Project>) -> Json<Vec<FixtureInfo>> {
+async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<FixtureInfo>> {
     Json(
         project
             .inner()
@@ -98,6 +102,7 @@ async fn add_fixture(
     data: Data<'_>,
     project: &State<Project>,
     info: &State<Sender<Info>>,
+    _g: ProjectGuard,
 ) -> Result<(), BadRequest<String>> {
     let s = data.open(2.gibibytes());
     let string = s
@@ -114,14 +119,18 @@ async fn add_fixture(
 }
 
 #[get("/universes")]
-async fn get_universes(project: &State<Project>) -> Json<Vec<UniverseId>> {
+async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<UniverseId>> {
     let mut data = project.get_universes().await;
     data.sort();
     Json(data)
 }
 
 #[get("/universes/<id>")]
-async fn get_universe(id: UniverseId, project: &State<Project>) -> Json<Option<FixtureUniverse>> {
+async fn get_universe(
+    id: UniverseId,
+    project: &State<Project>,
+    _g: ProjectGuard,
+) -> Json<Option<FixtureUniverse>> {
     let data = project.get_universe(&id).await;
     if let Ok(d) = data {
         Json(Some(d))
@@ -134,6 +143,7 @@ async fn get_universe(id: UniverseId, project: &State<Project>) -> Json<Option<F
 async fn save_project(
     project: &State<Project>,
     info: &State<Sender<Info>>,
+    _g: ProjectGuard,
 ) -> Result<(), Custom<&'static str>> {
     project
         .save(info)
@@ -164,6 +174,7 @@ fn patch_fixture(
     id: &str,
     mode: usize,
     create: bool,
+    _g: ProjectGuard,
 ) -> PatchResult {
     println!("{create}");
     let f_id = Uuid::from_str(id); //.map_err(|_| "Id is not valid".to_string())?;
@@ -220,3 +231,44 @@ impl Module for DataServingModule {
         app.mount("/data", get_routes())
     }
 }
+
+pub struct ProjectGuard;
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ProjectGuard {
+    type Error = String;
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
+        let t = request.rocket().state::<ProjectSelection>().unwrap();
+        if t.0.lock().await.is_some() {
+            request::Outcome::Success(ProjectGuard)
+        } else {
+            request::Outcome::Error((Status::Unauthorized, "No project loaded!".to_string()))
+        }
+    }
+}
+
+// #[rocket::async_trait]
+// impl Fairing for ProjectGuard {
+//     fn info(&self) -> rocket::fairing::Info {
+//         rocket::fairing::Info {
+//             name: "Project Guard",
+//             kind: Kind::Request,
+//         }
+//     }
+
+//     async fn on_request<'life0, 'life1, 'life2, 'life3, 'life4>(
+//         &'life0 self,
+//         req: &'life1 mut rocket::Request<'life2>,
+//         _data: &'life3 mut Data<'life4>,
+//     ) where
+//         'life0: 'async_trait,
+//         'life1: 'async_trait,
+//         'life2: 'async_trait,
+//         'life3: 'async_trait,
+//         'life4: 'async_trait,
+//     {
+//         if let Some(r) = &req.route() {
+//             r.
+//         }
+//     }
+// }
