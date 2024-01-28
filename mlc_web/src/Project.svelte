@@ -1,14 +1,15 @@
 <script lang="ts">
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
-  // import FaFileUpload from "svelte-icons/fa/FaFileUpload.svelte";
-  // import FaPlus from "svelte-icons/fa/FaPlus.svelte";
   import FaSolidFileUpload from "svelte-icons-pack/fa/FaSolidFileUpload";
   import FaSolidPlus from "svelte-icons-pack/fa/FaSolidPlus";
-  // import MdOpenInBrowser from "svelte-icons/md/MdOpenInBrowser.svelte";
   import FaSolidFolderOpen from "svelte-icons-pack/fa/FaSolidFolderOpen";
   import Icon from "svelte-icons-pack/Icon.svelte";
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
+
+  import marvin from "./assets/icon.png";
+  import { toastNotifier } from "./lib/stores";
+  import Toast from "./lib/Toast.svelte";
 
   type ProjectInformation = {
     name: string;
@@ -18,7 +19,6 @@
 
   fetch("/projects/projects-list").then((res) => {
     res.json().then((data) => {
-      console.log(data);
       let i = 0;
       items = data.map((item: ProjectInformation) => {
         return make_item(i++, item);
@@ -26,23 +26,7 @@
     });
   });
 
-  let items: any[] = [
-    // make_item(0),
-    // make_item(1),
-    // make_item(2),
-    // make_item(3),
-    // make_item(4),
-    // make_item(5),
-    // make_item(6),
-    // make_item(7),
-    // make_item(8),
-    // make_item(9),
-    // make_item(10),
-    // make_item(11),
-    // make_item(12),
-    // make_item(13),
-    // make_item(14),
-  ];
+  let items: any[] = [];
 
   function make_item(i: number, data: ProjectInformation) {
     return {
@@ -92,10 +76,7 @@
   }
 
   function format_time(timeString: string) {
-    console.log(timeString);
     let time = new Date(timeString);
-    console.log(time);
-
     return (
       time.getDate() +
       "." +
@@ -124,18 +105,29 @@
 <svelte:head>
   <title>MLC Project Browser</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <!-- Add a Favicon -->
+  <link rel="icon" href={marvin} />
 </svelte:head>
 <main>
   <DisconnectHelper></DisconnectHelper>
+  <Toast></Toast>
   <div class="head">
-    <span
-      ><a id="a" href="#top">M</a><a id="b" href="#top">L</a><a
-        id="c"
-        href="#top">C</a
-      ></span
-    >
+    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <img
+      on:click={() => {
+        toastNotifier.push({
+          level: "info",
+          msg: "Marvin says hi!",
+          title: "Marvin",
+        });
+      }}
+      on:keypress
+      class="iconMarvin"
+      src={marvin}
+      alt="MLC"
+    />
     <div class="tabs">
-      <h2>Project Browser</h2>
+      <h2>MLC Project Browser</h2>
     </div>
     <div class="tabs right">
       <button title="Import Project" class="icon"
@@ -171,6 +163,13 @@
 </main>
 
 <style>
+  .iconMarvin {
+    width: 3rem;
+    height: 80%;
+    margin-left: 0.2rem;
+    margin-top: 0.25rem;
+    cursor: pointer;
+  }
   div.project-card {
     background-color: #151111;
     border-radius: 0.5rem;
