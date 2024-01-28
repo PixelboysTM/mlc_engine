@@ -1,32 +1,38 @@
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{cell::RefMut, collections::HashMap, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Local};
-use rocket::{futures::lock::Mutex, tokio::sync::broadcast::Sender};
+use rocket::{
+    futures::lock::{Mutex, MutexGuard},
+    tokio::sync::broadcast::Sender,
+};
 
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
-    runtime::{endpoints::EndPointConfig, RuntimeData},
+    runtime::{effects::Effect, endpoints::EndPointConfig, RuntimeData},
     send,
     settings::ProjectDefinition,
 };
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct ProjectI {
+pub(crate) struct ProjectI {
     // Common with general Information
-    name: String,
+    pub(crate) name: String,
     #[serde(skip)]
-    file_name: String,
-    last_edited: DateTime<Local>,
+    pub(crate) file_name: String,
+    pub(crate) last_edited: DateTime<Local>,
 
     // Other stuff
-    fixtures: Vec<FixtureType>,
-    universes: HashMap<UniverseId, FixtureUniverse>,
+    pub(crate) fixtures: Vec<FixtureType>,
+    pub(crate) universes: HashMap<UniverseId, FixtureUniverse>,
 
-    settings: Settings,
+    //Effects
+    pub(crate) effects: Vec<Effect>,
+
+    pub(crate) settings: Settings,
 
     #[serde(default)]
-    endpoints: EndPointConfig,
+    pub(crate) endpoints: EndPointConfig,
 }
 
 pub struct Project {
@@ -217,6 +223,10 @@ impl Project {
         let mut data = self.project.lock().await;
         data.endpoints = config;
     }
+
+    pub async fn lock(&self) -> MutexGuard<'_, ProjectI> {
+        self.project.lock().await
+    }
 }
 
 impl Default for Project {
@@ -235,6 +245,7 @@ impl Default for Project {
                     save_on_quit: false,
                 },
                 endpoints: EndPointConfig::default(),
+                effects: Vec::new(),
             })),
         }
     }

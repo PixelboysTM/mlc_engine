@@ -1,9 +1,9 @@
+pub mod effects;
 pub mod endpoints;
 
 use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 
 use rocket::{
-    form::validate::Len,
     futures::{SinkExt, StreamExt},
     get, post, routes,
     serde::json::Json,
@@ -33,7 +33,10 @@ use crate::{
     send,
 };
 
-use self::endpoints::{EndPointConfig, EndpointData};
+use self::{
+    effects::EffectModule,
+    endpoints::{EndPointConfig, EndpointData},
+};
 
 #[derive(Debug)]
 struct RuntimeI {
@@ -290,7 +293,7 @@ impl Module for RuntimeModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = broadcast::channel::<RuntimeUpdate>(512);
 
-        app.manage(rx).manage(RuntimeData::new(tx)).mount(
+        let app = app.manage(rx).manage(RuntimeData::new(tx)).mount(
             "/runtime",
             routes![
                 get_value_updates,
@@ -299,7 +302,8 @@ impl Module for RuntimeModule {
                 set_endpoint_config,
                 set_feature
             ],
-        )
+        );
+        EffectModule.setup(app)
     }
 }
 
@@ -357,7 +361,7 @@ async fn set_value(
     ws: WebSocket,
     mut shutdown: Shutdown,
 ) -> rocket_ws::Channel<'_> {
-    let rd = runtime.clone();
+    let rd = runtime;
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
