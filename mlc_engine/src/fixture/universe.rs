@@ -14,6 +14,12 @@ pub struct FixtureUniverse {
     fixtures: Vec<PatchedFixture>,
 }
 
+impl FixtureUniverse {
+    pub fn get_fixtures(&self) -> &Vec<PatchedFixture> {
+        &self.fixtures
+    }
+}
+
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedChannelIndex {
     fixture_index: usize,

@@ -49,6 +49,13 @@
         };
       }
     | {
+        ValuesUpdated: {
+          universes: number[];
+          channel_indexes: number[];
+          values: number[];
+        };
+      }
+    | {
         Universe: {
           values: number[];
           universe: number;
@@ -74,6 +81,15 @@
         data.ValueUpdated.universe == currentUniverse
       ) {
         values[data.ValueUpdated.channel_index] = data.ValueUpdated.value;
+      } else if (typeof data === "object" && "ValuesUpdated" in data) {
+        console.log("Upsating values");
+        for (let i = 0; i < data.ValuesUpdated.universes.length; i++) {
+          let u = data.ValuesUpdated.universes[i];
+          if (u == currentUniverse) {
+            values[data.ValuesUpdated.channel_indexes[i]] =
+              data.ValuesUpdated.values[i];
+          }
+        }
       } else if (
         typeof data === "object" &&
         "Universe" in data &&

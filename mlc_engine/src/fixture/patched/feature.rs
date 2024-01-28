@@ -1,20 +1,28 @@
+pub mod apply;
+
 use crate::fixture::{
     DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureMode, FixtureType,
 };
 
 use super::{UniverseAddress, UniverseId};
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct Dimmer {
+    pub dimmer: FeatureTile,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct Rgb {
+    pub red: FeatureTile,
+    pub green: FeatureTile,
+    pub blue: FeatureTile,
+}
+
 // Indexes are offsets from the start_index of the Fixture
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub enum FixtureFeature {
-    Dimmer {
-        dimmer: FeatureTile,
-    },
-    Rgb {
-        red: FeatureTile,
-        green: FeatureTile,
-        blue: FeatureTile,
-    },
+    Dimmer(Dimmer),
+    Rgb(Rgb),
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -65,7 +73,7 @@ fn search_dimmer(
             for cap in &caps.capabilities {
                 match cap {
                     FixtureCapability::Intensity(d) => {
-                        return Some(FixtureFeature::Dimmer {
+                        return Some(FixtureFeature::Dimmer(Dimmer {
                             dimmer: FeatureTile {
                                 channel: FeatureChannel(i),
                                 fader: FaderAddress {
@@ -74,7 +82,7 @@ fn search_dimmer(
                                 },
                                 range: d.dmx_range,
                             },
-                        });
+                        }));
                     }
                     _ => {}
                 }
@@ -143,11 +151,11 @@ fn search_rgb(
     }
 
     if red.is_some() && green.is_some() && blue.is_some() {
-        Some(FixtureFeature::Rgb {
+        Some(FixtureFeature::Rgb(Rgb {
             red: red.expect(""),
             green: green.expect(""),
             blue: blue.expect(""),
-        })
+        }))
     } else {
         None
     }

@@ -1,8 +1,9 @@
 pub mod endpoints;
 
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 
 use rocket::{
+    form::validate::Len,
     futures::{SinkExt, StreamExt},
     get, post, routes,
     serde::json::Json,
@@ -20,7 +21,13 @@ use rocket_ws::WebSocket;
 
 use crate::{
     data_serving::Info,
-    fixture::{UniverseAddress, UniverseId, UNIVERSE_SIZE},
+    fixture::{
+        feature::{
+            apply::{ApplyFeature, FeatureSetRequest},
+            FixtureFeature,
+        },
+        DmxRange, UniverseAddress, UniverseId, UNIVERSE_SIZE,
+    },
     module::Module,
     project::Project,
     send,
@@ -31,7 +38,7 @@ use self::endpoints::{EndPointConfig, EndpointData};
 #[derive(Debug)]
 struct RuntimeI {
     universe_values: HashMap<UniverseId, [u8; UNIVERSE_SIZE]>,
-    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>,
+    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>, //TODO: Only one Sender needed
     sender: Sender<RuntimeUpdate>,
 }
 
@@ -83,7 +90,7 @@ impl RuntimeData {
                     send!(vs, EndpointData::Exit);
                 }
             }
-            sleep(Duration::from_millis(500)).await;
+            sleep(Duration::from_millis(800)).await; // To allow port freeing
             let t = c.create_endpoints().await;
             data.end_points = t;
             for (id, v) in &data.end_points {
@@ -113,7 +120,45 @@ impl RuntimeData {
             );
             self.update_endpoints(universe, channel, value, &data.end_points)
                 .await;
+        } else {
+            println!("No Values");
         }
+    }
+    pub async fn set_values(
+        &self,
+        universes: Vec<UniverseId>,
+        channels: Vec<UniverseAddress>,
+        values: Vec<u8>,
+    ) {
+        let mut data = self.inner.lock().await;
+
+        let mut u_u = vec![];
+        let mut c_u = vec![];
+        let mut v_u = vec![];
+
+        for i in 0..universes.len() {
+            let values_u = data.universe_values.get_mut(&universes[i]);
+            if let Some(values_u) = values_u {
+                let index: u16 = channels[i].into();
+                values_u[index as usize] = values[i];
+                u_u.push(universes[i]);
+                c_u.push(channels[i]);
+                v_u.push(values[i]);
+                // self.update_endpoints(universe, channel, value, &data.end_points)
+                //     .await;
+            }
+        }
+
+        send!(
+            data.sender,
+            RuntimeUpdate::ValuesUpdated {
+                universes: u_u.clone(),
+                channel_indexes: c_u.iter().map(|i| (*i).into()).collect(),
+                values: v_u.clone()
+            }
+        );
+        self.update_endpoints_batch(u_u, c_u, v_u, &data.end_points)
+            .await;
     }
 
     async fn update_endpoints(
@@ -133,6 +178,54 @@ impl RuntimeData {
                         value
                     }
                 );
+            }
+        }
+    }
+
+    async fn update_endpoints_batch(
+        &self,
+        verse_ids: Vec<UniverseId>,
+        indexs: Vec<UniverseAddress>,
+        values: Vec<u8>,
+        endpoints: &HashMap<UniverseId, Vec<Sender<EndpointData>>>,
+    ) {
+        let mut map: HashMap<UniverseId, Vec<(UniverseAddress, u8)>> = HashMap::new();
+        let mut i = 0;
+        for verse_id in verse_ids {
+            if map.contains_key(&verse_id) {
+                map.get_mut(&verse_id)
+                    .expect("Checked")
+                    .push((indexs[i], values[i]));
+            } else {
+                map.insert(verse_id, vec![(indexs[i], values[i])]);
+            }
+
+            i += 1;
+        }
+        for verse_id in map.keys() {
+            let point = endpoints.get(&verse_id);
+            if let Some(point) = point {
+                let cs: Vec<_> = map
+                    .get(verse_id)
+                    .expect("Checked")
+                    .iter()
+                    .map(|i| i.0)
+                    .collect();
+                let vs: Vec<_> = map
+                    .get(verse_id)
+                    .expect("Checked")
+                    .iter()
+                    .map(|i| i.1)
+                    .collect();
+                for v in point {
+                    send!(
+                        v,
+                        EndpointData::Multiple {
+                            channels: cs.clone(),
+                            values: vs.clone()
+                        }
+                    );
+                }
             }
         }
     }
@@ -161,12 +254,34 @@ pub enum RuntimeUpdate {
         channel_index: usize,
         value: u8,
     },
+    ValuesUpdated {
+        universes: Vec<UniverseId>,
+        channel_indexes: Vec<usize>,
+        values: Vec<u8>,
+    },
     Universe {
         universe: UniverseId,
         #[serde_as(as = "[_;UNIVERSE_SIZE]")]
         values: [u8; UNIVERSE_SIZE],
         author: usize,
     },
+}
+
+pub trait ToFaderValue {
+    fn to_fader_value(&self) -> u8;
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8;
+}
+
+impl ToFaderValue for f32 {
+    fn to_fader_value(&self) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (255.0 * v) as u8
+    }
+
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (range.range() as f32 * v) as u8 + range.start
+    }
 }
 
 pub struct RuntimeModule;
@@ -181,7 +296,8 @@ impl Module for RuntimeModule {
                 get_value_updates,
                 set_value,
                 get_endpoint_config,
-                set_endpoint_config
+                set_endpoint_config,
+                set_feature
             ],
         )
     }
@@ -281,4 +397,55 @@ async fn set_endpoint_config(
     project.set_endpoint_config(data.0).await;
     runtime.adapt(project, false).await;
     send!(tx, Info::EndpointConfigChanged);
+}
+
+#[get("/feature/<fix_id>")]
+async fn set_feature<'a>(
+    ws: WebSocket,
+    mut shutdown: Shutdown,
+    fix_id: String,
+    runtime: &'a State<RuntimeData>,
+    project: &'a State<Project>,
+) -> rocket_ws::Channel<'a> {
+    let id = uuid::Uuid::from_str(&fix_id);
+
+    async fn get_features(id: uuid::Uuid, project: &Project) -> Option<Vec<FixtureFeature>> {
+        let universes = project.get_universes().await;
+        for universe in universes {
+            let u = project.get_universe(&universe).await.expect("Queried");
+            let fs = u.get_fixtures();
+            for f in fs {
+                if f.id == id {
+                    return Some(f.features.clone());
+                }
+            }
+        }
+
+        None
+    }
+
+    ws.channel(move |mut stream| {
+        Box::pin(async move {
+            if let Ok(id) = id {
+                if let Some(fs) = get_features(id, project).await {
+                    let r = (runtime.inner()).clone();
+                    loop {
+                        select! {
+                            Some(msg) = stream.next() => {
+                                if let Ok(msg) = msg {
+                                    let fsr: FeatureSetRequest = serde_json::from_str(msg.to_text().unwrap()).expect("Must be");
+                                    println!("Got request");
+                                    fs.apply(fsr, &r).await;
+                                }
+                            }
+                            _ = &mut shutdown => {
+                                break;
+                            }
+                        };
+                    }
+                }
+            }
+            Ok(())
+        })
+    })
 }

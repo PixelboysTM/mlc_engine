@@ -132,8 +132,14 @@ pub enum FixtureCapability {
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct DmxRange {
-    start: u8,
-    end: u8,
+    pub start: u8,
+    pub end: u8,
+}
+
+impl DmxRange {
+    pub fn range(&self) -> u8 {
+        self.end - self.start
+    }
 }
 
 fn full_range() -> DmxRange {

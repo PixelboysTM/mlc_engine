@@ -13,14 +13,14 @@ use super::{FixtureChannel, FixtureType};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedFixture {
-    pub(in crate::fixture) config: FixtureType,
-    pub(in crate::fixture) num_channels: u8,
-    pub(in crate::fixture) channels: Vec<PatchedChannel>,
-    pub(in crate::fixture) start_channel: UniverseAddress,
-    pub(in crate::fixture) name: String,
-    pub(in crate::fixture) mode: usize,
-    pub(in crate::fixture) features: Vec<FixtureFeature>,
-    pub(in crate::fixture) id: uuid::Uuid,
+    pub config: FixtureType,
+    pub num_channels: u8,
+    pub channels: Vec<PatchedChannel>,
+    pub start_channel: UniverseAddress,
+    pub name: String,
+    pub mode: usize,
+    pub features: Vec<FixtureFeature>,
+    pub id: uuid::Uuid,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
