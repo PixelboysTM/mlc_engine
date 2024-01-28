@@ -108,7 +108,7 @@
 <style>
   [data-tooltip] {
     position: relative;
-    cursor: help;
+    cursor: pointer;
   }
 
   [data-tooltip]::after {
