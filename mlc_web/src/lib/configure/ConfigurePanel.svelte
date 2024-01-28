@@ -17,9 +17,7 @@
     });
 
   function format_time(timeString: string) {
-    console.log(timeString);
     let time = new Date(timeString);
-    console.log(time);
 
     return (
       time.getDate() +

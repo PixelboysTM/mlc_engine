@@ -77,8 +77,6 @@
       .then((res) => {
         if (res.ok) {
           res.json().then((data: string[]) => {
-            console.log("imported");
-            console.log(data);
             upload(JSON.stringify(data));
           });
         } else {

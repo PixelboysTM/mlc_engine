@@ -8,7 +8,6 @@
   import marvin from "./assets/icon.png";
 
   let s = info.subscribe((data) => {
-    console.log(data);
     if (data == "FixtureTypesUpdated") {
       toastNotifier.push({
         level: "info",

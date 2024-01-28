@@ -8,7 +8,6 @@
   loadTypes();
 
   let s = info.subscribe((data) => {
-    console.log(data);
     if (data == "FixtureTypesUpdated") {
       loadTypes();
     }
@@ -18,7 +17,6 @@
     fixtureTypes = fetch("/data/get/fixture-types")
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
         return data;
       });
   }

@@ -31,6 +31,7 @@
 
 <svelte:body
   on:mousedown={(e) => {
+    if (!isEdit) return;
     let box = popup.getBoundingClientRect();
     if (
       e.x < box.left ||
