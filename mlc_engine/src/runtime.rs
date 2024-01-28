@@ -96,13 +96,7 @@ impl RuntimeData {
         }
     }
 
-    pub async fn set_value(
-        &self,
-        universe: UniverseId,
-        channel: UniverseAddress,
-        value: u8,
-        author: Option<usize>,
-    ) {
+    pub async fn set_value(&self, universe: UniverseId, channel: UniverseAddress, value: u8) {
         let mut data = self.inner.lock().await;
 
         let values = data.universe_values.get_mut(&universe);
@@ -115,7 +109,6 @@ impl RuntimeData {
                     universe,
                     channel_index: index as usize,
                     value,
-                    author: author.unwrap_or(0)
                 }
             );
             self.update_endpoints(universe, channel, value, &data.end_points)
@@ -167,7 +160,6 @@ pub enum RuntimeUpdate {
         universe: UniverseId,
         channel_index: usize,
         value: u8,
-        author: usize,
     },
     Universe {
         universe: UniverseId,
@@ -241,7 +233,6 @@ struct FaderUpdateRequest {
     universe: UniverseId,
     channel: UniverseAddress,
     value: u8,
-    author: usize,
 }
 
 #[get("/fader-values/set")]
@@ -267,7 +258,7 @@ async fn set_value(
                     if let Ok(msg) = msg {
                         let req: FaderUpdateRequest =
                             serde_json::from_str(msg.to_text().unwrap()).unwrap();
-                        rd.set_value(req.universe, req.channel, req.value, Some(req.author)).await;
+                        rd.set_value(req.universe, req.channel, req.value).await;
                     }
                 },
                     _ = &mut shutdown => {

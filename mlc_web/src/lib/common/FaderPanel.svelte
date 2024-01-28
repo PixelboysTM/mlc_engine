@@ -1,23 +1,19 @@
 <script lang="ts">
-  import type { UIEventHandler } from "svelte/elements";
   import Fader from "./Fader.svelte";
   import { info } from "../stores";
-  import { seededRandom } from "three/src/math/MathUtils.js";
 
   let values: number[] = [];
   for (let i = 0; i < 512; i++) {
-    // let x = Math.floor(Math.random() * 255);
     values.push(0);
   }
   let currentUniverse = 0;
-
-  let authId: number = Math.ceil(Math.random() * 1000000);
 
   let universes: number[] = [];
   fetch("/data/universes").then((body) =>
     body.json().then((json) => {
       universes = json;
       currentUniverse = universes.at(0) ?? 1;
+      setUniverse(currentUniverse);
     })
   );
 
@@ -50,14 +46,12 @@
           universe: number;
           channel_index: number;
           value: number;
-          author: number;
         };
       }
     | {
         Universe: {
           values: number[];
           universe: number;
-          author: number;
         };
       };
   function getValuesWs() {
@@ -74,18 +68,16 @@
     const socket = new WebSocket(new_uri);
     socket.addEventListener("message", function (event: MessageEvent<string>) {
       let data = JSON.parse(event.data) as RuntimeValueUpdate;
-      // console.log(data.ValueUpdated != undefined);
       if (
         typeof data === "object" &&
         "ValueUpdated" in data &&
-        data.ValueUpdated.author != authId
+        data.ValueUpdated.universe == currentUniverse
       ) {
         values[data.ValueUpdated.channel_index] = data.ValueUpdated.value;
       } else if (
         typeof data === "object" &&
         "Universe" in data &&
-        data.Universe.universe == currentUniverse &&
-        data.Universe.author != authId
+        data.Universe.universe == currentUniverse
       ) {
         values = data.Universe.values;
       }
@@ -118,9 +110,7 @@
       universe: currentUniverse,
       channel: channel,
       value: value.detail,
-      author: authId,
     });
-    console.log(json);
     setSock.send(json);
   }
 
@@ -146,7 +136,7 @@
   </div>
   <div class="faders">
     {#each values as value, i}
-      <Fader v={value} on:set={(v) => setBinding(i, v)} name={makeName(i + 1)}
+      <Fader {value} on:set={(v) => setBinding(i, v)} name={makeName(i + 1)}
       ></Fader>
     {/each}
   </div>

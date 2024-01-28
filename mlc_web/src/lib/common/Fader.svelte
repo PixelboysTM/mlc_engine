@@ -1,52 +1,35 @@
 <script lang="ts">
-  import { createSlider, melt } from "@melt-ui/svelte";
   import { createEventDispatcher } from "svelte";
 
+  export let value: number = 0;
   export let name: string = "";
 
-  export let v: number = 0;
+  let isDown = false;
+  let range: HTMLDivElement;
+  function resize(e: MouseEvent) {
+    if (!isDown) return;
+    let cur = e.y;
+    // console.log(e);
+    // console.log(range);
+    // console.log(range.getBoundingClientRect());
+    let start = range.getBoundingClientRect().y;
+    let height = range.getBoundingClientRect().height;
 
-  // let range: HTMLDivElement;
-  // function resize(e: MouseEvent) {
-  //   if (!isDown) return;
-  //   let cur = e.y;
-  //   console.log(e);
-  //   console.log(range);
-  //   console.log(range.getBoundingClientRect());
-  //   let start = range.getBoundingClientRect().y;
-  //   let height = range.getBoundingClientRect().height;
-
-  //   let t = (1 - (cur - start) / height) * 255;
-  //   value = Math.max(0, Math.min(255, Math.floor(t)));
-  //   dispatchSet();
-  // }
+    let t = (1 - (cur - start) / height) * 255;
+    value = Math.max(0, Math.min(255, Math.floor(t)));
+    dispatchSet();
+  }
 
   const dispatch = createEventDispatcher();
-  // function dispatchSet() {
-  // }
+  function dispatchSet() {
+    dispatch("set", value);
+  }
 
   let isEdit = false;
-  // let popup: HTMLDivElement;
-
-  const {
-    elements: { root, range, thumbs },
-    states: { value },
-  } = createSlider({
-    defaultValue: [v],
-    max: 255,
-    orientation: "vertical",
-  });
-
-  // value.subscribe((vl) => {
-  //   dispatchSet();
-  // });
-
-  $: dispatch("set", $value[0]);
-
-  $: $value = [v];
+  let popup: HTMLDivElement;
 </script>
 
-<!-- <svelte:body
+<svelte:body
   on:mousedown={(e) => {
     let box = popup.getBoundingClientRect();
     if (
@@ -62,18 +45,11 @@
   on:mouseup={(e) => {
     isDown = false;
   }}
-/> -->
+/>
 
 <div class="fader">
   <div class="fader__name">{name}</div>
-
-  <span use:melt={$root} class="range">
-    <span class="filler">
-      <span use:melt={$range} class="inner"></span>
-    </span>
-    <span use:melt={$thumbs[0]}></span>
-  </span>
-  <!-- <div class="range" bind:this={range}>
+  <div class="range" bind:this={range}>
     <div
       class="filler"
       style="height: {(1 - value / 255) * 100}%;"
@@ -98,7 +74,7 @@
       aria-valuemax={255}
       tabindex={0}
     />
-  </div> -->
+  </div>
   <div
     class="fader__value"
     on:click={(e) => {
@@ -109,9 +85,9 @@
     tabindex={1}
     on:keypress
   >
-    <p>{$value[0]}</p>
+    <p>{value}</p>
   </div>
-  <!-- {#if isEdit}
+  {#if isEdit}
     <div
       class="fader-popup"
       bind:this={popup}
@@ -126,7 +102,7 @@
         max={255}
       />
     </div>
-  {/if} -->
+  {/if}
 </div>
 
 <style>
@@ -173,20 +149,16 @@
     overflow: hidden;
     border-top: #151111 1px solid;
     border-bottom: #151111 1px solid;
-    position: relative;
   }
 
   .filler {
     width: 100%;
     cursor: ns-resize;
-    display: block;
-    height: 100%;
   }
   .inner {
     width: 100%;
     background: linear-gradient(0deg, #fff 0%, #ff3e3e 100%);
     cursor: ns-resize;
-    transform: translateX(-50%);
   }
 
   .fader__value {
