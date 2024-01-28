@@ -246,13 +246,6 @@ async fn set_value(
     ws.channel(move |mut stream| {
         Box::pin(async move {
             loop {
-                // if let Some(msg) = stream.next().await {
-                //     if let Ok(msg) = msg {
-                //         let req: FaderUpdateRequest =
-                //             serde_json::from_str(msg.to_text().unwrap()).unwrap();
-                //         rd.set_value(req.universe, req.channel, req.value).await;
-                //     }
-                // }
                 select! {
                     Some(msg) = stream.next() => {
                     if let Ok(msg) = msg {

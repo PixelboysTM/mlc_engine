@@ -101,7 +101,8 @@ impl FixtureUniverse {
                 fixture.get_modes()[mode_index].get_name()
             ),
             mode: mode_index,
-            features: find_features(fixture, mode),
+            features: find_features(fixture, mode, self.id, start_index.into()),
+            id: uuid::Uuid::new_v4(),
         };
 
         let fixture_index = self.fixtures.len();

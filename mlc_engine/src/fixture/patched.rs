@@ -1,5 +1,6 @@
 pub mod feature;
 
+use std::ops::Add;
 use std::{fmt::Debug, num::ParseIntError};
 
 use rocket::request::FromParam;
@@ -19,6 +20,7 @@ pub struct PatchedFixture {
     pub(in crate::fixture) name: String,
     pub(in crate::fixture) mode: usize,
     pub(in crate::fixture) features: Vec<FixtureFeature>,
+    pub(in crate::fixture) id: uuid::Uuid,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -116,6 +118,20 @@ impl From<usize> for UniverseAddress {
 impl From<UniverseAddress> for u16 {
     fn from(value: UniverseAddress) -> Self {
         value.adds as u16 + if value.add_256 { 256 } else { 0 }
+    }
+}
+impl From<UniverseAddress> for usize {
+    fn from(value: UniverseAddress) -> Self {
+        value.adds as usize + if value.add_256 { 256 } else { 0 }
+    }
+}
+
+impl Add<usize> for UniverseAddress {
+    type Output = UniverseAddress;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        let s: usize = self.into();
+        (s + rhs).into()
     }
 }
 

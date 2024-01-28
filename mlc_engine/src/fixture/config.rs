@@ -129,7 +129,7 @@ pub enum FixtureCapability {
     // EffectSpeed,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct DmxRange {
     start: u8,

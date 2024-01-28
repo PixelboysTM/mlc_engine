@@ -12,7 +12,10 @@ use std::net::{IpAddr, Ipv4Addr};
 use data_serving::{DataServingModule, Info};
 use module::{Application, Module};
 use project::Project;
-use rocket::{catch, catchers, config::Ident, get, launch, routes, serde::json::Json, Config};
+use rocket::{
+    catch, catchers, config::Ident, get, launch, routes, serde::json::Json,
+    tokio::sync::broadcast::Sender, Config, State,
+};
 use runtime::RuntimeModule;
 use settings::SettingsModule;
 use ui_serving::UiServingModule;
@@ -76,10 +79,16 @@ impl Module for MainModule {
             .manage(rx)
             .register("/", catchers![catch_404])
             .configure(config)
-            .mount("/util", routes![heart_beat])
+            .mount("/util", routes![heart_beat, create_empty])
     }
 }
 #[catch(404)]
 fn catch_404() -> &'static str {
     "Resource not available"
+}
+
+#[get("/dCreate/<name>")]
+async fn create_empty(name: &str, info: &State<Sender<Info>>) {
+    let project = Project::default();
+    project.save_as(name, info).await.unwrap();
 }
