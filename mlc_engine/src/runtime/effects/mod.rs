@@ -1,6 +1,10 @@
+use std::collections::HashMap;
+
 use chrono::Duration;
+use rocket::fairing::AdHoc;
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::tokio::select;
+use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
 use rocket::{get, routes, Shutdown, State};
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
@@ -16,7 +20,21 @@ pub struct EffectModule;
 
 impl Module for EffectModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-        app.mount("/effects", routes![get_effect_handler])
+        let tx = startup_effect_player(
+            app.state::<RuntimeData>().unwrap().clone(),
+            app.state::<Project>().unwrap().clone(),
+        );
+
+        app.manage(tx)
+            .attach(AdHoc::on_shutdown("Shutdown EffectPlayer", |a| {
+                Box::pin(async move {
+                    let _ = a
+                        .state::<Sender<EffectPlayerAction>>()
+                        .unwrap()
+                        .send(EffectPlayerAction::Stop);
+                })
+            }))
+            .mount("/effects", routes![get_effect_handler])
     }
 }
 
@@ -70,7 +88,8 @@ pub enum EffectHandlerRequest {
 fn get_effect_handler<'a>(
     ws: WebSocket,
     mut shutdown: Shutdown,
-    runtime: &'a State<RuntimeData>,
+    // runtime: &'a State<RuntimeData>,
+    tx: &'a State<Sender<EffectPlayerAction>>,
     project: &'a State<Project>,
 ) -> rocket_ws::Channel<'a> {
     ws.channel(move |mut stream| {
@@ -80,7 +99,7 @@ fn get_effect_handler<'a>(
                     Some(msg) = stream.next() => {
                         if let Ok(msg) = msg {
                             let req: EffectHandlerRequest = serde_json::from_str(msg.to_text().unwrap()).expect("Must be");
-                            handle_msg(&mut stream, req, runtime, project).await;
+                            handle_msg(&mut stream, req, tx, project).await;
                         }
                     }
 
@@ -97,8 +116,9 @@ fn get_effect_handler<'a>(
 async fn handle_msg(
     stream: &mut DuplexStream,
     req: EffectHandlerRequest,
-    runtime: &State<RuntimeData>,
-    project: &State<Project>,
+    // runtime: &State<RuntimeData>,
+    tx: &Sender<EffectPlayerAction>,
+    project: &Project,
 ) {
     match req {
         EffectHandlerRequest::Create { name } => {
@@ -122,10 +142,164 @@ async fn handle_msg(
             let _ = stream
                 .send(make_msg(&EffectHandlerResponse::EffectUpdated { id }))
                 .await;
+            tx.send(EffectPlayerAction::EffectsChanged { id }).unwrap();
         }
     }
 }
 
 fn make_msg<T: serde::Serialize>(t: &T) -> rocket_ws::Message {
     rocket_ws::Message::Text(serde_json::to_string(t).unwrap())
+}
+
+struct EffectPlayerI {
+    runtime: RuntimeData,
+    project: Project,
+    effects: HashMap<uuid::Uuid, BakedEffect>,
+    rx: Receiver<EffectPlayerAction>,
+    time: chrono::NaiveTime,
+}
+
+#[derive(Debug, Clone)]
+pub enum EffectPlayerAction {
+    Stop,
+    EffectsChanged { id: uuid::Uuid },
+    Rebake,
+}
+
+#[derive(Debug)]
+pub struct BakedEffect {
+    faders: HashMap<FaderAddress, Vec<(Duration, u8)>>,
+    current_time: Duration,
+    max_time: Duration,
+}
+
+fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<EffectPlayerAction> {
+    let (tx, rx) = broadcast::channel(500);
+
+    rocket::tokio::spawn(async move {
+        let effect_player = EffectPlayerI {
+            effects: HashMap::new(),
+            project,
+            runtime,
+            rx,
+            time: chrono::Utc::now().naive_utc().time(),
+        };
+        effect_player.start().await;
+    });
+
+    tx
+}
+
+impl EffectPlayerI {
+    async fn start(mut self) {
+        let mut sleep = rocket::tokio::time::interval(std::time::Duration::from_millis(10));
+        loop {
+            select! {
+                _ = sleep.tick() => {
+                    self.update().await;
+                }
+                Ok(msg) = self.rx.recv() => {
+                    match msg {
+                        EffectPlayerAction::Stop => break,
+                        EffectPlayerAction::Rebake => {
+                            self.bake_effects().await;
+                        }
+                        EffectPlayerAction::EffectsChanged{..} => {
+                            self.bake_effects().await;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    async fn update(&mut self) {
+        let now = chrono::Utc::now().naive_utc().time();
+        let elapsed = now - self.time;
+        self.time = now;
+
+        let mut value_map = HashMap::new();
+
+        for (_, e) in &mut self.effects {
+            if e.max_time < Duration::milliseconds(2) {
+                continue;
+            }
+
+            e.current_time = e.current_time + elapsed;
+            while e.current_time > e.max_time {
+                e.current_time = e.current_time - e.max_time;
+            }
+
+            for f in &e.faders {
+                let mut value = 0;
+                for (i, (d, v)) in f.1.iter().enumerate() {
+                    if &e.current_time > d {
+                        value = *v;
+                    }
+                }
+                value_map.insert(*f.0, value);
+            }
+        }
+
+        let mut universes = vec![];
+        let mut channels = vec![];
+        let mut values = vec![];
+
+        for (k, v) in value_map {
+            universes.push(k.universe);
+            channels.push(k.address);
+            values.push(v);
+        }
+
+        self.runtime.set_values(universes, channels, values).await;
+    }
+
+    async fn bake_effects(&mut self) {
+        let p = self.project.lock().await;
+        let effects = &p.effects;
+
+        for ele in effects {
+            let baked = bake(ele).await;
+            self.effects.insert(ele.id, baked);
+        }
+
+        println!("Finished Baking!");
+    }
+}
+
+async fn bake(effect: &Effect) -> BakedEffect {
+    let mut faders = HashMap::new();
+    let mut max_time: Duration = Duration::milliseconds(0);
+
+    for track in &effect.tracks {
+        match track {
+            CueTrack::FaderCue(cue) => {
+                faders.insert(cue.address, bake_fader_cue(cue, &mut max_time))
+            }
+        };
+    }
+
+    BakedEffect {
+        faders,
+        max_time,
+        current_time: Duration::milliseconds(0),
+    }
+}
+
+fn bake_fader_cue(fader_cue: &FaderCue, max_time: &mut Duration) -> Vec<(Duration, u8)> {
+    let mut vals: Vec<_> = fader_cue
+        .values
+        .iter()
+        .filter(|k| k.start_time <= fader_cue.duration && k.start_time >= Duration::milliseconds(0))
+        .map(|f| (f.start_time, f.value))
+        .collect();
+    vals.sort_by_key(|k| k.0);
+    let current_max = vals.last();
+    if let Some((d, _)) = current_max {
+        if d > max_time {
+            *max_time = d.clone();
+        }
+    }
+
+    vals
 }

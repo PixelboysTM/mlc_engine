@@ -29,7 +29,7 @@ pub struct PatchedChannel {
     pub(in crate::fixture) channel_address: UniverseAddress,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UniverseAddress {
     add_256: bool,
     adds: u8,

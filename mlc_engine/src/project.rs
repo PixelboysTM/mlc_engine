@@ -35,6 +35,7 @@ pub(crate) struct ProjectI {
     pub(crate) endpoints: EndPointConfig,
 }
 
+#[derive(Debug, Clone)]
 pub struct Project {
     project: Arc<Mutex<ProjectI>>,
 }
