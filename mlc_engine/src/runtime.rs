@@ -442,11 +442,24 @@ async fn set_feature<'a>(
                     let r = (runtime.inner()).clone();
                     loop {
                         select! {
-                            Some(msg) = stream.next() => {
-                                if let Ok(msg) = msg {
-                                    let fsr: FeatureSetRequest = serde_json::from_str(msg.to_text().unwrap()).expect("Must be");
-                                    println!("Got request");
-                                    fs.apply(fsr, &r).await;
+                            pot_msg = stream.next() => {
+                                if let Some(msg) = pot_msg {
+                                    if let Ok(msg) = msg {
+                                        if msg.is_close() {
+                                            break;
+                                        }
+
+                                        let msg = msg.to_text().unwrap();
+
+                                        let fsr: FeatureSetRequest = serde_json::from_str(msg).expect("Must be");
+                                        if let FeatureSetRequest::GetAvailableFeatures = fsr {
+                                            stream.send(rocket_ws::Message::text(serde_json::to_string(&fs.iter().map(|s| s.name()).collect::<Vec<_>>()).unwrap())).await.unwrap();
+                                        } else {
+                                            fs.apply(fsr, &r).await;
+                                        }
+                                    }
+                                } else {
+                                    break;
                                 }
                             }
                             _ = &mut shutdown => {

@@ -29,6 +29,7 @@
     "@threlte/theatre": "^2.1.6",
     "@threlte/xr": "^0.1.2",
     "@types/three": "^0.160.0",
+    "svelte-awesome-color-picker": "^3.0.4",
     "svelte-icons": "^2.1.0",
     "svelte-icons-pack": "^2.1.0",
     "three": "^0.160.1"

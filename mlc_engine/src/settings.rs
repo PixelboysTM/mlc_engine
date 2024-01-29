@@ -11,7 +11,7 @@ use crate::{
     data_serving::{Info, ProjectGuard},
     module::Module,
     project::{self, Project, Settings},
-    runtime::RuntimeData,
+    runtime::{effects::EffectPlayerAction, RuntimeData},
     ui_serving::ProjectSelection,
 };
 
@@ -74,12 +74,15 @@ async fn load_project(
     project_selection: &State<ProjectSelection>,
     info: &State<Sender<Info>>,
     runtime: &State<RuntimeData>,
+    effect_handler: &State<Sender<EffectPlayerAction>>,
 ) -> Result<String, String> {
     if project_selection.0.lock().await.is_some() {
         return Err("Project already loaded why on this page.".to_string());
     }
 
-    let result = project.load(name, info.inner(), runtime).await;
+    let result = project
+        .load(name, info.inner(), runtime, effect_handler)
+        .await;
     if result.is_err() {
         eprintln!("{:?}", result.unwrap_err());
         return result.map_err(|e| e.to_string()).map(|_| "".to_string());

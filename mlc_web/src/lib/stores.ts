@@ -1,15 +1,21 @@
 import { readable, writable, type Readable, type Writable } from "svelte/store";
 
+export function make_ws_uri(path: string): string {
+  var loc = window.location, new_uri;
+  if(loc.protocol === "https:") {
+    new_uri = "wss:";
+  } else {
+    new_uri = "ws:";
+  }
+  new_uri += "//" + loc.host;
+  new_uri += loc.pathname + path;
+  return new_uri;
+}
+
 export type InfoKind = "None" | "FixtureTypesUpdated" | "ProjectSaved" | "ProjectLoaded" | "SystemShutdown" | "UniversesUpdated" | {"UniversePatchChanged": number}; 
 export const info: Readable<InfoKind> = readable("None", function start(set) {
-  var loc = window.location, new_uri;
-if (loc.protocol === "https:") {
-    new_uri = "wss:";
-} else {
-    new_uri = "ws:";
-}
-new_uri += "//" + loc.host;
-new_uri += loc.pathname + "/data/info";
+
+var new_uri = make_ws_uri("/data/info");
 
   const socket = new WebSocket(new_uri);
 

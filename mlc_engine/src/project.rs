@@ -9,7 +9,11 @@ use rocket::{
 use crate::{
     data_serving::Info,
     fixture::{FixtureType, FixtureUniverse, UniverseId},
-    runtime::{effects::Effect, endpoints::EndPointConfig, RuntimeData},
+    runtime::{
+        effects::{Effect, EffectPlayerAction},
+        endpoints::EndPointConfig,
+        RuntimeData,
+    },
     send,
     settings::ProjectDefinition,
 };
@@ -76,6 +80,7 @@ impl Project {
         name: &str,
         info: &Sender<Info>,
         runtime: &RuntimeData,
+        effect_handler: &Sender<EffectPlayerAction>,
     ) -> Result<(), &str> {
         if let Some(path) = make_path(name) {
             if let Ok(json_data) = std::fs::read_to_string(path) {
@@ -93,6 +98,7 @@ impl Project {
         }
 
         runtime.adapt(self, true).await;
+        effect_handler.send(EffectPlayerAction::Rebake);
         send!(info, Info::ProjectLoaded);
 
         Ok(())

@@ -2,6 +2,7 @@
   import type { FixtureUniverse } from "fixture-types";
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
   import { info } from "../stores";
+  import FixtureTester from "./fixtureTester/FixtureTester.svelte";
   let promise: Promise<number[]>;
   getUniverses();
 
@@ -48,6 +49,10 @@
       return "middle";
     }
   }
+
+  var id: string;
+  var name: string;
+  var open = false;
 </script>
 
 {#await promise}
@@ -82,6 +87,16 @@
                   data.fixtures[channel.fixture_index].num_channels,
                   channel.channel_index
                 )}"
+                on:click={() => {
+                  if (channel) {
+                    id = data.fixtures[channel.fixture_index].id;
+                    name = data.fixtures[channel.fixture_index].name;
+                    open = true;
+                  }
+                }}
+                on:keypress
+                role="button"
+                tabindex={0}
               >
                 {#if channel.channel_index == 0}
                   <code
@@ -104,6 +119,10 @@
 {:catch error}
   <p>Error loading universes</p>
 {/await}
+
+{#if open}
+  <FixtureTester {id} {name} on:close={(e) => (open = false)}></FixtureTester>
+{/if}
 
 <style>
   [data-tooltip] {

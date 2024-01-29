@@ -10,6 +10,7 @@ pub trait ApplyFeature {
 pub enum FeatureSetRequest {
     Dimmer { value: f32 },
     Rgb { red: f32, green: f32, blue: f32 },
+    GetAvailableFeatures,
 }
 
 impl ApplyFeature for Vec<FixtureFeature> {
@@ -17,7 +18,6 @@ impl ApplyFeature for Vec<FixtureFeature> {
         match req {
             FeatureSetRequest::Dimmer { value } => {
                 if let Some(d) = find_dimmer(self) {
-                    println!("FOund Dimmer");
                     runtime_data
                         .set_value(
                             d.dimmer.fader.universe,
@@ -25,7 +25,6 @@ impl ApplyFeature for Vec<FixtureFeature> {
                             value.to_fader_value_range(&d.dimmer.range),
                         )
                         .await;
-                    println!("Set");
                 }
             }
             FeatureSetRequest::Rgb { red, green, blue } => {
@@ -50,6 +49,9 @@ impl ApplyFeature for Vec<FixtureFeature> {
                         )
                         .await;
                 }
+            }
+            FeatureSetRequest::GetAvailableFeatures => {
+                eprintln!("Something is not working with your code dumb ass")
             }
         }
     }

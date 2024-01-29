@@ -25,6 +25,15 @@ pub enum FixtureFeature {
     Rgb(Rgb),
 }
 
+impl FixtureFeature {
+    pub fn name(&self) -> &'static str {
+        match self {
+            FixtureFeature::Dimmer(_) => "Dimmer",
+            FixtureFeature::Rgb(_) => "Rgb",
+        }
+    }
+}
+
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct FeatureTile {
     channel: FeatureChannel,

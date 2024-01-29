@@ -1,13 +1,13 @@
 <script lang="ts">
   import DualRingSpinner from "./misc/DualRingSpinner.svelte";
-  import { info } from "./stores";
+  import { info, type InfoKind } from "./stores";
 
   let active = false;
   info.subscribe((data) => {
     handleData(data);
   });
 
-  function handleData(data: string) {
+  function handleData(data: InfoKind) {
     if (data == "SystemShutdown") {
       setActive();
     }

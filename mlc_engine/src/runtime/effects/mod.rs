@@ -39,23 +39,24 @@ impl Module for EffectModule {
     }
 }
 
+#[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Effect {
     id: uuid::Uuid,
     name: String,
-    tracks: Vec<CueTrack>,
-}
-
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub enum CueTrack {
-    FaderCue(FaderCue),
-}
-
-#[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub struct FaderCue {
+    looping: bool,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
     duration: Duration,
+    tracks: Vec<Track>,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub enum Track {
+    FaderTrack(FaderTrack),
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct FaderTrack {
     address: FaderAddress,
     values: Vec<FaderKey>,
 }
@@ -72,17 +73,14 @@ pub struct FaderKey {
 pub enum EffectHandlerResponse {
     EffectCreated { name: String, id: uuid::Uuid },
     EffectUpdated { id: uuid::Uuid },
+    EffectRunning { id: uuid::Uuid, running: bool },
 }
 
 #[derive(Debug, serde::Deserialize)]
 pub enum EffectHandlerRequest {
-    Create {
-        name: String,
-    },
-    Update {
-        id: uuid::Uuid,
-        tracks: Vec<CueTrack>,
-    },
+    Create { name: String },
+    Update { id: uuid::Uuid, tracks: Vec<Track> },
+    Toggle { id: uuid::Uuid },
 }
 
 #[get("/effectHandler")]
@@ -129,7 +127,9 @@ async fn handle_msg(
             p.effects.push(Effect {
                 id,
                 name: name.clone(),
+                duration: Duration::seconds(5),
                 tracks: vec![],
+                looping: false,
             });
             let _ = stream
                 .send(make_msg(&EffectHandlerResponse::EffectCreated { name, id }))
@@ -145,6 +145,9 @@ async fn handle_msg(
                 .send(make_msg(&EffectHandlerResponse::EffectUpdated { id }))
                 .await;
             tx.send(EffectPlayerAction::EffectsChanged { id }).unwrap();
+        }
+        EffectHandlerRequest::Toggle { id } => {
+            tx.send(EffectPlayerAction::Toggle { id }).unwrap();
         }
     }
 }
@@ -166,6 +169,7 @@ pub enum EffectPlayerAction {
     Stop,
     EffectsChanged { id: uuid::Uuid },
     Rebake,
+    Toggle { id: uuid::Uuid },
 }
 
 #[derive(Debug)]
@@ -173,6 +177,19 @@ pub struct BakedEffect {
     faders: HashMap<FaderAddress, Vec<(Duration, u8)>>,
     current_time: Duration,
     max_time: Duration,
+    running: bool,
+    looping: bool,
+}
+
+impl BakedEffect {
+    fn toggle(&mut self) {
+        if self.running {
+            self.running = false;
+        } else {
+            self.current_time = Duration::milliseconds(0);
+            self.running = true;
+        }
+    }
 }
 
 fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<EffectPlayerAction> {
@@ -192,27 +209,43 @@ fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<Effec
     tx
 }
 
+const EFFECT_UPDATE_FREQ: u64 = 2; //TODO: Make available in settings
+
 impl EffectPlayerI {
     async fn start(mut self) {
-        let mut sleep = rocket::tokio::time::interval(std::time::Duration::from_millis(10));
+        let mut sleep =
+            rocket::tokio::time::interval(std::time::Duration::from_millis(EFFECT_UPDATE_FREQ));
         loop {
             select! {
                 _ = sleep.tick() => {
                     self.update().await;
                 }
                 Ok(msg) = self.rx.recv() => {
-                    match msg {
-                        EffectPlayerAction::Stop => break,
-                        EffectPlayerAction::Rebake => {
-                            self.bake_effects().await;
-                        }
-                        EffectPlayerAction::EffectsChanged{..} => {
-                            self.bake_effects().await;
-                        }
+                    if self.handle_action(msg).await {
+                        break;
                     }
                 }
             }
         }
+    }
+
+    async fn handle_action(&mut self, msg: EffectPlayerAction) -> bool {
+        match msg {
+            EffectPlayerAction::Stop => return true,
+            EffectPlayerAction::Rebake => {
+                self.bake_effects().await;
+            }
+            EffectPlayerAction::EffectsChanged { id } => {
+                self.bake_effect(id).await;
+            }
+            EffectPlayerAction::Toggle { id } => {
+                if let Some(e) = self.effects.get_mut(&id) {
+                    e.toggle()
+                }
+            }
+        }
+
+        false
     }
 
     async fn update(&mut self) {
@@ -223,13 +256,19 @@ impl EffectPlayerI {
         let mut value_map = HashMap::new();
 
         for (_, e) in &mut self.effects {
-            if e.max_time < Duration::milliseconds(2) {
+            if !e.running || e.max_time < Duration::milliseconds(2) {
                 continue;
             }
 
             e.current_time = e.current_time + elapsed;
-            while e.current_time > e.max_time {
-                e.current_time = e.current_time - e.max_time;
+            if e.current_time > e.max_time {
+                if e.looping {
+                    while e.current_time > e.max_time {
+                        e.current_time = e.current_time - e.max_time;
+                    }
+                } else {
+                    e.running = false;
+                }
             }
 
             for f in &e.faders {
@@ -252,11 +291,14 @@ impl EffectPlayerI {
             channels.push(k.address);
             values.push(v);
         }
-
-        self.runtime.set_values(universes, channels, values).await;
+        if !universes.is_empty() {
+            self.runtime.set_values(universes, channels, values).await;
+        }
     }
 
     async fn bake_effects(&mut self) {
+        self.effects.clear();
+
         let p = self.project.lock().await;
         let effects = &p.effects;
 
@@ -267,41 +309,46 @@ impl EffectPlayerI {
 
         println!("Finished Baking!");
     }
+
+    async fn bake_effect(&mut self, effect: uuid::Uuid) {
+        let p = self.project.lock().await;
+        let effects = &p.effects;
+        let e = effects.iter().find(|e| e.id == effect);
+        if let Some(e) = e {
+            let baked = bake(e).await;
+            self.effects.insert(e.id, baked);
+        }
+    }
 }
 
 async fn bake(effect: &Effect) -> BakedEffect {
     let mut faders = HashMap::new();
-    let mut max_time: Duration = Duration::milliseconds(0);
 
     for track in &effect.tracks {
         match track {
-            CueTrack::FaderCue(cue) => {
-                faders.insert(cue.address, bake_fader_cue(cue, &mut max_time))
+            Track::FaderTrack(cue) => {
+                faders.insert(cue.address, bake_fader_cue(cue, &effect.duration))
             }
         };
     }
 
     BakedEffect {
         faders,
-        max_time,
+        max_time: effect.duration,
         current_time: Duration::milliseconds(0),
+        running: false,
+        looping: effect.looping,
     }
 }
 
-fn bake_fader_cue(fader_cue: &FaderCue, max_time: &mut Duration) -> Vec<(Duration, u8)> {
+fn bake_fader_cue(fader_cue: &FaderTrack, max_time: &Duration) -> Vec<(Duration, u8)> {
     let mut vals: Vec<_> = fader_cue
         .values
         .iter()
-        .filter(|k| k.start_time <= fader_cue.duration && k.start_time >= Duration::milliseconds(0))
+        .filter(|k| &k.start_time <= max_time && k.start_time >= Duration::milliseconds(0))
         .map(|f| (f.start_time, f.value))
         .collect();
     vals.sort_by_key(|k| k.0);
-    let current_max = vals.last();
-    if let Some((d, _)) = current_max {
-        if d > max_time {
-            *max_time = d.clone();
-        }
-    }
 
     vals
 }

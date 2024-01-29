@@ -17,6 +17,7 @@ declare module "fixture-types" {
         start_channel: number;
         name: string;
         mode: number;
+        id: string;
     }
 
     export interface PatchedChannel {
