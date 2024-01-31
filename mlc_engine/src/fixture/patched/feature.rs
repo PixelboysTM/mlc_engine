@@ -25,6 +25,12 @@ pub struct Rotation {
     pub ccw: FeatureTile,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct PanTilt {
+    pub pan: FeatureTile,
+    pub tilt: FeatureTile,
+}
+
 // Indexes are offsets from the start_index of the Fixture
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub enum FixtureFeature {
@@ -32,6 +38,7 @@ pub enum FixtureFeature {
     White(Dimmer),
     Rgb(Rgb),
     Rotation(Rotation),
+    PanTilt(PanTilt),
 }
 
 impl FixtureFeature {
@@ -41,6 +48,7 @@ impl FixtureFeature {
             FixtureFeature::White(_) => "White",
             FixtureFeature::Rgb(_) => "Rgb",
             FixtureFeature::Rotation(_) => "Rotation",
+            FixtureFeature::PanTilt(_) => "PanTilt",
         }
     }
 }
@@ -80,8 +88,13 @@ pub fn find_features(
     universe: UniverseId,
     start_index: UniverseAddress,
 ) -> Vec<FixtureFeature> {
-    let finders: Vec<&FeatureFinder> =
-        vec![&search_dimmer, &search_rgb, &search_white, &search_rotation];
+    let finders: Vec<&FeatureFinder> = vec![
+        &search_dimmer,
+        &search_rgb,
+        &search_white,
+        &search_rotation,
+        &search_pantilt,
+    ];
 
     let mut features = vec![];
 
@@ -98,35 +111,6 @@ pub fn find_features(
 
 type FeatureFinder =
     dyn Fn(&FixtureType, &[String], UniverseId, UniverseAddress) -> Option<FixtureFeature>;
-
-// fn search_dimmer(
-//     fixture: &FixtureType,
-//     channels: &[String],
-//     universe_id: UniverseId,
-//     start_index: UniverseAddress,
-// ) -> Option<FixtureFeature> {
-//     for (i, channel) in channels.iter().enumerate() {
-//         let caps = fixture.get_available_channels().get(channel);
-//         if let Some(caps) = caps {
-//             for cap in &caps.capabilities {
-//                 if let FixtureCapability::Intensity(d) = &cap.detail {
-//                     return Some(FixtureFeature::Dimmer(Dimmer {
-//                         dimmer: FeatureTile {
-//                             channel: FeatureChannel(i),
-//                             fader: FaderAddress {
-//                                 universe: universe_id,
-//                                 address: start_index + i,
-//                             },
-//                             range: cap.dmx_range,
-//                         },
-//                     }));
-//                 }
-//             }
-//         }
-//     }
-
-//     None
-// }
 
 fn search_dimmer(
     fixture: &FixtureType,
@@ -377,6 +361,56 @@ fn search_rotation(
         Some(FixtureFeature::Rotation(Rotation {
             cw: cw.expect("Must be"),
             ccw: ccw.expect("Must be"),
+        }))
+    } else {
+        None
+    }
+}
+
+fn search_pantilt(
+    fixture: &FixtureType,
+    channels: &[String],
+    universe_id: UniverseId,
+    start_index: UniverseAddress,
+) -> Option<FixtureFeature> {
+    let mut pan = None;
+    let mut tilt = None;
+
+    for (i, channel) in channels.iter().enumerate() {
+        let caps = fixture.get_available_channels().get(channel);
+        if let Some(caps) = caps {
+            for cap in &caps.capabilities {
+                match &cap.detail {
+                    FixtureCapability::Pan(_) if pan.is_none() => {
+                        pan = Some(make_feature_tile(
+                            caps,
+                            start_index,
+                            universe_id,
+                            i,
+                            &cap.dmx_range,
+                            channels,
+                        ));
+                    }
+                    FixtureCapability::Tilt(_) if tilt.is_none() => {
+                        tilt = Some(make_feature_tile(
+                            caps,
+                            start_index,
+                            universe_id,
+                            i,
+                            &cap.dmx_range,
+                            channels,
+                        ));
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    if pan.is_some() && tilt.is_some() {
+        Some(FixtureFeature::PanTilt(PanTilt {
+            pan: pan.expect("Must be"),
+            tilt: tilt.expect("Must be"),
         }))
     } else {
         None

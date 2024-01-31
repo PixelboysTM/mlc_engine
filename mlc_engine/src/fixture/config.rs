@@ -242,11 +242,46 @@ impl<'de> Visitor<'de> for DmxRangeValueVisitor {
         Ok(DmxRangeValue::Value(v))
     }
 
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Value(v as u32))
+    }
+
+    fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Value(v as u32))
+    }
+
+    fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Value(v as u32))
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Value(v as u32))
+    }
+
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
         Ok(DmxRangeValue::Percentage(v))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Percentage(v as f32))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>

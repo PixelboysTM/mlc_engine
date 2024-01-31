@@ -8,11 +8,12 @@
   import WhiteFeature from "./WhiteFeature.svelte";
   import RotationFeature from "./RotationFeature.svelte";
   import DualRingSpinner from "../../misc/DualRingSpinner.svelte";
+  import PanTiltFeature from "./PanTiltFeature.svelte";
 
   export let id: string;
   export let name: string;
 
-  type FeatureKind = "Dimmer" | "Rgb" | "White" | "Rotation";
+  type FeatureKind = "Dimmer" | "Rgb" | "White" | "Rotation" | "PanTilt";
 
   var features: FeatureKind[] = [];
 
@@ -76,6 +77,17 @@
               on:value={(v) =>
                 socket.send('{"Rotation": { "value":' + v.detail + "}}")}
             ></RotationFeature>
+          {:else if feature == "PanTilt"}
+            <PanTiltFeature
+              on:value={(v) =>
+                socket.send(
+                  '{"PanTilt": { "pan": ' +
+                    v.detail[0] +
+                    ', "tilt":' +
+                    v.detail[1] +
+                    "}}"
+                )}
+            ></PanTiltFeature>
           {:else}
             <h3>Unknown Feature: {feature}</h3>
           {/if}

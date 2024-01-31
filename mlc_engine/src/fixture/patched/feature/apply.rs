@@ -3,7 +3,7 @@ use crate::{
     runtime::{RuntimeData, ToFaderValue},
 };
 
-use super::{Dimmer, FeatureTile, FixtureFeature, Rgb, Rotation};
+use super::{Dimmer, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
 
 pub trait ApplyFeature {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
@@ -15,6 +15,7 @@ pub enum FeatureSetRequest {
     Rgb { red: f32, green: f32, blue: f32 },
     White { value: f32 },
     Rotation { value: f32 },
+    PanTilt { pan: f32, tilt: f32 },
     GetAvailableFeatures,
 }
 
@@ -48,6 +49,11 @@ impl ApplyFeature for Vec<FixtureFeature> {
                     if value < 0.0 {
                         update_values(&[(rot.ccw, value.abs())], runtime_data).await;
                     }
+                }
+            }
+            FeatureSetRequest::PanTilt { pan, tilt } => {
+                if let Some(pantilt) = find_pantilt(self) {
+                    update_values(&[(pantilt.pan, pan), (pantilt.tilt, tilt)], runtime_data).await;
                 }
             }
             FeatureSetRequest::GetAvailableFeatures => {
@@ -153,6 +159,17 @@ fn find_rgb(features: &[FixtureFeature]) -> Option<Rgb> {
     for f in features {
         match f {
             FixtureFeature::Rgb(d) => return Some(d.clone()),
+            _ => continue,
+        }
+    }
+
+    None
+}
+
+fn find_pantilt(features: &[FixtureFeature]) -> Option<PanTilt> {
+    for f in features {
+        match f {
+            FixtureFeature::PanTilt(d) => return Some(d.clone()),
             _ => continue,
         }
     }
