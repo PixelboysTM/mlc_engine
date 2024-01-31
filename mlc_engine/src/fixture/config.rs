@@ -81,6 +81,9 @@ pub struct FixtureChannel {
     pub dmx_value_resolution: ValueResolution,
 
     #[serde(default)]
+    pub pixel_key: Option<String>,
+
+    #[serde(default)]
     pub fine_channel_aliases: Vec<String>,
     #[serde(alias = "capability")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]

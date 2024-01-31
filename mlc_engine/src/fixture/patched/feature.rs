@@ -121,6 +121,10 @@ fn search_dimmer(
     for (i, channel) in channels.iter().enumerate() {
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
+            if caps.pixel_key.is_some() {
+                continue;
+            }
+
             for cap in &caps.capabilities {
                 if let FixtureCapability::Intensity(d) = &cap.detail {
                     let dimmer = make_feature_tile(
@@ -222,6 +226,9 @@ fn search_white(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
+                if caps.pixel_key.is_some() {
+                    continue;
+                }
                 if let FixtureCapability::ColorIntensity(d) = &cap.detail {
                     if d.color == DmxColor::White {
                         return Some(FixtureFeature::White(Dimmer {
@@ -257,6 +264,9 @@ fn search_rgb(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
+                if caps.pixel_key.is_some() {
+                    continue;
+                }
                 if let FixtureCapability::ColorIntensity(c) = &cap.detail {
                     match c.color {
                         DmxColor::Red if red.is_none() => {
@@ -320,6 +330,9 @@ fn search_rotation(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
+                if caps.pixel_key.is_some() {
+                    continue;
+                }
                 if let FixtureCapability::Rotation(d) = &cap.detail {
                     if ((matches!(d.speed_start, RotationSpeed::SlowCw)
                         && matches!(d.speed_end, RotationSpeed::FastCw))
@@ -379,6 +392,9 @@ fn search_pantilt(
     for (i, channel) in channels.iter().enumerate() {
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
+            if caps.pixel_key.is_some() {
+                continue;
+            }
             for cap in &caps.capabilities {
                 match &cap.detail {
                     FixtureCapability::Pan(_) if pan.is_none() => {
