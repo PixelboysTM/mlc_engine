@@ -172,7 +172,7 @@
 
 <style>
   div.bg {
-    background-color: #00000061;
+    background-color: var(--color-background-transparent);
     width: 100%;
     height: 100%;
     position: fixed;
@@ -191,9 +191,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #ffffff;
-    background-color: #151111;
-    border-radius: 0.25rem;
+    color: var(--color-text);
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
     padding: 1.5rem 2rem;
     display: grid;
     grid-template-rows: 3rem 2rem calc(100% - 5rem);
@@ -220,13 +220,13 @@
     flex-direction: row;
     width: 100%;
     height: 2rem;
-    border-bottom: #ff3e3e 1px solid;
+    border-bottom: var(--color-accent) 1px solid;
   }
   .tab {
     width: 3rem;
     height: 100%;
-    background-color: #333;
-    color: #fff;
+    background-color: var(--color-background);
+    color: var(--color-text);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -235,8 +235,8 @@
   }
 
   .selected {
-    background-color: #ff3e3e;
-    color: #fff;
+    background-color: var(--color-accent);
+    color: var(--color-background);
   }
 
   .searchbar {
@@ -246,8 +246,8 @@
     gap: 0.25rem;
     position: sticky;
     top: 0px;
-    background-color: #151111;
-    border-top: #ff3e3e 1px solid;
+    background-color: var(--color-panel);
+    border-top: var(--color-accent) 1px solid;
   }
 
   input[type="text"] {
@@ -256,20 +256,20 @@
     margin: 8px 0;
     box-sizing: border-box;
     border: none;
-    border-bottom: 2px solid #ff3e3e;
+    border-bottom: 2px solid var(--color-accent);
   }
 
   input[type="button"] {
-    background-color: #ff3e3e;
+    background-color: var(--color-accent);
     border: none;
-    color: white;
+    color: var(--color-text);
     padding: 16px 32px;
     text-decoration: none;
     margin: 4px 2px;
     cursor: pointer;
   }
   .results {
-    overflow-y: scroll;
+    overflow-y: hidden;
   }
   .content {
     overflow-y: scroll;
@@ -279,7 +279,7 @@
     flex-direction: row;
     width: 100%;
     height: 3rem;
-    border-bottom: #ff3e3e 1px solid;
+    border-bottom: var(--color-accent) 1px solid;
   }
   .manufacturer {
     width: 10%;

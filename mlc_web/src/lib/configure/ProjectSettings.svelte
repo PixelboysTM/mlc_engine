@@ -85,6 +85,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffa83e;
+    background-color: var(--color-warning);
   }
 </style>

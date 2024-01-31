@@ -49,9 +49,9 @@
   }
 
   .dark {
-    --cp-bg-color: #333;
-    --cp-border-color: #ff3e3e;
-    --cp-input-color: #151111;
+    --cp-bg-color: var(--color-background);
+    --cp-border-color: var(--color-accent);
+    --cp-input-color: var(--color-panel);
     --cp-button-hover-color: #777;
     --slider-width: 1.25rem;
     --picker-indicator-size: 0.75rem;

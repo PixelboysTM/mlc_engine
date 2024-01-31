@@ -23,9 +23,9 @@
     max={100}
     min={-100}
     step={1}
-    primaryColor={"#ff3e3e"}
-    secondaryColor={"#333333"}
-    textColor={"#fff"}
+    primaryColor={"var(--color-accent)"}
+    secondaryColor={"var(--color-background)"}
+    textColor={"var(--color-text)"}
   ></Knob>
 </div>
 <p class="value">{$speed > 0 ? "Cw" : "Ccw"}</p>

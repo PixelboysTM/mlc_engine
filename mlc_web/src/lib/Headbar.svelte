@@ -58,7 +58,7 @@
   div {
     width: 100%;
     height: 3rem;
-    background-color: #151111;
+    background-color: var(--color-panel);
     display: grid;
     grid-template-columns: 1fr 5fr 1fr;
   }
@@ -81,18 +81,18 @@
     width: auto;
     height: 80%;
     margin-left: 0.2rem;
-    color: #fff;
+    color: var(--color-text);
   }
   div.right {
     place-content: end;
   }
   .selected.configure {
-    color: #ff3e3e;
+    color: var(--color-accent);
   }
   .selected.program {
-    color: #3eff41;
+    color: var(--color-secondary);
   }
   .selected.show {
-    color: #3e88ff;
+    color: var(--color-tertiary);
   }
 </style>

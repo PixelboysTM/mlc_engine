@@ -7,6 +7,7 @@
   import RgbFeature from "./RgbFeature.svelte";
   import WhiteFeature from "./WhiteFeature.svelte";
   import RotationFeature from "./RotationFeature.svelte";
+  import DualRingSpinner from "../../misc/DualRingSpinner.svelte";
 
   export let id: string;
   export let name: string;
@@ -36,12 +37,15 @@
   <div class="panel">
     <div class="header">
       <div class="icon">
-        <Icon size="2rem" color={"#ff3e3e"} src={BsLampFill}></Icon>
+        <Icon size="2rem" color={"var(--color-accent)"} src={BsLampFill}></Icon>
       </div>
       <h3>{name}</h3>
       <button on:click={() => dispatcher("close")}>X</button>
     </div>
     <div class="body">
+      {#if features.length == 0}
+        <DualRingSpinner></DualRingSpinner>
+      {/if}
       {#each features as feature}
         <div class="feature">
           {#if feature == "Dimmer"}
@@ -89,7 +93,7 @@
     width: 100vw;
     height: 100vh;
 
-    background-color: #000000e5;
+    background-color: var(--color-background-transparent);
 
     display: flex;
     justify-content: center;
@@ -99,8 +103,8 @@
   .panel {
     width: 60vw;
     height: 80vh;
-    background-color: #151111;
-    border-radius: 0.25rem;
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
     display: flex;
     flex-direction: column;
     z-index: 51;
@@ -112,7 +116,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem;
-    border-bottom: #ff3e3e 1px solid;
+    border-bottom: var(--color-accent) 1px solid;
   }
 
   .header h3 {
@@ -131,13 +135,13 @@
 
   .feature {
     background-color: #1a1a1a;
-    border-radius: 0.25rem;
+    border-radius: var(--number-border-radius);
     height: max-content;
     padding: 0.5rem;
   }
 
   .icon {
     padding-right: 0.25rem;
-    border-right: #ff3e3e 1px solid;
+    border-right: var(--color-accent) 1px solid;
   }
 </style>

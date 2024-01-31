@@ -93,8 +93,8 @@
     padding: 1rem;
     padding-top: 0rem;
     padding-bottom: 0rem;
-    border-radius: 0.25rem;
-    background-color: #151111;
+    border-radius: var(--number-border-radius);
+    background-color: var(--color-panel);
     overflow: auto;
     min-width: 0;
   }
@@ -140,7 +140,7 @@
     user-select: none;
     position: sticky;
     top: 0px;
-    background-color: #151111;
+    background-color: var(--color-panel);
     padding-top: 0.25rem;
     z-index: 15;
   }

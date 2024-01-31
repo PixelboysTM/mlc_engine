@@ -192,14 +192,15 @@
     height: 100%;
     width: 2rem;
     overflow-y: auto;
-    border-right: #ff3e3e 1px solid;
+    overflow-x: hidden;
+    border-right: var(--color-accent) 1px solid;
   }
 
   .tab {
     width: 2rem;
     height: 3rem;
-    background-color: #333;
-    color: #fff;
+    background-color: var(--color-background);
+    color: var(--color-text);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -207,7 +208,7 @@
     cursor: pointer;
   }
   .selected {
-    background-color: #ff3e3e;
-    color: #333;
+    background-color: var(--color-accent);
+    color: var(--color-background);
   }
 </style>

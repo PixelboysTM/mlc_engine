@@ -75,12 +75,12 @@
     left: 0;
     top: calc(100% + 10px);
     border-radius: 3px;
-    box-shadow: 0 0 5px 2px rgba(100, 100, 100, 0.6);
-    background-color: #151111;
+    /* box-shadow: 0 0 5px 2px rgba(100, 100, 100, 0.6); */
+    background-color: var(--color-panel);
     z-index: 10;
     padding: 8px;
     width: 15rem;
-    color: #fff;
+    color: var(--color-text);
     /* transform: translateY(-20px);
     transition: all 150ms cubic-bezier(0.25, 0.8, 0.25, 1); */
   }
@@ -93,7 +93,7 @@
   h3 {
     margin: 0;
     width: 100%;
-    background-color: #1a1a1a;
+    background-color: var(--color-background);
     padding: 0.1rem 0.25rem;
     border-radius: 0.1rem;
   }
@@ -113,7 +113,7 @@
     user-select: none;
   }
   .p-btn:hover {
-    color: #ff3e3e;
+    color: var(--color-accent);
   }
 
   .f-id {

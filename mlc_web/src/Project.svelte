@@ -171,10 +171,10 @@
     cursor: pointer;
   }
   div.project-card {
-    background-color: #151111;
-    border-radius: 0.5rem;
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
     /* margin: 1rem; */
-    color: #fff;
+    color: var(--color-text);
     font-family: "Roboto Mono", monospace;
     font-weight: 700;
     font-size: 1.5rem;
@@ -216,7 +216,7 @@
   div {
     width: 100%;
     height: 3rem;
-    background-color: #151111;
+    background-color: var(--color-panel);
     display: grid;
     grid-template-columns: 1fr 5fr 1fr;
   }
@@ -226,23 +226,11 @@
     align-items: center;
     width: 100%;
   }
-  span a {
-    font-size: 2rem;
-    color: #fff;
-    text-decoration: none;
-    font-family: "Roboto Mono", monospace;
-    font-weight: 700;
-    padding: 0.5rem;
-    margin: 0rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease-in-out;
-  }
   .head {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
-    border-bottom: #151311 1px solid;
     animation: border 10s linear 0s infinite;
   }
 
@@ -261,40 +249,17 @@
 
   @keyframes border {
     0% {
-      border-bottom: #ff4e3e 1px solid;
+      border-bottom: var(--color-accent) 1px solid;
     }
     33% {
-      border-bottom: #3eff41 1px solid;
+      border-bottom: var(--color-secondary) 1px solid;
     }
     66% {
-      border-bottom: #3e88ff 1px solid;
+      border-bottom: var(--color-tertiary) 1px solid;
     }
     100% {
-      border-bottom: #ff4e3e 1px solid;
+      border-bottom: var(--color-accent) 1px solid;
     }
-  }
-
-  #a {
-    color: #ff4e3e;
-  }
-  #b {
-    color: #3eff41;
-  }
-  #c {
-    color: #3e88ff;
-  }
-
-  #a:hover {
-    background-color: #ffdc3e;
-    color: #fff;
-  }
-  #b:hover {
-    background-color: #3effe5;
-    color: #fff;
-  }
-  #c:hover {
-    background-color: #ff3ee8;
-    color: #fff;
   }
 
   .icon {
@@ -316,34 +281,6 @@
   @media only screen and (max-width: 600px) {
     .tabs h2 {
       font-size: 1rem;
-    }
-  }
-
-  /* Small devices (portrait tablets and large phones, 600px and up) */
-  @media only screen and (min-width: 600px) {
-    .example {
-      background: green;
-    }
-  }
-
-  /* Medium devices (landscape tablets, 768px and up) */
-  @media only screen and (min-width: 768px) {
-    .example {
-      background: blue;
-    }
-  }
-
-  /* Large devices (laptops/desktops, 992px and up) */
-  @media only screen and (min-width: 992px) {
-    .example {
-      background: orange;
-    }
-  }
-
-  /* Extra large devices (large laptops and desktops, 1200px and up) */
-  @media only screen and (min-width: 1200px) {
-    .example {
-      background: pink;
     }
   }
 </style>

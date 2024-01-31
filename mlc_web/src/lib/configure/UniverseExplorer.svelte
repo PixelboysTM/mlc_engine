@@ -138,12 +138,12 @@
     left: 0;
     top: calc(100% + 10px);
     border-radius: 3px;
-    box-shadow: 0 0 5px 2px #64646499;
-    background-color: #151111;
+    /* box-shadow: 0 0 5px 2px #64646499; */
+    background-color: var(--color-panel);
     z-index: 10;
     padding: 8px;
     width: 15rem;
-    color: #fff;
+    color: var(--color-text);
     /* transform: translateY(-20px);
     transition: all 150ms cubic-bezier(0.25, 0.8, 0.25, 1); */
   }
@@ -164,13 +164,13 @@
     width: 100%;
     height: 2rem;
     gap: 0.25rem;
-    border-bottom: #ff3e3e 1px solid;
+    border-bottom: var(--color-accent) 1px solid;
   }
   .tab {
     width: 3rem;
     height: 100%;
-    background-color: #333;
-    color: #fff;
+    background-color: var(--color-background);
+    color: var(--color-text);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -178,48 +178,52 @@
     cursor: pointer;
   }
   .selected {
-    background-color: #ff3e3e;
-    color: #333;
+    background-color: var(--color-accent);
+    color: var(--color-background);
   }
   .channels {
     display: grid;
     grid-template-columns: repeat(32, 1fr);
-    border: #ff3e3e 1px solid;
+    border: var(--color-accent) 1px solid;
     overflow: hidden;
   }
   .channel {
     width: 100%;
     height: 2.5rem;
-    background-color: #333;
-    color: #fff;
+    background-color: var(--color-background);
+    color: var(--color-text);
     display: flex;
     justify-content: center;
     align-items: center;
-    border: #151111 1px solid;
+    border: var(--color-panel) 1px solid;
   }
 
   .patched-channel {
     width: 100%;
     height: 2.5rem;
-    background: linear-gradient(0deg, #3eff41 0%, #3e88ff 100%);
-    color: #333;
+    background: linear-gradient(
+      0deg,
+      var(--color-secondary) 0%,
+      var(--color-tertiary) 100%
+    );
+    color: var(--color-background);
     display: flex;
     justify-content: center;
     align-items: center;
   }
   .patched-channel.start {
-    border-left: #333 1px solid;
-    border-top: #333 1px solid;
-    border-bottom: #333 1px solid;
+    border-left: var(--color-background) 1px solid;
+    border-top: var(--color-background) 1px solid;
+    border-bottom: var(--color-background) 1px solid;
   }
   .patched-channel.end {
-    border-right: #333 1px solid;
-    border-top: #333 1px solid;
-    border-bottom: #333 1px solid;
+    border-right: var(--color-background) 1px solid;
+    border-top: var(--color-background) 1px solid;
+    border-bottom: var(--color-background) 1px solid;
   }
   .patched-channel.middle {
-    border-top: #333 1px solid;
-    border-bottom: #333 1px solid;
+    border-top: var(--color-background) 1px solid;
+    border-bottom: var(--color-background) 1px solid;
   }
 
   .universe {

@@ -38,7 +38,7 @@
     overflow: hidden;
     margin-left: auto;
     margin-right: auto;
-    border: 1px solid #ff3e3e;
+    border: 1px solid var(--color-accent);
   }
 
   .outer {
@@ -49,7 +49,7 @@
 
   .range {
     width: 100%;
-    background-color: azure;
+    background-color: var(--color-text);
   }
 
   .thumb {

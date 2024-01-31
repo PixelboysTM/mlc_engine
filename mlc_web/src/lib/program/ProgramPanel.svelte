@@ -2,8 +2,10 @@
   import { Canvas } from "@threlte/core";
   import Scene from "./Scene.svelte";
   import { T } from "@threlte/core";
+  import DualRingSpinner from "../misc/DualRingSpinner.svelte";
 </script>
 
+<DualRingSpinner></DualRingSpinner>
 <Canvas>
   <T.PerspectiveCamera
     makeDefault

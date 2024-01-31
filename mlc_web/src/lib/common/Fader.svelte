@@ -127,7 +127,7 @@
     min-width: 0;
     text-align: center;
     width: 1.5rem;
-    background-color: #242424;
+    background-color: var(--color-background);
     border-radius: 0.25rem;
   }
 
@@ -148,8 +148,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border-top: #151111 1px solid;
-    border-bottom: #151111 1px solid;
+    border-top: var(--color-panel) 1px solid;
+    border-bottom: var(--color-panel) 1px solid;
   }
 
   .filler {
@@ -158,7 +158,11 @@
   }
   .inner {
     width: 100%;
-    background: linear-gradient(0deg, #fff 0%, #ff3e3e 100%);
+    background: linear-gradient(
+      0deg,
+      var(--color-text) 0%,
+      var(--color-accent) 100%
+    );
     cursor: ns-resize;
   }
 

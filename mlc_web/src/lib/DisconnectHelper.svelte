@@ -56,7 +56,7 @@
 
 <style>
   div.bg {
-    background-color: #000000e5;
+    background-color: var(--color-background-transparent);
     width: 100%;
     height: 100%;
     position: fixed;
@@ -69,9 +69,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #ffffff;
-    background-color: #151111;
-    border-radius: 2rem;
+    color: var(--color-text);
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
     padding: 2rem;
     display: flex;
     flex-direction: column;
