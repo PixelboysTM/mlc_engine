@@ -209,7 +209,7 @@ fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<Effec
     tx
 }
 
-const EFFECT_UPDATE_FREQ: u64 = 2; //TODO: Make available in settings
+const EFFECT_UPDATE_FREQ: u64 = 20; //TODO: Make available in settings
 
 impl EffectPlayerI {
     async fn start(mut self) {

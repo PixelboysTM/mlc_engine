@@ -5,11 +5,13 @@
   import BsLampFill from "svelte-icons-pack/bs/BsLampFill";
   import DimmerFeature from "./DimmerFeature.svelte";
   import RgbFeature from "./RgbFeature.svelte";
+  import WhiteFeature from "./WhiteFeature.svelte";
+  import RotationFeature from "./RotationFeature.svelte";
 
   export let id: string;
   export let name: string;
 
-  type FeatureKind = "Dimmer" | "Rgb";
+  type FeatureKind = "Dimmer" | "Rgb" | "White" | "Rotation";
 
   var features: FeatureKind[] = [];
 
@@ -60,6 +62,16 @@
                     "}}"
                 )}
             ></RgbFeature>
+          {:else if feature == "White"}
+            <WhiteFeature
+              on:value={(v) =>
+                socket.send('{"White": {"value": ' + v.detail + "}}")}
+            ></WhiteFeature>
+          {:else if feature == "Rotation"}
+            <RotationFeature
+              on:value={(v) =>
+                socket.send('{"Rotation": { "value":' + v.detail + "}}")}
+            ></RotationFeature>
           {:else}
             <h3>Unknown Feature: {feature}</h3>
           {/if}

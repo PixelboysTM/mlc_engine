@@ -1,7 +1,7 @@
 pub mod apply;
 
 use crate::fixture::{
-    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureMode, FixtureType,
+    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureMode, FixtureType, RotationSpeed,
 };
 
 use super::{UniverseAddress, UniverseId};
@@ -18,18 +18,28 @@ pub struct Rgb {
     pub blue: FeatureTile,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct Rotation {
+    pub cw: FeatureTile,
+    pub ccw: FeatureTile,
+}
+
 // Indexes are offsets from the start_index of the Fixture
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub enum FixtureFeature {
     Dimmer(Dimmer),
+    White(Dimmer),
     Rgb(Rgb),
+    Rotation(Rotation),
 }
 
 impl FixtureFeature {
     pub fn name(&self) -> &'static str {
         match self {
             FixtureFeature::Dimmer(_) => "Dimmer",
+            FixtureFeature::White(_) => "White",
             FixtureFeature::Rgb(_) => "Rgb",
+            FixtureFeature::Rotation(_) => "Rotation",
         }
     }
 }
@@ -51,7 +61,8 @@ pub fn find_features(
     universe: UniverseId,
     start_index: UniverseAddress,
 ) -> Vec<FixtureFeature> {
-    let finders: Vec<&FeatureFinder> = vec![&search_dimmer, &search_rgb];
+    let finders: Vec<&FeatureFinder> =
+        vec![&search_dimmer, &search_rgb, &search_white, &search_rotation];
 
     let mut features = vec![];
 
@@ -90,6 +101,37 @@ fn search_dimmer(
                             range: d.dmx_range,
                         },
                     }));
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn search_white(
+    fixture: &FixtureType,
+    channels: &[String],
+    universe_id: UniverseId,
+    start_index: UniverseAddress,
+) -> Option<FixtureFeature> {
+    for (i, channel) in channels.iter().enumerate() {
+        let caps = fixture.get_available_channels().get(channel);
+        if let Some(caps) = caps {
+            for cap in &caps.capabilities {
+                if let FixtureCapability::ColorIntensity(d) = cap {
+                    if d.color == DmxColor::White {
+                        return Some(FixtureFeature::White(Dimmer {
+                            dimmer: FeatureTile {
+                                channel: FeatureChannel(i),
+                                fader: FaderAddress {
+                                    universe: universe_id,
+                                    address: start_index + i,
+                                },
+                                range: d.dmx_range,
+                            },
+                        }));
+                    }
                 }
             }
         }
@@ -156,6 +198,66 @@ fn search_rgb(
             red: red.expect(""),
             green: green.expect(""),
             blue: blue.expect(""),
+        }))
+    } else {
+        None
+    }
+}
+
+fn search_rotation(
+    fixture: &FixtureType,
+    channels: &[String],
+    universe_id: UniverseId,
+    start_index: UniverseAddress,
+) -> Option<FixtureFeature> {
+    let mut cw: Option<FeatureTile> = None;
+    let mut ccw: Option<FeatureTile> = None;
+
+    for (i, channel) in channels.iter().enumerate() {
+        let caps = fixture.get_available_channels().get(channel);
+        if let Some(caps) = caps {
+            for cap in &caps.capabilities {
+                if let FixtureCapability::Rotation(d) = cap {
+                    if ((matches!(d.speed_start, RotationSpeed::SlowCw)
+                        && matches!(d.speed_end, RotationSpeed::FastCw))
+                        || (matches!(d.speed_start, RotationSpeed::FastCw)
+                            && matches!(d.speed_end, RotationSpeed::SlowCw)))
+                        && cw.is_none()
+                    {
+                        cw = Some(FeatureTile {
+                            channel: FeatureChannel(i),
+                            fader: FaderAddress {
+                                universe: universe_id,
+                                address: start_index + i,
+                            },
+                            range: d.dmx_range,
+                        })
+                    }
+
+                    if ((matches!(d.speed_start, RotationSpeed::SlowCcw)
+                        && matches!(d.speed_end, RotationSpeed::FastCcw))
+                        || (matches!(d.speed_start, RotationSpeed::FastCcw)
+                            && matches!(d.speed_end, RotationSpeed::SlowCcw)))
+                        && ccw.is_none()
+                    {
+                        ccw = Some(FeatureTile {
+                            channel: FeatureChannel(i),
+                            fader: FaderAddress {
+                                universe: universe_id,
+                                address: start_index + i,
+                            },
+                            range: d.dmx_range,
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    if cw.is_some() && ccw.is_some() {
+        Some(FixtureFeature::Rotation(Rotation {
+            cw: cw.expect("Must be"),
+            ccw: ccw.expect("Must be"),
         }))
     } else {
         None

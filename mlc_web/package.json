@@ -32,6 +32,7 @@
     "svelte-awesome-color-picker": "^3.0.4",
     "svelte-icons": "^2.1.0",
     "svelte-icons-pack": "^2.1.0",
+    "svelte-knob": "^1.0.2",
     "three": "^0.160.1"
   }
 }

@@ -18,3 +18,4 @@ pollster = { version = "*" }
 chrono = { version = "*", features = ["serde"] }
 artnet_protocol = "0.4.2"
 sacn = "0.4.4"
+regex = { version = "*" }

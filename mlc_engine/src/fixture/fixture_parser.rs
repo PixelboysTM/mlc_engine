@@ -1,6 +1,7 @@
 use uuid::Uuid;
 
 use super::FixtureType;
+use serde_with::OneOrMany;
 
 pub fn parse_fixture(json: &str) -> Result<Vec<FixtureType>, String> {
     let mut data: Wrapper =
@@ -11,7 +12,9 @@ pub fn parse_fixture(json: &str) -> Result<Vec<FixtureType>, String> {
     Ok(data.fixtures)
 }
 
+#[serde_with::serde_as]
 #[derive(Debug, serde::Deserialize)]
 struct Wrapper {
+    #[serde_as(as = "OneOrMany<_>")]
     fixtures: Vec<FixtureType>,
 }

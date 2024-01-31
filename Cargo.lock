@@ -926,6 +926,7 @@ dependencies = [
  "crossbeam",
  "directories",
  "pollster",
+ "regex",
  "rocket",
  "rocket_ws",
  "sacn",
