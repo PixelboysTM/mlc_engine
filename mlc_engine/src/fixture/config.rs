@@ -197,6 +197,31 @@ impl Serialize for RotationSpeed {
         serializer.serialize_str(s)
     }
 }
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PanTilt {
+    #[serde(default = "full_range")]
+    dmx_range: DmxRange,
+    angle_start: u32,
+    angle_end: u32,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PanTiltSpeed {
+    #[serde(default = "full_range")]
+    dmx_range: DmxRange,
+    speed_start: Speed,
+    speed_end: Speed,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+pub enum Speed {
+    #[serde(alias = "fast")]
+    Fast,
+    #[serde(alias = "slow")]
+    Slow,
+}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(tag = "type")]
@@ -210,6 +235,10 @@ pub enum FixtureCapability {
     Effect(Effect),
     EffectSpeed,
     Rotation(Rotation),
+    Pan(PanTilt),
+    Tilt(PanTilt),
+    PanTiltSpeed(PanTiltSpeed),
+    Generic,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy)]
