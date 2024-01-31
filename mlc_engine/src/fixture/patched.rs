@@ -9,7 +9,7 @@ use serde::{de::Visitor, Deserialize, Serialize};
 
 use self::feature::FixtureFeature;
 
-use super::{FixtureChannel, FixtureType};
+use super::{FixtureChannel, FixtureType, ValueResolution};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchedFixture {
@@ -27,6 +27,7 @@ pub struct PatchedFixture {
 pub struct PatchedChannel {
     pub(in crate::fixture) config: FixtureChannel,
     pub(in crate::fixture) channel_address: UniverseAddress,
+    pub(in crate::fixture) resolution: ValueResolution,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]

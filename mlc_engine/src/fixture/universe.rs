@@ -1,6 +1,8 @@
+use std::{clone, collections::HashMap};
+
 use super::{
-    feature::find_features, FixtureType, PatchedChannel, PatchedFixture, UniverseAddress,
-    UniverseId,
+    feature::find_features, FixtureChannel, FixtureType, PatchedChannel, PatchedFixture,
+    UniverseAddress, UniverseId, ValueResolution,
 };
 
 pub const UNIVERSE_SIZE: usize = 512;
@@ -89,27 +91,8 @@ impl FixtureUniverse {
 
         start_index -= len;
 
-        let patched_fixture = PatchedFixture {
-            config: fixture.clone(),
-            num_channels: len as u8,
-            channels: (0..len)
-                .map(|i| PatchedChannel {
-                    config: fixture.get_available_channels()
-                        [&fixture.get_modes()[mode_index].get_channels()[i]]
-                        .clone(),
-                    channel_address: (start_index + i).into(),
-                })
-                .collect(),
-            start_channel: start_index.into(),
-            name: format!(
-                "{} / {}",
-                fixture.get_name(),
-                fixture.get_modes()[mode_index].get_name()
-            ),
-            mode: mode_index,
-            features: find_features(fixture, mode, self.id, start_index.into()),
-            id: uuid::Uuid::new_v4(),
-        };
+        let patched_fixture =
+            self.create_patched_fixture(fixture, len, mode_index, start_index, mode)?;
 
         let fixture_index = self.fixtures.len();
         self.fixtures.push(patched_fixture);
@@ -121,6 +104,80 @@ impl FixtureUniverse {
         }
 
         Ok(start_index.into())
+    }
+
+    fn create_patched_fixture(
+        &mut self,
+        fixture: &FixtureType,
+        len: usize,
+        mode_index: usize,
+        start_index: usize,
+        mode: &super::FixtureMode,
+    ) -> Result<PatchedFixture, &'static str> {
+        let mut resolution: ValueResolution = ValueResolution::U8;
+        let mut cs = (0..len).map(|i| -> Result<_, &'static str> {
+            let c = fixture.get_available_channels().find(
+                &fixture.get_modes()[mode_index].get_channels()[i],
+                &mut resolution,
+            )?;
+
+            Ok(PatchedChannel {
+                config: c,
+                channel_address: (start_index + i).into(),
+                resolution,
+            })
+        });
+
+        if cs.any(|f| f.is_err()) {
+            let _ = cs.find(|f| f.is_err()).expect("Must be")?;
+        }
+
+        Ok(PatchedFixture {
+            config: fixture.clone(),
+            num_channels: len as u8,
+            channels: cs.map(|f| f.expect("Must be")).collect(),
+            start_channel: start_index.into(),
+            name: format!(
+                "{} / {}",
+                fixture.get_name(),
+                fixture.get_modes()[mode_index].get_name()
+            ),
+            mode: mode_index,
+            features: find_features(fixture, mode, self.id, start_index.into()),
+            id: uuid::Uuid::new_v4(),
+        })
+    }
+}
+
+trait FindChannelConfig {
+    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, &'static str>;
+}
+
+impl FindChannelConfig for HashMap<String, FixtureChannel> {
+    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, &'static str> {
+        if let Some(d) = self.get(name) {
+            *fine = ValueResolution::U8;
+            Ok(d.clone())
+        } else if let Some(d) = self
+            .values()
+            .find(|c| c.fine_channel_aliases.contains(&name.to_string()))
+        {
+            let i = d
+                .fine_channel_aliases
+                .iter()
+                .position(|c| c == name)
+                .expect("Must be");
+            *fine = match i {
+                0 => ValueResolution::U16,
+                1 => ValueResolution::U24,
+                _ => {
+                    return Err("More than two fine channels! Unknown resolution");
+                }
+            };
+            Ok(d.clone())
+        } else {
+            Err("Unknown Channel Name")
+        }
     }
 }
 

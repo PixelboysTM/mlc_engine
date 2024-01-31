@@ -1,6 +1,9 @@
-use crate::runtime::{RuntimeData, ToFaderValue};
+use crate::{
+    fixture::Value,
+    runtime::{RuntimeData, ToFaderValue},
+};
 
-use super::{Dimmer, FixtureFeature, Rgb, Rotation};
+use super::{Dimmer, FeatureTile, FixtureFeature, Rgb, Rotation};
 
 pub trait ApplyFeature {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
@@ -20,68 +23,30 @@ impl ApplyFeature for Vec<FixtureFeature> {
         match req {
             FeatureSetRequest::Dimmer { value } => {
                 if let Some(d) = find_dimmer(self) {
-                    runtime_data
-                        .set_value(
-                            d.dimmer.fader.universe,
-                            d.dimmer.fader.address,
-                            value.to_fader_value_range(&d.dimmer.range),
-                        )
-                        .await;
+                    update_values(&[(d.dimmer, value)], runtime_data).await;
                 }
             }
             FeatureSetRequest::White { value } => {
                 if let Some(d) = find_white(self) {
-                    runtime_data
-                        .set_value(
-                            d.dimmer.fader.universe,
-                            d.dimmer.fader.address,
-                            value.to_fader_value_range(&d.dimmer.range),
-                        )
-                        .await;
+                    update_values(&[(d.dimmer, value)], runtime_data).await;
                 }
             }
             FeatureSetRequest::Rgb { red, green, blue } => {
                 if let Some(rgb) = find_rgb(self) {
-                    runtime_data
-                        .set_values(
-                            vec![
-                                rgb.red.fader.universe,
-                                rgb.green.fader.universe,
-                                rgb.blue.fader.universe,
-                            ],
-                            vec![
-                                rgb.red.fader.address,
-                                rgb.green.fader.address,
-                                rgb.blue.fader.address,
-                            ],
-                            vec![
-                                red.to_fader_value_range(&rgb.red.range),
-                                green.to_fader_value_range(&rgb.green.range),
-                                blue.to_fader_value_range(&rgb.blue.range),
-                            ],
-                        )
-                        .await;
+                    update_values(
+                        &[(rgb.red, red), (rgb.blue, blue), (rgb.green, green)],
+                        runtime_data,
+                    )
+                    .await;
                 }
             }
             FeatureSetRequest::Rotation { value } => {
                 if let Some(rot) = find_rotation(self) {
                     if value > 0.0 {
-                        runtime_data
-                            .set_value(
-                                rot.cw.fader.universe,
-                                rot.cw.fader.address,
-                                value.abs().to_fader_value_range(&rot.cw.range),
-                            )
-                            .await;
+                        update_values(&[(rot.cw, value.abs())], runtime_data).await;
                     }
                     if value < 0.0 {
-                        runtime_data
-                            .set_value(
-                                rot.ccw.fader.universe,
-                                rot.ccw.fader.address,
-                                value.abs().to_fader_value_range(&rot.ccw.range),
-                            )
-                            .await;
+                        update_values(&[(rot.ccw, value.abs())], runtime_data).await;
                     }
                 }
             }
@@ -90,6 +55,68 @@ impl ApplyFeature for Vec<FixtureFeature> {
             }
         }
     }
+}
+
+async fn update_values(ts: &[(FeatureTile, f32)], runtime: &RuntimeData) {
+    let mut universes = vec![];
+    let mut channels = vec![];
+    let mut values = vec![];
+
+    for (tile, raw_v) in ts {
+        match tile {
+            FeatureTile::Single { fader, range, .. } => {
+                let v = raw_v.to_fader_value_range(range);
+                universes.push(fader.universe);
+                channels.push(fader.address);
+                values.push(v);
+            }
+            FeatureTile::Double {
+                fader,
+                fader_fine,
+                range,
+                ..
+            } => {
+                let (v, f) = raw_v.to_fader_value_range_fine(range);
+                universes.push(fader.universe);
+                universes.push(fader_fine.universe);
+                channels.push(fader.address);
+                channels.push(fader_fine.address);
+                values.push(v);
+                values.push(f);
+            }
+            FeatureTile::Tripple {
+                fader,
+                fader_fine,
+                fader_grain,
+                range,
+                ..
+            } => {
+                let (v, f, g) = raw_v.to_fader_value_range_grain(range);
+                universes.push(fader.universe);
+                universes.push(fader_fine.universe);
+                universes.push(fader_grain.universe);
+                channels.push(fader.address);
+                channels.push(fader_fine.address);
+                channels.push(fader_grain.address);
+                values.push(v);
+                values.push(f);
+                values.push(g);
+            }
+        }
+    }
+
+    if universes.is_empty() {
+        return;
+    }
+
+    if universes.len() == 1 {
+        runtime
+            .set_value(universes[0], channels[0], values[0])
+            .await;
+        return;
+    }
+
+    runtime.set_values(universes, channels, values).await;
 }
 
 fn find_dimmer(features: &[FixtureFeature]) -> Option<Dimmer> {

@@ -1,7 +1,8 @@
 pub mod apply;
 
 use crate::fixture::{
-    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureMode, FixtureType, RotationSpeed,
+    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureChannel, FixtureMode, FixtureType,
+    RotationSpeed,
 };
 
 use super::{UniverseAddress, UniverseId};
@@ -45,10 +46,28 @@ impl FixtureFeature {
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
-pub struct FeatureTile {
-    channel: FeatureChannel,
-    fader: FaderAddress,
-    range: DmxRange,
+pub enum FeatureTile {
+    Single {
+        channel: FeatureChannel,
+        fader: FaderAddress,
+        range: DmxRange,
+    },
+    Double {
+        channel: FeatureChannel,
+        channel_fine: FeatureChannel,
+        fader: FaderAddress,
+        fader_fine: FaderAddress,
+        range: DmxRange,
+    },
+    Tripple {
+        channel: FeatureChannel,
+        channel_fine: FeatureChannel,
+        channel_grain: FeatureChannel,
+        fader: FaderAddress,
+        fader_fine: FaderAddress,
+        fader_grain: FaderAddress,
+        range: DmxRange,
+    },
 }
 
 /// The Offset of channelss from the start of the Fixture Fader = start_index + self
@@ -80,6 +99,35 @@ pub fn find_features(
 type FeatureFinder =
     dyn Fn(&FixtureType, &[String], UniverseId, UniverseAddress) -> Option<FixtureFeature>;
 
+// fn search_dimmer(
+//     fixture: &FixtureType,
+//     channels: &[String],
+//     universe_id: UniverseId,
+//     start_index: UniverseAddress,
+// ) -> Option<FixtureFeature> {
+//     for (i, channel) in channels.iter().enumerate() {
+//         let caps = fixture.get_available_channels().get(channel);
+//         if let Some(caps) = caps {
+//             for cap in &caps.capabilities {
+//                 if let FixtureCapability::Intensity(d) = &cap.detail {
+//                     return Some(FixtureFeature::Dimmer(Dimmer {
+//                         dimmer: FeatureTile {
+//                             channel: FeatureChannel(i),
+//                             fader: FaderAddress {
+//                                 universe: universe_id,
+//                                 address: start_index + i,
+//                             },
+//                             range: cap.dmx_range,
+//                         },
+//                     }));
+//                 }
+//             }
+//         }
+//     }
+
+//     None
+// }
+
 fn search_dimmer(
     fixture: &FixtureType,
     channels: &[String],
@@ -90,23 +138,94 @@ fn search_dimmer(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                if let FixtureCapability::Intensity(d) = cap {
-                    return Some(FixtureFeature::Dimmer(Dimmer {
-                        dimmer: FeatureTile {
-                            channel: FeatureChannel(i),
-                            fader: FaderAddress {
-                                universe: universe_id,
-                                address: start_index + i,
-                            },
-                            range: d.dmx_range,
-                        },
-                    }));
+                if let FixtureCapability::Intensity(d) = &cap.detail {
+                    let dimmer = make_feature_tile(
+                        caps,
+                        start_index,
+                        universe_id,
+                        i,
+                        &cap.dmx_range,
+                        channels,
+                    );
+                    return Some(FixtureFeature::Dimmer(Dimmer { dimmer }));
                 }
             }
         }
     }
 
     None
+}
+
+fn make_feature_tile(
+    channel: &FixtureChannel,
+    start_index: UniverseAddress,
+    universe_id: UniverseId,
+    i: usize,
+    range: &DmxRange,
+    channels: &[String],
+) -> FeatureTile {
+    let fine = if channel.fine_channel_aliases.len() == 0 {
+        None
+    } else {
+        channels
+            .iter()
+            .position(|f| f == &channel.fine_channel_aliases[0])
+    };
+    let grain = if fine.is_none() || channel.fine_channel_aliases.len() == 1 {
+        None
+    } else {
+        channels
+            .iter()
+            .position(|f| f == &channel.fine_channel_aliases[1])
+    };
+
+    if fine.is_none() {
+        FeatureTile::Single {
+            channel: FeatureChannel(i),
+            fader: FaderAddress {
+                universe: universe_id,
+                address: start_index + i,
+            },
+            range: *range,
+        }
+    } else {
+        let fine = fine.expect("Must be");
+        if grain.is_none() {
+            FeatureTile::Double {
+                channel: FeatureChannel(i),
+                channel_fine: FeatureChannel(fine),
+                fader: FaderAddress {
+                    universe: universe_id,
+                    address: start_index + i,
+                },
+                fader_fine: FaderAddress {
+                    universe: universe_id,
+                    address: start_index + fine,
+                },
+                range: *range,
+            }
+        } else {
+            let grain = grain.expect("Must be");
+            FeatureTile::Tripple {
+                channel: FeatureChannel(i),
+                channel_fine: FeatureChannel(fine),
+                channel_grain: FeatureChannel(grain),
+                fader: FaderAddress {
+                    universe: universe_id,
+                    address: start_index + i,
+                },
+                fader_fine: FaderAddress {
+                    universe: universe_id,
+                    address: start_index + fine,
+                },
+                fader_grain: FaderAddress {
+                    universe: universe_id,
+                    address: start_index + grain,
+                },
+                range: *range,
+            }
+        }
+    }
 }
 
 fn search_white(
@@ -119,17 +238,17 @@ fn search_white(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                if let FixtureCapability::ColorIntensity(d) = cap {
+                if let FixtureCapability::ColorIntensity(d) = &cap.detail {
                     if d.color == DmxColor::White {
                         return Some(FixtureFeature::White(Dimmer {
-                            dimmer: FeatureTile {
-                                channel: FeatureChannel(i),
-                                fader: FaderAddress {
-                                    universe: universe_id,
-                                    address: start_index + i,
-                                },
-                                range: d.dmx_range,
-                            },
+                            dimmer: make_feature_tile(
+                                caps,
+                                start_index,
+                                universe_id,
+                                i,
+                                &cap.dmx_range,
+                                channels,
+                            ),
                         }));
                     }
                 }
@@ -154,37 +273,37 @@ fn search_rgb(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                if let FixtureCapability::ColorIntensity(c) = cap {
+                if let FixtureCapability::ColorIntensity(c) = &cap.detail {
                     match c.color {
                         DmxColor::Red if red.is_none() => {
-                            red = Some(FeatureTile {
-                                channel: FeatureChannel(i),
-                                fader: FaderAddress {
-                                    universe: universe_id,
-                                    address: start_index + i,
-                                },
-                                range: c.dmx_range,
-                            })
+                            red = Some(make_feature_tile(
+                                caps,
+                                start_index,
+                                universe_id,
+                                i,
+                                &cap.dmx_range,
+                                channels,
+                            ))
                         }
                         DmxColor::Green if green.is_none() => {
-                            green = Some(FeatureTile {
-                                channel: FeatureChannel(i),
-                                fader: FaderAddress {
-                                    universe: universe_id,
-                                    address: start_index + i,
-                                },
-                                range: c.dmx_range,
-                            })
+                            green = Some(make_feature_tile(
+                                caps,
+                                start_index,
+                                universe_id,
+                                i,
+                                &cap.dmx_range,
+                                channels,
+                            ))
                         }
                         DmxColor::Blue if blue.is_none() => {
-                            blue = Some(FeatureTile {
-                                channel: FeatureChannel(i),
-                                fader: FaderAddress {
-                                    universe: universe_id,
-                                    address: start_index + i,
-                                },
-                                range: c.dmx_range,
-                            })
+                            blue = Some(make_feature_tile(
+                                caps,
+                                start_index,
+                                universe_id,
+                                i,
+                                &cap.dmx_range,
+                                channels,
+                            ))
                         }
                         _ => {}
                     }
@@ -217,21 +336,21 @@ fn search_rotation(
         let caps = fixture.get_available_channels().get(channel);
         if let Some(caps) = caps {
             for cap in &caps.capabilities {
-                if let FixtureCapability::Rotation(d) = cap {
+                if let FixtureCapability::Rotation(d) = &cap.detail {
                     if ((matches!(d.speed_start, RotationSpeed::SlowCw)
                         && matches!(d.speed_end, RotationSpeed::FastCw))
                         || (matches!(d.speed_start, RotationSpeed::FastCw)
                             && matches!(d.speed_end, RotationSpeed::SlowCw)))
                         && cw.is_none()
                     {
-                        cw = Some(FeatureTile {
-                            channel: FeatureChannel(i),
-                            fader: FaderAddress {
-                                universe: universe_id,
-                                address: start_index + i,
-                            },
-                            range: d.dmx_range,
-                        })
+                        cw = Some(make_feature_tile(
+                            caps,
+                            start_index,
+                            universe_id,
+                            i,
+                            &cap.dmx_range,
+                            channels,
+                        ))
                     }
 
                     if ((matches!(d.speed_start, RotationSpeed::SlowCcw)
@@ -240,14 +359,14 @@ fn search_rotation(
                             && matches!(d.speed_end, RotationSpeed::SlowCcw)))
                         && ccw.is_none()
                     {
-                        ccw = Some(FeatureTile {
-                            channel: FeatureChannel(i),
-                            fader: FaderAddress {
-                                universe: universe_id,
-                                address: start_index + i,
-                            },
-                            range: d.dmx_range,
-                        })
+                        ccw = Some(make_feature_tile(
+                            caps,
+                            start_index,
+                            universe_id,
+                            i,
+                            &cap.dmx_range,
+                            channels,
+                        ))
                     }
                 }
             }

@@ -1,4 +1,3 @@
-use regex::Regex;
 use serde::de::Visitor;
 use serde::Deserialize;
 use serde::Serialize;
@@ -7,6 +6,8 @@ use serde_with::serde_as;
 use serde_with::OneOrMany;
 
 use std::collections::HashMap;
+
+pub type Value = u32;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -74,134 +75,78 @@ impl FixtureMode {
 #[serde(rename_all = "camelCase")]
 pub struct FixtureChannel {
     #[serde(default = "zero")]
-    pub default_value: u8,
+    pub default_value: Value,
+
+    #[serde(default)]
+    pub dmx_value_resolution: ValueResolution,
+
+    #[serde(default)]
+    pub fine_channel_aliases: Vec<String>,
     #[serde(alias = "capability")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]
-    pub capabilities: Vec<FixtureCapability>,
+    pub capabilities: Vec<FixtureCapabilityCommon>,
 }
 
-fn zero() -> u8 {
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Default, Copy)]
+pub enum ValueResolution {
+    #[default]
+    Implied,
+    #[serde(alias = "8bit")]
+    U8,
+    #[serde(alias = "16bit")]
+    U16,
+    #[serde(alias = "24bit")]
+    U24,
+}
+
+fn zero() -> Value {
     0
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct NoFunction {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
-}
+pub struct NoFunction {}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Maintenance {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
-}
+pub struct Maintenance {}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Intensity {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
-}
+pub struct Intensity {}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ColorIntensity {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
     pub color: DmxColor,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Effect {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
-}
+pub struct Effect {}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Rotation {
-    #[serde(default = "full_range")]
-    pub dmx_range: DmxRange,
     pub speed_start: RotationSpeed,
     pub speed_end: RotationSpeed,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize)]
 pub enum RotationSpeed {
+    #[serde(alias = "slow CW")]
     SlowCw,
+    #[serde(alias = "slow CCW")]
     SlowCcw,
+    #[serde(alias = "fast CW")]
     FastCw,
+    #[serde(alias = "fast CCW")]
     FastCcw,
 }
 
-struct RotationSpeedVisitor;
-
-impl<'de> Deserialize<'de> for RotationSpeed {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_str(RotationSpeedVisitor)
-    }
-}
-
-impl<'de> Visitor<'de> for RotationSpeedVisitor {
-    type Value = RotationSpeed;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("an string with a speed and a direction")
-    }
-
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        if let Some(c) = Regex::new(r"(?<speed>(slow)|(fast))\s+(?<dir>(CW)|(CCW))")
-            .unwrap()
-            .captures(v)
-        {
-            let speed = c.name("speed").unwrap().as_str();
-            let dir = c.name("dir").unwrap().as_str();
-
-            Ok(if speed == "slow" && dir == "CW" {
-                RotationSpeed::SlowCw
-            } else if speed == "slow" && dir == "CCW" {
-                RotationSpeed::SlowCcw
-            } else if speed == "fast" && dir == "CW" {
-                RotationSpeed::FastCw
-            } else if speed == "fast" && dir == "CCW" {
-                RotationSpeed::FastCcw
-            } else {
-                return Err(E::custom("WHAT DE ACTUAL F"));
-            })
-        } else {
-            Err(E::custom("Not matching"))
-        }
-    }
-}
-
-impl Serialize for RotationSpeed {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let s = match self {
-            RotationSpeed::SlowCw => "slow CW",
-            RotationSpeed::SlowCcw => "slow CCW",
-            RotationSpeed::FastCw => "fast CW",
-            RotationSpeed::FastCcw => "fast CCW",
-        };
-        serializer.serialize_str(s)
-    }
-}
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PanTilt {
-    #[serde(default = "full_range")]
-    dmx_range: DmxRange,
     angle_start: u32,
     angle_end: u32,
 }
@@ -209,8 +154,6 @@ pub struct PanTilt {
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PanTiltSpeed {
-    #[serde(default = "full_range")]
-    dmx_range: DmxRange,
     speed_start: Speed,
     speed_end: Speed,
 }
@@ -221,6 +164,16 @@ pub enum Speed {
     Fast,
     #[serde(alias = "slow")]
     Slow,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FixtureCapabilityCommon {
+    #[serde(default = "full_range")]
+    pub dmx_range: DmxRange,
+
+    #[serde(flatten)]
+    pub detail: FixtureCapability,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
@@ -244,18 +197,102 @@ pub enum FixtureCapability {
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct DmxRange {
-    pub start: u8,
-    pub end: u8,
+    pub start: DmxRangeValue,
+    pub end: DmxRangeValue,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum DmxRangeValue {
+    Value(Value),
+    Percentage(f32),
 }
 
 impl DmxRange {
-    pub fn range(&self) -> u8 {
-        self.end - self.start
+    pub fn range(&self, range_min: Value, range_max: Value) -> Value {
+        self.end.to_value(range_min, range_max) - self.start.to_value(range_min, range_max)
+    }
+}
+
+impl DmxRangeValue {
+    pub fn to_value(&self, range_min: Value, range_max: Value) -> Value {
+        match self {
+            DmxRangeValue::Value(v) => *v.min(&range_max).max(&range_min),
+            DmxRangeValue::Percentage(p) => {
+                ((range_min as f32 + ((range_max as f32 - range_min as f32) * *p)) as Value)
+                    .min(range_max)
+                    .max(range_min)
+            }
+        }
+    }
+}
+
+struct DmxRangeValueVisitor;
+
+impl<'de> Visitor<'de> for DmxRangeValueVisitor {
+    type Value = DmxRangeValue;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("an integer float or string with pecentage")
+    }
+
+    fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Value(v))
+    }
+
+    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(DmxRangeValue::Percentage(v))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        if !v.ends_with("%") {
+            return Err(E::custom("Not a percentage"));
+        }
+
+        let v = v
+            .strip_suffix("%")
+            .expect("Must be")
+            .parse::<u8>()
+            .map_err(|e| E::custom(e))?;
+
+        Ok(DmxRangeValue::Percentage(v as f32 / 100.0))
+    }
+}
+
+impl<'de> Deserialize<'de> for DmxRangeValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(DmxRangeValueVisitor)
+    }
+}
+
+impl Serialize for DmxRangeValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            DmxRangeValue::Value(v) => serializer.serialize_u32(*v),
+            DmxRangeValue::Percentage(f) => serializer.serialize_f32(*f),
+        }
     }
 }
 
 fn full_range() -> DmxRange {
-    DmxRange { start: 0, end: 255 }
+    DmxRange {
+        start: DmxRangeValue::Percentage(0.0),
+        end: DmxRangeValue::Percentage(1.0),
+    }
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
