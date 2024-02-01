@@ -343,6 +343,8 @@ pub enum DmxColor {
     Blue,
     #[serde(alias = "#ffffff")]
     White,
+    #[serde(alias = "#ffbf00")]
+    Amber,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]

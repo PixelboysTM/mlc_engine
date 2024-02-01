@@ -1,7 +1,4 @@
-use crate::{
-    fixture::Value,
-    runtime::{RuntimeData, ToFaderValue},
-};
+use crate::runtime::{RuntimeData, ToFaderValue};
 
 use super::{Dimmer, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
 
@@ -14,6 +11,7 @@ pub enum FeatureSetRequest {
     Dimmer { value: f32 },
     Rgb { red: f32, green: f32, blue: f32 },
     White { value: f32 },
+    Amber { value: f32 },
     Rotation { value: f32 },
     PanTilt { pan: f32, tilt: f32 },
     GetAvailableFeatures,
@@ -29,6 +27,11 @@ impl ApplyFeature for Vec<FixtureFeature> {
             }
             FeatureSetRequest::White { value } => {
                 if let Some(d) = find_white(self) {
+                    update_values(&[(d.dimmer, value)], runtime_data).await;
+                }
+            }
+            FeatureSetRequest::Amber { value } => {
+                if let Some(d) = find_amber(self) {
                     update_values(&[(d.dimmer, value)], runtime_data).await;
                 }
             }
@@ -149,6 +152,16 @@ fn find_white(features: &[FixtureFeature]) -> Option<Dimmer> {
     for f in features {
         match f {
             FixtureFeature::White(d) => return Some(d.clone()),
+            _ => continue,
+        }
+    }
+
+    None
+}
+fn find_amber(features: &[FixtureFeature]) -> Option<Dimmer> {
+    for f in features {
+        match f {
+            FixtureFeature::Amber(d) => return Some(d.clone()),
             _ => continue,
         }
     }

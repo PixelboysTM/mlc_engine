@@ -36,6 +36,7 @@ pub struct PanTilt {
 pub enum FixtureFeature {
     Dimmer(Dimmer),
     White(Dimmer),
+    Amber(Dimmer),
     Rgb(Rgb),
     Rotation(Rotation),
     PanTilt(PanTilt),
@@ -49,6 +50,7 @@ impl FixtureFeature {
             FixtureFeature::Rgb(_) => "Rgb",
             FixtureFeature::Rotation(_) => "Rotation",
             FixtureFeature::PanTilt(_) => "PanTilt",
+            FixtureFeature::Amber(_) => "Amber",
         }
     }
 }
@@ -94,6 +96,7 @@ pub fn find_features(
         &search_white,
         &search_rotation,
         &search_pantilt,
+        &search_amber,
     ];
 
     let mut features = vec![];
@@ -431,4 +434,38 @@ fn search_pantilt(
     } else {
         None
     }
+}
+
+fn search_amber(
+    fixture: &FixtureType,
+    channels: &[String],
+    universe_id: UniverseId,
+    start_index: UniverseAddress,
+) -> Option<FixtureFeature> {
+    for (i, channel) in channels.iter().enumerate() {
+        let caps = fixture.get_available_channels().get(channel);
+        if let Some(caps) = caps {
+            for cap in &caps.capabilities {
+                if caps.pixel_key.is_some() {
+                    continue;
+                }
+                if let FixtureCapability::ColorIntensity(d) = &cap.detail {
+                    if d.color == DmxColor::Amber {
+                        return Some(FixtureFeature::Amber(Dimmer {
+                            dimmer: make_feature_tile(
+                                caps,
+                                start_index,
+                                universe_id,
+                                i,
+                                &cap.dmx_range,
+                                channels,
+                            ),
+                        }));
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
