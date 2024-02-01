@@ -22,7 +22,7 @@ use rocket::{
     },
     Shutdown, State,
 };
-use rocket_ws::WebSocket;
+use rocket_ws::{Message, WebSocket};
 
 use crate::{
     data_serving::{Info, ProjectGuard},
@@ -46,7 +46,8 @@ use self::{
 #[derive(Debug)]
 struct RuntimeI {
     universe_values: HashMap<UniverseId, [u8; UNIVERSE_SIZE]>,
-    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>, //TODO: Only one Sender needed
+    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>,
+    //TODO: Only one Sender needed
     sender: Sender<RuntimeUpdate>,
 }
 
@@ -348,12 +349,12 @@ async fn get_value_updates(
                     },
                     Some(msg) = stream.next() => {
                     if let Ok(msg) = msg {
-                        let req: UniverseId =
-                            serde_json::from_str(msg.to_text().unwrap()).unwrap();
-                        let data = runtime.get_universe_values(&req).await;
-                        if let Some(data) = data {
-                            stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: req, values: data, author: 0 }).unwrap())).await.unwrap();
-                        }
+                            if let Some(req) = decode_msg(&msg) {
+                                let data = runtime.get_universe_values(&req).await;
+                                if let Some(data) = data {
+                                    stream.send(rocket_ws::Message::text(serde_json::to_string(&RuntimeUpdate::Universe { universe: req, values: data, author: 0 }).unwrap())).await.unwrap();
+                                }
+                            }
                     }
                 },
                     _ = &mut shutdown => {
@@ -365,6 +366,16 @@ async fn get_value_updates(
             Ok(())
         })
     })
+}
+
+fn decode_msg<'a, T: serde::Deserialize<'a>>(msg: &'a Message) -> Option<T> {
+    if let Ok(json) = msg.to_text() {
+        if let Ok(val) = serde_json::from_str(json) {
+            return Some(val);
+        }
+    }
+
+    None
 }
 
 #[derive(serde::Deserialize)]
@@ -389,15 +400,16 @@ async fn set_value(
                 select! {
                     Some(msg) = stream.next() => {
                     if let Ok(msg) = msg {
-                        let req: FaderUpdateRequest =
-                            serde_json::from_str(msg.to_text().unwrap()).unwrap();
-                        rd.set_value(req.universe, req.channel, req.value).await;
+                            if let Some(req) = decode_msg::<FaderUpdateRequest>(&msg) {
+                                rd.set_value(req.universe, req.channel, req.value).await;
+                            }
                     }
                 },
                     _ = &mut shutdown => {
                         break;
                     },
-                };
+                }
+                ;
             }
 
             Ok(())
@@ -428,7 +440,7 @@ async fn set_endpoint_config(
 async fn set_feature<'a>(
     ws: WebSocket,
     mut shutdown: Shutdown,
-    fix_id: String,
+    fix_id: &'a str,
     runtime: &'a State<RuntimeData>,
     project: &'a State<Project>,
     _g: ProjectGuard,
@@ -464,13 +476,12 @@ async fn set_feature<'a>(
                                             break;
                                         }
 
-                                        let msg = msg.to_text().unwrap();
-
-                                        let fsr: FeatureSetRequest = serde_json::from_str(msg).expect("Must be");
-                                        if let FeatureSetRequest::GetAvailableFeatures = fsr {
-                                            stream.send(rocket_ws::Message::text(serde_json::to_string(&fs.iter().map(|s| s.name()).collect::<Vec<_>>()).unwrap())).await.unwrap();
-                                        } else {
-                                            fs.apply(fsr, &r).await;
+                                        if let Some(fsr) = decode_msg(&msg){
+                                            if let FeatureSetRequest::GetAvailableFeatures = fsr {
+                                                stream.send(rocket_ws::Message::text(serde_json::to_string(&fs.iter().map(|s| s.name()).collect::<Vec<_>>()).unwrap())).await.unwrap();
+                                            } else {
+                                                fs.apply(fsr, &r).await;
+                                            }
                                         }
                                     }
                                 } else {
@@ -480,7 +491,8 @@ async fn set_feature<'a>(
                             _ = &mut shutdown => {
                                 break;
                             }
-                        };
+                        }
+                        ;
                     }
                 }
             }

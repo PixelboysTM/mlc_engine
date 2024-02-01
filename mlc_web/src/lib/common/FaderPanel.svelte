@@ -62,8 +62,8 @@
         };
       };
   function getValuesWs() {
-    var loc = window.location,
-      new_uri;
+    let loc = window.location,
+            new_uri;
     if (loc.protocol === "https:") {
       new_uri = "wss:";
     } else {

@@ -51,17 +51,17 @@
       <button on:click={() => dispatcher("close")}>X</button>
     </div>
     <div class="body">
-      {#if features.length == 0}
+      {#if features.length === 0}
         <DualRingSpinner></DualRingSpinner>
       {/if}
       {#each features as feature}
         <div class="feature">
-          {#if feature == "Dimmer"}
+          {#if feature === "Dimmer"}
             <DimmerFeature
               on:value={(v) =>
                 socket.send('{"Dimmer": {"value": ' + v.detail + "}}")}
             ></DimmerFeature>
-          {:else if feature == "Rgb"}
+          {:else if feature === "Rgb"}
             <RgbFeature
               on:value={(v) =>
                 socket.send(
@@ -74,17 +74,17 @@
                     "}}"
                 )}
             ></RgbFeature>
-          {:else if feature == "White"}
+          {:else if feature === "White"}
             <WhiteFeature
               on:value={(v) =>
                 socket.send('{"White": {"value": ' + v.detail + "}}")}
             ></WhiteFeature>
-          {:else if feature == "Rotation"}
+          {:else if feature === "Rotation"}
             <RotationFeature
               on:value={(v) =>
                 socket.send('{"Rotation": { "value":' + v.detail + "}}")}
             ></RotationFeature>
-          {:else if feature == "PanTilt"}
+          {:else if feature === "PanTilt"}
             <PanTiltFeature
               on:value={(v) =>
                 socket.send(
@@ -95,7 +95,7 @@
                     "}}"
                 )}
             ></PanTiltFeature>
-          {:else if feature == "Amber"}
+          {:else if feature === "Amber"}
             <AmberFeature
               on:value={(v) =>
                 socket.send('{"Amber": {"value": ' + v.detail + "}}")}
