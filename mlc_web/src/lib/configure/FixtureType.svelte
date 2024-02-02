@@ -1,5 +1,6 @@
 <script lang="ts">
   import { toastNotifier } from "../stores";
+  import { Hash } from "lucide-svelte";
   export let fixtureType: { name: string; id: string; modes: string[] };
 
   function patch(e: MouseEvent, mode: number) {
@@ -56,7 +57,8 @@
       on:keypress
       tabindex={0}
     >
-      ⏺ {mode}
+      <Hash size={"1.2rem"} />
+      {mode}
     </p>
   {/each}
 </div>
@@ -101,6 +103,7 @@
   p {
     margin: 0 0.2rem;
     width: 100%;
+    vertical-align: middle;
   }
 
   .p-btn {

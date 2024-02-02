@@ -1,8 +1,7 @@
 <script lang="ts">
   import { createSlider, melt } from "@melt-ui/svelte";
   import { writable } from "svelte/store";
-  import Icon from "svelte-icons-pack/Icon.svelte";
-  import RiSystemAddLine from "svelte-icons-pack/ri/RiSystemAddLine";
+  import { Plus } from "lucide-svelte";
   import { createEventDispatcher } from "svelte";
 
   let valueX = writable([0.5]);
@@ -156,8 +155,7 @@
     <span class="thumb" use:melt={$sliderYThumb[0]}></span>
   </span>
   <div class="corner">
-    <Icon src={RiSystemAddLine} color={"var(--color-text)"} size={"100%"}
-    ></Icon>
+    <Plus color={"var(--color-text)"} size={"100%"}></Plus>
   </div>
 </div>
 <p class="value">

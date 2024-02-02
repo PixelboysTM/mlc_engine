@@ -1,9 +1,6 @@
 <script lang="ts">
   import DisconnectHelper from "./lib/DisconnectHelper.svelte";
-  import FaSolidFileUpload from "svelte-icons-pack/fa/FaSolidFileUpload";
-  import FaSolidPlus from "svelte-icons-pack/fa/FaSolidPlus";
-  import FaSolidFolderOpen from "svelte-icons-pack/fa/FaSolidFolderOpen";
-  import Icon from "svelte-icons-pack/Icon.svelte";
+  import { FileUp, Plus, FolderOpen } from "lucide-svelte";
   import Grid from "svelte-grid";
   import gridHelp from "svelte-grid/build/helper/index.mjs";
 
@@ -89,8 +86,6 @@
       time.getMinutes()
     );
   }
-  // const breakpoint = 0;
-  // const column = 5;
 
   const cols = [
     [1500, 5],
@@ -131,10 +126,10 @@
     </div>
     <div class="tabs right">
       <button title="Import Project" class="icon"
-        ><Icon color="white" src={FaSolidFileUpload} /></button
+        ><FileUp size={"100%"} /></button
       >
       <button title="Create New Project" class="icon"
-        ><Icon color="white" src={FaSolidPlus} /></button
+        ><Plus size={"100%"} /></button
       >
     </div>
   </div>
@@ -154,7 +149,7 @@
               window.location.reload()
             );
           }}
-          ><Icon color="white" src={FaSolidFolderOpen} />
+          ><FolderOpen size={"1rem"} />
           <p class="loadBtn">Open</p></button
         >
       </div>

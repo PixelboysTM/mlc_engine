@@ -9,9 +9,6 @@
   function resize(e: MouseEvent) {
     if (!isDown) return;
     let cur = e.y;
-    // console.log(e);
-    // console.log(range);
-    // console.log(range.getBoundingClientRect());
     let start = range.getBoundingClientRect().y;
     let height = range.getBoundingClientRect().height;
 

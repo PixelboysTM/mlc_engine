@@ -1,10 +1,8 @@
 <script lang="ts">
-  import App from "../../App.svelte";
   import FixtureTypeExplorer from "./FixtureTypeExplorer.svelte";
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
   import FaderPanel from "../common/FaderPanel.svelte";
   import UniverseExplorer from "./UniverseExplorer.svelte";
-  import Project from "../../Project.svelte";
   import ProjectSettings from "./ProjectSettings.svelte";
 
   let projectInfo:
@@ -68,10 +66,6 @@
   </div>
 </div>
 
-<!-- 
-
-<FixtureTypeExplorer></FixtureTypeExplorer> -->
-
 <style>
   .configure {
     width: calc(100% - 1rem);
@@ -90,9 +84,7 @@
   .panel {
     width: calc(100% - 2rem);
     /*height: calc(100% - 2rem);*/
-    padding: 1rem;
-    padding-top: 0rem;
-    padding-bottom: 0rem;
+    padding: 0 1rem;
     border-radius: var(--number-border-radius);
     background-color: var(--color-panel);
     overflow: auto;

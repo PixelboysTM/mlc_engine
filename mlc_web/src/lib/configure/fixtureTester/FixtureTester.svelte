@@ -1,8 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy } from "svelte";
   import { make_ws_uri } from "../../stores";
-  import Icon from "svelte-icons-pack/Icon.svelte";
-  import BsLampFill from "svelte-icons-pack/bs/BsLampFill";
+  import { Lamp, X } from "lucide-svelte";
   import DimmerFeature from "./DimmerFeature.svelte";
   import RgbFeature from "./RgbFeature.svelte";
   import WhiteFeature from "./WhiteFeature.svelte";
@@ -27,7 +26,6 @@
   const socket = new WebSocket(make_ws_uri("/runtime/feature/" + id));
   socket.addEventListener("message", (event) => {
     features = JSON.parse(event.data);
-    console.log(event.data);
   });
 
   onDestroy(() => {
@@ -45,10 +43,12 @@
   <div class="panel">
     <div class="header">
       <div class="icon">
-        <Icon size="2rem" color={"var(--color-accent)"} src={BsLampFill}></Icon>
+        <Lamp size="2rem" color={"var(--color-accent)"} />
       </div>
       <h3>{name}</h3>
-      <button on:click={() => dispatcher("close")}>X</button>
+      <button class="close" on:click={() => dispatcher("close")}
+        ><X size={"1.25rem"} /></button
+      >
     </div>
     <div class="body">
       {#if features.length === 0}
@@ -139,7 +139,10 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     border-bottom: var(--color-accent) 1px solid;
   }
 
@@ -167,5 +170,25 @@
   .icon {
     padding-right: 0.25rem;
     border-right: var(--color-accent) 1px solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+
+  .close {
+    border: none;
+    color: var(--color-text);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem;
+    border-radius: var(--number-border-radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .close:hover {
+    color: var(--color-accent);
   }
 </style>
