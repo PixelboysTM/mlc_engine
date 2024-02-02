@@ -1,16 +1,28 @@
 <script lang="ts">
   import UploadFixture from "./configure/UploadFixture.svelte";
-  import BsCloudUploadFill from "svelte-icons-pack/bs/BsCloudUploadFill";
-  import FiSave from "svelte-icons-pack/fi/FiSave";
-  import BsGearFill from "svelte-icons-pack/bs/BsGearFill";
-  import BsPencilFill from "svelte-icons-pack/bs/BsPencilFill";
-  import BsLightbulbFill from "svelte-icons-pack/bs/BsLightbulbFill";
+  import {
+    Settings,
+    Pencil,
+    Lightbulb,
+    UploadCloud,
+    Save,
+  } from "lucide-svelte";
   import marvin from "../assets/icon.png";
-  import Icon from "svelte-icons-pack/Icon.svelte";
 
   let showUpload = false;
 
-  export let pane: "configure" | "program" | "show" = "configure";
+  type Tab = "configure" | "program" | "show";
+
+  export let pane: Tab = 'configure';
+
+  function setTab(tab: Tab){
+      if(pane == tab) return;
+
+      pane = tab;
+      localStorage.setItem("lastTab", tab);
+  }
+
+  setTab(localStorage.getItem("lastTab") as Tab ?? pane);
 </script>
 
 <div>
@@ -18,34 +30,34 @@
 
   <div class="tabs">
     <button
-      class="icon configure {pane == 'configure' ? 'selected' : ''}"
+      class="icon configure {pane === 'configure' ? 'selected' : ''}"
       title="Configure"
-      on:click={() => (pane = "configure")}><Icon src={BsGearFill} /></button
+      on:click={() => setTab('configure')}><Settings size={"100%"} /></button
     >
     <button
-      class="icon program {pane == 'program' ? 'selected' : ''}"
+      class="icon program {pane === 'program' ? 'selected' : ''}"
       title="Program"
-      on:click={() => (pane = "program")}><Icon src={BsPencilFill} /></button
+      on:click={() => setTab('program')}><Pencil size={"100%"} /></button
     >
     <button
-      class="icon show {pane == 'show' ? 'selected' : ''}"
+      class="icon show {pane === 'show' ? 'selected' : ''}"
       title="Show"
-      on:click={() => (pane = "show")}><Icon src={BsLightbulbFill} /></button
+      on:click={() => setTab('show')}><Lightbulb size={"100%"} /></button
     >
   </div>
   <div class="tabs right">
-    {#if pane == "configure"}
+    {#if pane === "configure"}
       <button
         title="Upload Fixture"
         class="icon"
         on:click={() => (showUpload = true)}
-        ><Icon src={BsCloudUploadFill} /></button
+        ><UploadCloud size={"100%"} /></button
       >
     {/if}
     <button
       title="Save Project"
       class="icon"
-      on:click={() => fetch("/data/save")}><Icon src={FiSave} /></button
+      on:click={() => fetch("/data/save")}><Save size={"100%"} /></button
     >
   </div>
 

@@ -138,20 +138,16 @@
     left: 0;
     top: calc(100% + 10px);
     border-radius: 3px;
-    /* box-shadow: 0 0 5px 2px #64646499; */
     background-color: var(--color-panel);
     z-index: 10;
     padding: 8px;
     width: 15rem;
     color: var(--color-text);
-    /* transform: translateY(-20px);
-    transition: all 150ms cubic-bezier(0.25, 0.8, 0.25, 1); */
   }
 
   [data-tooltip]:hover::after {
     opacity: 1;
     transform: translateY(0);
-    /* transition-duration: 300ms; */
   }
   .explorer {
     width: 100%;

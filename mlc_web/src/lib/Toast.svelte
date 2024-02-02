@@ -3,28 +3,13 @@
   import { createToaster, melt } from "@melt-ui/svelte";
   import { flip } from "svelte/animate";
   import { fly } from "svelte/transition";
-
-  // let level: "info" | "warning" | "error" = "info";
-  // let title: string = "ToastManager";
-  // let msg: string = "Notificationsmanager loaded";
-
-  // let interval: number | undefined = undefined;
   toastNotifier.subscribe((data) => {
-    // if (interval != undefined) {
-    //   return;
-    // }
-
-    // handleData();
-    // interval = setInterval(() => {
-    //   handleData();
-    // }, 2000);
-    // handleData();
     if (data == null) {
       return;
     }
     addToast({
       data: data as ToastNotification,
-      // closeDelay: 1000,
+      closeDelay: 1000,
     });
   });
 
@@ -62,8 +47,6 @@
     color: var(--color-text);
     padding: 0.5rem;
     border-radius: var(--number-border-radius);
-    /* box-shadow: -0.2rem 0.2rem 1rem #2d2d2db3; */
-    /* border: #ff3e3e 1px solid; */
   }
 
   .dot {

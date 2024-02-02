@@ -22,8 +22,7 @@
   function request_heartbeat() {
     fetch("/util/heartbeat")
       .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
+      .then(() => {
         failed = 0;
       })
       .catch((err) => {

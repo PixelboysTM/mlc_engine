@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use chrono::Duration;
 use rocket::fairing::AdHoc;
 use rocket::futures::{SinkExt, StreamExt};
+use rocket::serde::json::Json;
 use rocket::tokio::select;
 use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
 use rocket::{get, routes, Shutdown, State};
@@ -11,11 +12,11 @@ use rocket_ws::WebSocket;
 use serde_with::serde_as;
 use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
-use crate::data_serving::ProjectGuard;
+use crate::data_serving::{Info, ProjectGuard};
 use crate::project::Project;
-use crate::{fixture::FaderAddress, module::Module};
+use crate::{fixture::FaderAddress, module::Module, send};
 
-use super::RuntimeData;
+use super::{decode_msg, RuntimeData};
 
 pub struct EffectModule;
 
@@ -35,12 +36,26 @@ impl Module for EffectModule {
                         .send(EffectPlayerAction::Stop);
                 })
             }))
-            .mount("/effects", routes![get_effect_handler])
+            .mount("/effects", routes![get_effect_handler, get_effect_list])
     }
 }
 
+#[get("/get")]
+async fn get_effect_list(
+    project: &State<Project>,
+    _g: ProjectGuard,
+) -> Json<Vec<(String, uuid::Uuid)>> {
+    let p = project.lock().await;
+    Json(
+        p.effects
+            .iter()
+            .map(|e| (e.name.to_string(), e.id.clone()))
+            .collect(),
+    )
+}
+
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct Effect {
     id: uuid::Uuid,
     name: String,
@@ -50,19 +65,19 @@ pub struct Effect {
     tracks: Vec<Track>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub enum Track {
     FaderTrack(FaderTrack),
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct FaderTrack {
     address: FaderAddress,
     values: Vec<FaderKey>,
 }
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct FaderKey {
     value: u8,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
@@ -74,6 +89,8 @@ pub enum EffectHandlerResponse {
     EffectCreated { name: String, id: uuid::Uuid },
     EffectUpdated { id: uuid::Uuid },
     EffectRunning { id: uuid::Uuid, running: bool },
+    EffectList { effects: Vec<(String, uuid::Uuid)> },
+    Effect { effect: Effect },
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -81,13 +98,15 @@ pub enum EffectHandlerRequest {
     Create { name: String },
     Update { id: uuid::Uuid, tracks: Vec<Track> },
     Toggle { id: uuid::Uuid },
+    Get { id: uuid::Uuid },
+    List,
 }
 
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
     mut shutdown: Shutdown,
-    // runtime: &'a State<RuntimeData>,
+    info: &'a State<Sender<Info>>,
     tx: &'a State<Sender<EffectPlayerAction>>,
     project: &'a State<Project>,
     _g: ProjectGuard,
@@ -98,8 +117,13 @@ async fn get_effect_handler<'a>(
                 select! {
                     Some(msg) = stream.next() => {
                         if let Ok(msg) = msg {
-                            let req: EffectHandlerRequest = serde_json::from_str(msg.to_text().unwrap()).expect("Must be");
+                            let req: EffectHandlerRequest = decode_msg(&msg).expect("Must be");
+                            let send_info = matches!(req, EffectHandlerRequest::Create {..});
+
                             handle_msg(&mut stream, req, tx, project).await;
+                            if send_info {
+                                send!(info, Info::EffectListChanged);
+                            }
                         }
                     }
 
@@ -148,6 +172,24 @@ async fn handle_msg(
         }
         EffectHandlerRequest::Toggle { id } => {
             tx.send(EffectPlayerAction::Toggle { id }).unwrap();
+        }
+        EffectHandlerRequest::Get { id } => {
+            let p = project.lock().await;
+            let effect = p.effects.iter().find(|e| e.id == id);
+            if let Some(e) = effect {
+                let _ = stream.send(make_msg(&EffectHandlerResponse::Effect { effect: e.clone() })).await;
+            }
+        }
+        EffectHandlerRequest::List => {
+            let p = project.lock().await;
+            let effects = p
+                .effects
+                .iter()
+                .map(|e| (e.name.clone(), e.id.clone()))
+                .collect();
+            let _ = stream
+                .send(make_msg(&EffectHandlerResponse::EffectList { effects }))
+                .await;
         }
     }
 }

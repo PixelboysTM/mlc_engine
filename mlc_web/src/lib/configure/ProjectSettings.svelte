@@ -1,6 +1,5 @@
 <script lang="ts">
   import DualRingSpinner from "../misc/DualRingSpinner.svelte";
-  import { toastNotifier } from "../stores";
   import EndPointMappingPanel from "./EndPointMappingPanel.svelte";
 
   type Settings = {

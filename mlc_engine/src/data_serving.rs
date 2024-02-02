@@ -33,6 +33,7 @@ pub enum Info {
     UniversePatchChanged(UniverseId),
     UniversesUpdated,
     EndpointConfigChanged,
+    EffectListChanged,
 }
 
 #[get("/info")]

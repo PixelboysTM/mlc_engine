@@ -1,11 +1,5 @@
-<script>
-  import marvin from "../../assets/icon.png";
-</script>
-
 <div class="outer">
-  <div class="lds-dual-ring">
-    <!-- <img class="iconMarvin" src={marvin} alt="MLC" /> -->
-  </div>
+  <div class="lds-dual-ring" />
 </div>
 
 <style>
@@ -27,20 +21,9 @@
     border-top: var(--color-tertiary) 6px solid;
     border-right: var(--color-text) 6px solid;
     border-radius: 50%;
-    animation: lds-dual-ring 2s linear infinite;
+    animation: spin-animation 2s linear infinite;
   }
-  /* .lds-dual-ring:after {
-    content: " ";
-    display: block;
-    width: 64px;
-    height: 64px;
-    margin: 8px;
-    border-radius: 50%;
-    border: 6px solid #fff;
-    border-color: #fff transparent #fff transparent;
-    animation: lds-dual-ring 1.2s linear infinite;
-  } */
-  @keyframes lds-dual-ring {
+  @keyframes spin-animation {
     0% {
       transform: rotate(0deg);
     }

@@ -12,7 +12,7 @@ export function make_ws_uri(path: string): string {
   return new_uri;
 }
 
-export type InfoKind = "None" | "FixtureTypesUpdated" | "ProjectSaved" | "ProjectLoaded" | "SystemShutdown" | "UniversesUpdated" | {"UniversePatchChanged": number}; 
+export type InfoKind = "None" | "FixtureTypesUpdated" | "ProjectSaved" | "ProjectLoaded" | "SystemShutdown" | "UniversesUpdated" | {"UniversePatchChanged": number} |"EffectListChanged";
 export const info: Readable<InfoKind> = readable("None", function start(set) {
 
 var new_uri = make_ws_uri("/data/info");
@@ -35,17 +35,6 @@ function createToast() {
     subscribe,
     reset: () => set(null),
     push: (e: ToastNotification) => {update((n) => e); history.update((n) => [...n, e])},
-    // pull: () => {
-    //   let element: null | ToastNotification = null;
-    //   update((n) => {
-    //     if(n.length > 0){
-    //       element = n[0];
-    //     }
-    //     return [...n.slice(1)];
-    //   })
-
-    //   return element;
-    // }
   }
 }
 

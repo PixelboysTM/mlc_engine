@@ -5,10 +5,6 @@
 
   const dispatcher = createEventDispatcher<Record<string, number[]>>();
 
-  //   value.subscribe((data) => {
-  //     dispatcher("value", data[0] / 100);
-  //   });
-
   let hex = "#000000";
 
   function make_value(val: RgbaColor): number[] {
