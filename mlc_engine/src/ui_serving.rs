@@ -33,8 +33,21 @@ async fn index(project_selection: &State<ProjectSelection>) -> Option<NamedFile>
     }
 }
 
+#[get("/viewer3d")]
+async fn viewer3d(project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
+    if project_selection.inner().0.lock().await.is_some() {
+        NamedFile::open(Path::new(OUT_PATH).join("viewer-3d.html"))
+            .await
+            .ok()
+    } else {
+        NamedFile::open(Path::new(OUT_PATH).join("error.html")) // TODO: Custom Error page
+            .await
+            .ok()
+    }
+}
+
 fn get_routes() -> Vec<Route> {
-    routes![index, files]
+    routes![index, files, viewer3d]
 }
 
 pub struct UiServingModule;

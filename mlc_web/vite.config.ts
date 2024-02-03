@@ -12,7 +12,8 @@ export default defineConfig({
       input: {
         index: "index.html",
         error: "error.html",
-        project: "project.html"
+        project: "project.html",
+        viewer3d: "viewer-3d.html",
       },
       output: [
         {

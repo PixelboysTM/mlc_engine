@@ -6,6 +6,7 @@
     Lightbulb,
     UploadCloud,
     Save,
+    ArrowUpRightFromSquare,
   } from "lucide-svelte";
   import marvin from "../assets/icon.png";
 
@@ -13,16 +14,16 @@
 
   type Tab = "configure" | "program" | "show";
 
-  export let pane: Tab = 'configure';
+  export let pane: Tab = "configure";
 
-  function setTab(tab: Tab){
-      if(pane == tab) return;
+  function setTab(tab: Tab) {
+    if (pane == tab) return;
 
-      pane = tab;
-      localStorage.setItem("lastTab", tab);
+    pane = tab;
+    localStorage.setItem("lastTab", tab);
   }
 
-  setTab(localStorage.getItem("lastTab") as Tab ?? pane);
+  setTab((localStorage.getItem("lastTab") as Tab) ?? pane);
 </script>
 
 <div>
@@ -32,17 +33,17 @@
     <button
       class="icon configure {pane === 'configure' ? 'selected' : ''}"
       title="Configure"
-      on:click={() => setTab('configure')}><Settings size={"100%"} /></button
+      on:click={() => setTab("configure")}><Settings size={"100%"} /></button
     >
     <button
       class="icon program {pane === 'program' ? 'selected' : ''}"
       title="Program"
-      on:click={() => setTab('program')}><Pencil size={"100%"} /></button
+      on:click={() => setTab("program")}><Pencil size={"100%"} /></button
     >
     <button
       class="icon show {pane === 'show' ? 'selected' : ''}"
       title="Show"
-      on:click={() => setTab('show')}><Lightbulb size={"100%"} /></button
+      on:click={() => setTab("show")}><Lightbulb size={"100%"} /></button
     >
   </div>
   <div class="tabs right">
@@ -52,6 +53,15 @@
         class="icon"
         on:click={() => (showUpload = true)}
         ><UploadCloud size={"100%"} /></button
+      >
+    {/if}
+    {#if pane === "program"}
+      <button
+        title="Open 3D Viewer"
+        class="icon"
+        on:click={() => {
+          window.open("/viewer3d", "_blank");
+        }}><ArrowUpRightFromSquare size={"100%"} /></button
       >
     {/if}
     <button
