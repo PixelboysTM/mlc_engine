@@ -2,7 +2,12 @@
   import EffectBrowser from "./EffectBrowser.svelte";
   import { make_ws_uri } from "../stores";
   import type { Effect } from "../../customTypings/Effect";
-  import { PanelLeftClose, PanelLeftOpen } from "lucide-svelte";
+  import {
+    PanelLeftClose,
+    PanelLeftOpen,
+    Repeat,
+    Repeat1,
+  } from "lucide-svelte";
 
   const socket = new WebSocket(make_ws_uri("/effects/effectHandler"));
 
@@ -96,9 +101,28 @@
   </div>
   <div class="panel effect-detail {broswerOut ? 'browser' : ''}">
     <h3>Effect:</h3>
-    <p>Name: {effect?.name}</p>
-    <p>Looping: {effect?.looping}</p>
-    <p>Duration: {effect?.duration}s</p>
+    <div class="p-effect">
+      <p>Name:</p>
+      <p>{effect?.name}</p>
+      <p>Looping:</p>
+      <div class="looping">
+        <button
+          on:click={() => {
+            if (effect) {
+              effect.looping = !effect?.looping;
+            }
+          }}
+        >
+          {#if effect?.looping}
+            <Repeat size={"1rem"}></Repeat>
+          {:else}
+            <Repeat1 size={"1rem"}></Repeat1>
+          {/if}
+        </button>
+      </div>
+      <p>Duration:</p>
+      <p>{effect?.duration}s</p>
+    </div>
   </div>
 </div>
 
@@ -124,6 +148,7 @@
     background-color: var(--color-panel);
     overflow: auto;
     min-width: 0;
+    transition: 0.5s;
   }
 
   .header {
@@ -213,5 +238,23 @@
   .iconBtn:hover {
     cursor: pointer;
     color: var(--color-accent);
+  }
+
+  .p-effect {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.2rem;
+  }
+
+  .p-effect p {
+    margin: 0;
+  }
+  .p-effect .looping {
+    display: grid;
+    place-items: center;
+  }
+  .p-effect .looping button {
+    padding: 0.2rem 0.5rem;
+    margin: 0;
   }
 </style>
