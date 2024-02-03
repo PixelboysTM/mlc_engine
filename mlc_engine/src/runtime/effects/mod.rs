@@ -96,7 +96,9 @@ pub enum EffectHandlerResponse {
 #[serde_as]
 #[derive(Debug, serde::Deserialize)]
 pub enum EffectHandlerRequest {
-    Create { name: String },
+    Create {
+        name: String,
+    },
     Update {
         id: uuid::Uuid,
         tracks: Vec<Track>,
@@ -104,8 +106,12 @@ pub enum EffectHandlerRequest {
         #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
         duration: Duration,
     },
-    Toggle { id: uuid::Uuid },
-    Get { id: uuid::Uuid },
+    Toggle {
+        id: uuid::Uuid,
+    },
+    Get {
+        id: uuid::Uuid,
+    },
     List,
 }
 
@@ -153,6 +159,7 @@ async fn handle_msg(
 ) {
     match req {
         EffectHandlerRequest::Create { name } => {
+            let name = validate_effect_name(name);
             let mut p = project.lock().await;
             let id = uuid::Uuid::new_v4();
             p.effects.push(Effect {
@@ -166,7 +173,12 @@ async fn handle_msg(
                 .send(make_msg(&EffectHandlerResponse::EffectCreated { name, id }))
                 .await;
         }
-        EffectHandlerRequest::Update { id, tracks, looping, duration } => {
+        EffectHandlerRequest::Update {
+            id,
+            tracks,
+            looping,
+            duration,
+        } => {
             let mut p = project.lock().await;
             let effect = p.effects.iter_mut().find(|f| f.id == id);
             if let Some(effect) = effect {
@@ -186,7 +198,11 @@ async fn handle_msg(
             let p = project.lock().await;
             let effect = p.effects.iter().find(|e| e.id == id);
             if let Some(e) = effect {
-                let _ = stream.send(make_msg(&EffectHandlerResponse::Effect { effect: e.clone() })).await;
+                let _ = stream
+                    .send(make_msg(&EffectHandlerResponse::Effect {
+                        effect: e.clone(),
+                    }))
+                    .await;
             }
         }
         EffectHandlerRequest::List => {
@@ -201,6 +217,17 @@ async fn handle_msg(
                 .await;
         }
     }
+}
+
+fn validate_effect_name(name: String) -> String {
+    let parts = name.split("/");
+    parts.map(|p| p.trim()).fold("".to_string(), |a, p| {
+        if a.len() == 0 {
+            a + p
+        } else {
+            a + "/" + p
+        }
+    })
 }
 
 fn make_msg<T: serde::Serialize>(t: &T) -> rocket_ws::Message {
