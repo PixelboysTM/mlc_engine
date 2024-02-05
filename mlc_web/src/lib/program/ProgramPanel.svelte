@@ -8,6 +8,7 @@
     Repeat,
     Repeat1,
   } from "lucide-svelte";
+  import Timeline from "./timeline/Timeline.svelte";
 
   const socket = new WebSocket(make_ws_uri("/effects/effectHandler"));
 
@@ -94,7 +95,8 @@
     </div>
   {/if}
   <div class="panel timeline {broswerOut ? 'browser' : ''}">
-    <h3>Timeline</h3>
+    <!-- <h3>Timeline</h3> -->
+    <Timeline></Timeline>
   </div>
   <div class="panel flat-preview {broswerOut ? 'browser' : ''}">
     <h3>Viewport:</h3>
