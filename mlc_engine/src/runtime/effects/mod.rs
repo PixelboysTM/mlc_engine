@@ -130,12 +130,14 @@ async fn get_effect_handler<'a>(
                 select! {
                     Some(msg) = stream.next() => {
                         if let Ok(msg) = msg {
-                            let req: EffectHandlerRequest = decode_msg(&msg).expect("Must be");
-                            let send_info = matches!(req, EffectHandlerRequest::Create {..});
+                            if let Some(req) = decode_msg::<EffectHandlerRequest>(&msg){
 
-                            handle_msg(&mut stream, req, tx, project).await;
-                            if send_info {
-                                send!(info, Info::EffectListChanged);
+                                let send_info = matches!(req, EffectHandlerRequest::Create {..});
+
+                                handle_msg(&mut stream, req, tx, project).await;
+                                if send_info {
+                                    send!(info, Info::EffectListChanged);
+                                }
                             }
                         }
                     }

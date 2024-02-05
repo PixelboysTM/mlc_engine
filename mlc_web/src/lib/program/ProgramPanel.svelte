@@ -14,6 +14,8 @@
   import Timeline from "./timeline/Timeline.svelte";
   import { createPopover, melt } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
+  import Viewer2D from "./Viewer2D.svelte";
+  import { onDestroy } from "svelte";
 
   const socket = new WebSocket(make_ws_uri("/effects/effectHandler"));
 
@@ -83,6 +85,11 @@
       );
     }
   }
+
+  onDestroy(() => {
+    updateEffect();
+    socket.close();
+  });
 </script>
 
 <!--<EffectBrowser></EffectBrowser>-->
@@ -139,6 +146,7 @@
   </div>
   <div class="panel flat-preview {broswerOut ? 'browser' : ''}">
     <h3>Viewport:</h3>
+    <Viewer2D></Viewer2D>
   </div>
   <div class="panel effect-detail {broswerOut ? 'browser' : ''}">
     <div class="header">

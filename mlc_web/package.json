@@ -30,6 +30,7 @@
     "@threlte/xr": "^0.1.2",
     "@types/three": "^0.160.0",
     "lucide-svelte": "^0.321.0",
+    "p5-svelte": "^3.1.2",
     "svelte-awesome-color-picker": "^3.0.4",
     "svelte-knob": "^1.0.2",
     "three": "^0.160.1"
