@@ -12,7 +12,7 @@ export type Effect = {
 }
 
 export type Track = {
-    "FaderTrack": FaderTrack
+    FaderTrack: FaderTrack;
 };
 
 export type FaderTrack = {

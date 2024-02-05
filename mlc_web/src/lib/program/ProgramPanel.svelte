@@ -7,8 +7,13 @@
     PanelLeftOpen,
     Repeat,
     Repeat1,
+    SquarePen,
+    X,
+    FolderSync,
   } from "lucide-svelte";
   import Timeline from "./timeline/Timeline.svelte";
+  import { createPopover, melt } from "@melt-ui/svelte";
+  import { fade } from "svelte/transition";
 
   const socket = new WebSocket(make_ws_uri("/effects/effectHandler"));
 
@@ -47,6 +52,37 @@
   let effect: Effect | undefined = undefined;
 
   let broswerOut: boolean = false;
+  function setBrowserOut(out: boolean) {
+    broswerOut = out;
+    localStorage.setItem("browserOut", JSON.stringify(out));
+  }
+  setBrowserOut(JSON.parse(localStorage.getItem("browserOut") ?? "false"));
+
+  let newEffectName: string = "New Effect";
+  function createNewEffect() {
+    socket.send('{"Create": {"name": "' + newEffectName + '"}}');
+  }
+
+  const {
+    elements: { trigger, content, arrow, close },
+    states: { open },
+  } = createPopover({ forceVisible: true });
+
+  function updateEffect() {
+    if (effect) {
+      socket.send(
+        '{"Update": {"id": "' +
+          effect.id +
+          '", "tracks":' +
+          JSON.stringify(effect.tracks) +
+          ', "looping": ' +
+          effect.looping +
+          ', "duration": ' +
+          effect.duration +
+          "}}"
+      );
+    }
+  }
 </script>
 
 <!--<EffectBrowser></EffectBrowser>-->
@@ -70,7 +106,7 @@
       <div class="header">
         <div
           class="iconBtn"
-          on:click={() => (broswerOut = false)}
+          on:click={() => setBrowserOut(false)}
           on:keypress
           role="button"
           tabindex="0"
@@ -78,6 +114,9 @@
           <PanelLeftClose size={"1.25rem"}></PanelLeftClose>
         </div>
         <h3>Effect Browser:</h3>
+        <div class="iconBtn" use:melt={$trigger}>
+          <SquarePen size={"1.25rem"}></SquarePen>
+        </div>
       </div>
       <EffectBrowser
         on:open={(v) => socket.send('{"Get": {"id": "' + v.detail + '"}}')}
@@ -86,7 +125,7 @@
   {:else}
     <div
       class="openEffectBrowser iconBtn"
-      on:click={() => (broswerOut = true)}
+      on:click={() => setBrowserOut(true)}
       on:keypress
       role="button"
       tabindex="0"
@@ -96,13 +135,24 @@
   {/if}
   <div class="panel timeline {broswerOut ? 'browser' : ''}">
     <!-- <h3>Timeline</h3> -->
-    <Timeline></Timeline>
+    <Timeline bind:effect></Timeline>
   </div>
   <div class="panel flat-preview {broswerOut ? 'browser' : ''}">
     <h3>Viewport:</h3>
   </div>
   <div class="panel effect-detail {broswerOut ? 'browser' : ''}">
-    <h3>Effect:</h3>
+    <div class="header">
+      <h3>Effect:</h3>
+      <div
+        class="iconBtn"
+        on:click={() => updateEffect()}
+        on:keypress
+        role="button"
+        tabindex="0"
+      >
+        <FolderSync size={"1.25rem"}></FolderSync>
+      </div>
+    </div>
     <div class="p-effect">
       <p>Name:</p>
       <p>{effect?.name}</p>
@@ -127,6 +177,30 @@
     </div>
   </div>
 </div>
+
+<!-- Popover -->
+{#if $open}
+  <div class="content" use:melt={$content} transition:fade={{ duration: 100 }}>
+    <span use:melt={$arrow} />
+    <div class="popover">
+      <p>Create New Effect</p>
+      <fieldset>
+        <label for="name">Name:</label>
+        <input
+          type="text"
+          id="name"
+          class="popInput"
+          placeholder="New Effect"
+          bind:value={newEffectName}
+        />
+      </fieldset>
+      <button on:click={() => createNewEffect()}>Create</button>
+    </div>
+    <button use:melt={$close} class="close">
+      <X class="square"></X>
+    </button>
+  </div>
+{/if}
 
 <style>
   .program {
@@ -258,5 +332,85 @@
   .p-effect .looping button {
     padding: 0.2rem 0.5rem;
     margin: 0;
+  }
+
+  /* Popover */
+  .content {
+    z-index: 50;
+    width: fit-content;
+    border-radius: var(--number-border-radius);
+    background-color: var(--color-panel);
+    padding: 0.5rem;
+    box-shadow: 0 0 0.2rem 0.2rem #000000c4;
+  }
+
+  .popover {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .popover p {
+    margin: 0;
+  }
+
+  fieldset {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    margin: 0;
+    border: 1px solid var(--color-accent);
+    border-radius: var(--number-border-radius);
+  }
+
+  label {
+    font-size: small;
+  }
+
+  .popInput {
+    display: flex;
+    height: 2rem;
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    background-color: var(--color-panel);
+    font-size: small;
+    align-items: center;
+    justify-items: center;
+    border-left: 1px solid var(--color-background);
+  }
+
+  .popInput:focus-visible {
+    outline: none;
+  }
+
+  .close {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    display: flex;
+    height: 1.5rem;
+    width: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+    color: var(--color-text);
+  }
+  .close:hover {
+    color: var(--color-accent);
+  }
+
+  .square {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+
+    color: var(--color-text);
+  }
+
+  .square:hover {
+    color: var(--color-accent);
   }
 </style>
