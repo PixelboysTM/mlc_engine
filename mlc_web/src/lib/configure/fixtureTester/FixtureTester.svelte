@@ -50,6 +50,7 @@
         ><X size={"1.25rem"} /></button
       >
     </div>
+      <p class="f-id">{id}</p>
     <div class="body">
       {#if features.length === 0}
         <DualRingSpinner></DualRingSpinner>
@@ -190,5 +191,10 @@
 
   .close:hover {
     color: var(--color-accent);
+  }
+
+  .f-id {
+    color: var(--color-background);
+    margin: 0 0 0 0.5rem;
   }
 </style>

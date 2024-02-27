@@ -1,5 +1,6 @@
 pub mod feature;
 
+use get_size::GetSize;
 use std::ops::Add;
 use std::{fmt::Debug, num::ParseIntError};
 
@@ -11,7 +12,9 @@ use self::feature::FixtureFeature;
 
 use super::{FixtureChannel, FixtureType, ValueResolution};
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub type FixtureId = uuid::Uuid;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct PatchedFixture {
     pub config: FixtureType,
     pub num_channels: u8,
@@ -20,17 +23,18 @@ pub struct PatchedFixture {
     pub name: String,
     pub mode: usize,
     pub features: Vec<FixtureFeature>,
-    pub id: uuid::Uuid,
+    #[get_size(ignore)]
+    pub id: FixtureId,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct PatchedChannel {
     pub(in crate::fixture) config: FixtureChannel,
     pub(in crate::fixture) channel_address: UniverseAddress,
     pub(in crate::fixture) resolution: ValueResolution,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, get_size::GetSize)]
 pub struct UniverseAddress {
     add_256: bool,
     adds: u8,
@@ -145,7 +149,7 @@ impl Debug for UniverseAddress {
     }
 }
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash, get_size::GetSize)]
 pub struct UniverseId(pub u16);
 
 impl FromParam<'_> for UniverseId {

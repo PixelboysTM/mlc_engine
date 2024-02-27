@@ -1,33 +1,49 @@
 use std::collections::HashMap;
 
 use chrono::Duration;
+use rocket::{get, routes, Shutdown, State};
 use rocket::fairing::AdHoc;
 use rocket::futures::{SinkExt, StreamExt};
+use rocket::futures::lock::MutexGuard;
 use rocket::serde::json::Json;
+use rocket::time::Instant;
 use rocket::tokio::select;
 use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
-use rocket::{get, routes, Shutdown, State};
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
+use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
-use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
-use crate::data_serving::{Info, ProjectGuard};
-use crate::project::Project;
 use crate::{fixture::FaderAddress, module::Module, send};
+use crate::data_serving::{Info, ProjectGuard};
+use crate::fixture::feature::{FixtureFeature, FixtureFeatureType};
+use crate::fixture::FixtureId;
+use crate::project::{Project, ProjectI};
+use crate::runtime::effects::baking::{BakedEffect, BakedFixtureData, BakingNotification};
+use crate::runtime::effects::feature_track::FeatureTrack;
+use crate::runtime::effects::track_key::FaderKey;
 
-use super::{decode_msg, RuntimeData};
+use super::{decode_msg, RuntimeData, RuntimeUpdate};
+
+mod baking;
+mod feature_track;
+mod track_key;
 
 pub struct EffectModule;
 
 impl Module for EffectModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+        let (baking_tx, baking_rx) = broadcast::channel::<BakingNotification>(512);
+
         let tx = startup_effect_player(
             app.state::<RuntimeData>().unwrap().clone(),
             app.state::<Project>().unwrap().clone(),
+            baking_tx.clone(),
         );
 
         app.manage(tx)
+            .manage(baking_rx)
+            .manage(baking_tx)
             .attach(AdHoc::on_shutdown("Shutdown EffectPlayer", |a| {
                 Box::pin(async move {
                     let _ = a
@@ -36,7 +52,10 @@ impl Module for EffectModule {
                         .send(EffectPlayerAction::Stop);
                 })
             }))
-            .mount("/effects", routes![get_effect_handler, get_effect_list])
+            .mount(
+                "/effects",
+                routes![get_effect_handler, get_effect_list, get_baking_notifications],
+            )
     }
 }
 
@@ -68,20 +87,13 @@ pub struct Effect {
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub enum Track {
     FaderTrack(FaderTrack),
+    FeatureTrack(FeatureTrack),
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct FaderTrack {
     address: FaderAddress,
     values: Vec<FaderKey>,
-}
-
-#[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-pub struct FaderKey {
-    value: u8,
-    #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
-    start_time: Duration,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -140,6 +152,32 @@ async fn get_effect_handler<'a>(
                                 }
                             }
                         }
+                    }
+
+                    _ = &mut shutdown => {
+                        break;
+                    }
+                }
+            }
+            Ok(())
+        })
+    })
+}
+
+#[get("/baking")]
+async fn get_baking_notifications<'a>(
+    ws: WebSocket,
+    mut shutdown: Shutdown,
+    tx: &'a State<Sender<BakingNotification>>,
+) -> rocket_ws::Channel<'a> {
+    let mut rx = tx.subscribe();
+
+    ws.channel(move |mut stream| {
+        Box::pin(async move {
+            loop {
+                select! {
+                    Ok(msg) = rx.recv() => {
+                        let _ = stream.send(make_msg(&msg)).await;
                     }
 
                     _ = &mut shutdown => {
@@ -242,6 +280,7 @@ struct EffectPlayerI {
     effects: HashMap<uuid::Uuid, BakedEffect>,
     rx: Receiver<EffectPlayerAction>,
     time: chrono::NaiveTime,
+    baking: Sender<BakingNotification>,
 }
 
 #[derive(Debug, Clone)]
@@ -252,27 +291,11 @@ pub enum EffectPlayerAction {
     Toggle { id: uuid::Uuid },
 }
 
-#[derive(Debug)]
-pub struct BakedEffect {
-    faders: HashMap<FaderAddress, Vec<(Duration, u8)>>,
-    current_time: Duration,
-    max_time: Duration,
-    running: bool,
-    looping: bool,
-}
-
-impl BakedEffect {
-    fn toggle(&mut self) {
-        if self.running {
-            self.running = false;
-        } else {
-            self.current_time = Duration::milliseconds(0);
-            self.running = true;
-        }
-    }
-}
-
-fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<EffectPlayerAction> {
+fn startup_effect_player(
+    runtime: RuntimeData,
+    project: Project,
+    baking: Sender<BakingNotification>,
+) -> Sender<EffectPlayerAction> {
     let (tx, rx) = broadcast::channel(500);
 
     rocket::tokio::spawn(async move {
@@ -282,6 +305,7 @@ fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<Effec
             runtime,
             rx,
             time: chrono::Utc::now().naive_utc().time(),
+            baking,
         };
         effect_player.start().await;
     });
@@ -289,7 +313,7 @@ fn startup_effect_player(runtime: RuntimeData, project: Project) -> Sender<Effec
     tx
 }
 
-const EFFECT_UPDATE_FREQ: u64 = 20; //TODO: Make available in settings
+const EFFECT_UPDATE_FREQ: u64 = 20; //ms //TODO: Make available in settings
 
 impl EffectPlayerI {
     async fn start(mut self) {
@@ -313,10 +337,10 @@ impl EffectPlayerI {
         match msg {
             EffectPlayerAction::Stop => return true,
             EffectPlayerAction::Rebake => {
-                self.bake_effects().await;
+                self.bake_effects().await; //TODO: Make player not wait for baking to finish just queue and update when baking completed then also needs to run on seperate thread
             }
             EffectPlayerAction::EffectsChanged { id } => {
-                self.bake_effect(id).await;
+                self.bake_effect(id).await; //TODO: Same as above but then also needs to run on seperate thread
             }
             EffectPlayerAction::Toggle { id } => {
                 if let Some(e) = self.effects.get_mut(&id) {
@@ -382,11 +406,33 @@ impl EffectPlayerI {
         let p = self.project.lock().await;
         let effects = &p.effects;
 
-        for ele in effects {
-            let baked = bake(ele).await;
-            self.effects.insert(ele.id, baked);
+        let patched_fixtures = get_patched_fixtures_clone(&p);
+
+        send!(
+            self.baking,
+            BakingNotification::Started("Baking effects started!".to_string())
+        );
+        let time = Instant::now();
+        let s: Vec<_> = effects
+            .iter()
+            .map(|e| (e.id, baking::bake(e, patched_fixtures.clone())))
+            .collect();
+        let l = s.len();
+        send!(
+            self.baking,
+            BakingNotification::Misc("Baking effects running!".to_string())
+        );
+
+        for (id, ele) in s {
+            let baked = ele.await;
+            self.effects.insert(id, baked);
         }
 
+        let duration = time.elapsed();
+        send!(
+            self.baking,
+            BakingNotification::Finished(format!("Baking {} effects completed in {}", l, duration))
+        );
         println!("Finished Baking!");
     }
 
@@ -394,41 +440,39 @@ impl EffectPlayerI {
         let p = self.project.lock().await;
         let effects = &p.effects;
         let e = effects.iter().find(|e| e.id == effect);
+
+        let patched_fixtures = get_patched_fixtures_clone(&p);
+
+        send!(
+            self.baking,
+            BakingNotification::Started("Baking single effect!".to_string())
+        );
+        let time = Instant::now();
         if let Some(e) = e {
-            let baked = bake(e).await;
+            let baked = baking::bake(e, patched_fixtures).await;
             self.effects.insert(e.id, baked);
         }
+
+        let duration = time.elapsed();
+        send!(
+            self.baking,
+            BakingNotification::Finished(format!("Baking single effect complete in {}", duration))
+        );
+        println!("Done");
     }
 }
 
-async fn bake(effect: &Effect) -> BakedEffect {
-    let mut faders = HashMap::new();
-
-    for track in &effect.tracks {
-        match track {
-            Track::FaderTrack(cue) => {
-                faders.insert(cue.address, bake_fader_cue(cue, &effect.duration))
-            }
-        };
-    }
-
-    BakedEffect {
-        faders,
-        max_time: effect.duration,
-        current_time: Duration::milliseconds(0),
-        running: false,
-        looping: effect.looping,
-    }
-}
-
-fn bake_fader_cue(fader_cue: &FaderTrack, max_time: &Duration) -> Vec<(Duration, u8)> {
-    let mut vals: Vec<_> = fader_cue
-        .values
+fn get_patched_fixtures_clone(p: &MutexGuard<ProjectI>) -> BakedFixtureData {
+    use get_size::GetSize;
+    let patched_fixtures: Vec<_> = p
+        .universes
         .iter()
-        .filter(|k| &k.start_time <= max_time && k.start_time >= Duration::milliseconds(0))
-        .map(|f| (f.start_time, f.value))
+        .map(|(id, u)| u.get_fixtures().clone())
+        .flatten()
         .collect();
-    vals.sort_by_key(|k| k.0);
-
-    vals
+    println!(
+        "Debug: Patched fixture clone size for baking {} bytes",
+        patched_fixtures.get_heap_size()
+    );
+    patched_fixtures
 }

@@ -1,38 +1,41 @@
 pub mod apply;
 
+use get_size::GetSize;
+use std::fmt::{Display, Formatter, Write};
 use crate::fixture::{
     DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureChannel, FixtureMode, FixtureType,
     RotationSpeed,
 };
+use crate::runtime::ToFaderValue;
 
 use super::{UniverseAddress, UniverseId};
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct Dimmer {
     pub dimmer: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct Rgb {
     pub red: FeatureTile,
     pub green: FeatureTile,
     pub blue: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct Rotation {
     pub cw: FeatureTile,
     pub ccw: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct PanTilt {
     pub pan: FeatureTile,
     pub tilt: FeatureTile,
 }
 
 // Indexes are offsets from the start_index of the Fixture
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub enum FixtureFeature {
     Dimmer(Dimmer),
     White(Dimmer),
@@ -42,20 +45,43 @@ pub enum FixtureFeature {
     PanTilt(PanTilt),
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq, get_size::GetSize)]
+pub enum FixtureFeatureType {
+    Dimmer,
+    White,
+    Rgb,
+    Rotation,
+    PanTilt,
+    Amber,
+}
+
+impl Display for FixtureFeatureType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            FixtureFeatureType::Dimmer => "Dimmer",
+            FixtureFeatureType::White => "White",
+            FixtureFeatureType::Rgb => "Rgb",
+            FixtureFeatureType::Rotation => "Rotation",
+            FixtureFeatureType::PanTilt => "PanTilt",
+            FixtureFeatureType::Amber => "Amber",
+        })
+    }
+}
+
 impl FixtureFeature {
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> FixtureFeatureType {
         match self {
-            FixtureFeature::Dimmer(_) => "Dimmer",
-            FixtureFeature::White(_) => "White",
-            FixtureFeature::Rgb(_) => "Rgb",
-            FixtureFeature::Rotation(_) => "Rotation",
-            FixtureFeature::PanTilt(_) => "PanTilt",
-            FixtureFeature::Amber(_) => "Amber",
+            FixtureFeature::Dimmer(_) => FixtureFeatureType::Dimmer,
+            FixtureFeature::White(_) => FixtureFeatureType::White,
+            FixtureFeature::Rgb(_) => FixtureFeatureType::Rgb,
+            FixtureFeature::Rotation(_) => FixtureFeatureType::Rotation,
+            FixtureFeature::PanTilt(_) => FixtureFeatureType::PanTilt,
+            FixtureFeature::Amber(_) => FixtureFeatureType::Amber,
         }
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub enum FeatureTile {
     Single {
         channel: FeatureChannel,
@@ -80,8 +106,38 @@ pub enum FeatureTile {
     },
 }
 
+impl FeatureTile {
+    pub fn to_raw(&self, val: &f32) -> Vec<(FaderAddress, u8)> {
+        match self {
+            FeatureTile::Single { fader, range, .. } => {
+                let v = val.to_fader_value_range(range);
+                vec![(*fader, v)]
+            }
+            FeatureTile::Double {
+                fader,
+                fader_fine,
+                range,
+                ..
+            } => {
+                let (v, f) = val.to_fader_value_range_fine(range);
+                vec![(*fader, v), (*fader_fine, f)]
+            }
+            FeatureTile::Tripple {
+                fader,
+                fader_fine,
+                fader_grain,
+                range,
+                ..
+            } => {
+                let (v, f, g) = val.to_fader_value_range_grain(range);
+                vec![(*fader, v), (*fader_fine, f), (*fader_grain, g)]
+            }
+        }
+    }
+}
+
 /// The Offset of channelss from the start of the Fixture Fader = start_index + self
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct FeatureChannel(usize);
 
 pub fn find_features(
@@ -309,12 +365,14 @@ fn search_rgb(
         }
     }
 
-    if red.is_some() && green.is_some() && blue.is_some() {
-        Some(FixtureFeature::Rgb(Rgb {
-            red: red.expect(""),
-            green: green.expect(""),
-            blue: blue.expect(""),
-        }))
+    if let (Some(red), Some(green), Some(blue)) = (red, green, blue) {
+        Some(FixtureFeature::Rgb(
+            Rgb {
+                red,
+                green,
+                blue,
+            }
+        ))
     } else {
         None
     }
@@ -373,10 +431,10 @@ fn search_rotation(
         }
     }
 
-    if cw.is_some() && ccw.is_some() {
+    if let (Some(cw), Some(ccw)) = (cw, ccw) {
         Some(FixtureFeature::Rotation(Rotation {
-            cw: cw.expect("Must be"),
-            ccw: ccw.expect("Must be"),
+            cw,
+            ccw
         }))
     } else {
         None
@@ -426,10 +484,10 @@ fn search_pantilt(
         }
     }
 
-    if pan.is_some() && tilt.is_some() {
+    if let (Some(pan), Some(tilt)) = (pan, tilt) {
         Some(FixtureFeature::PanTilt(PanTilt {
-            pan: pan.expect("Must be"),
-            tilt: tilt.expect("Must be"),
+            pan,
+            tilt,
         }))
     } else {
         None

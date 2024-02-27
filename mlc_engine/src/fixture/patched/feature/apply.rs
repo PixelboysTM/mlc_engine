@@ -72,45 +72,11 @@ async fn update_values(ts: &[(FeatureTile, f32)], runtime: &RuntimeData) {
     let mut values = vec![];
 
     for (tile, raw_v) in ts {
-        match tile {
-            FeatureTile::Single { fader, range, .. } => {
-                let v = raw_v.to_fader_value_range(range);
-                universes.push(fader.universe);
-                channels.push(fader.address);
-                values.push(v);
-            }
-            FeatureTile::Double {
-                fader,
-                fader_fine,
-                range,
-                ..
-            } => {
-                let (v, f) = raw_v.to_fader_value_range_fine(range);
-                universes.push(fader.universe);
-                universes.push(fader_fine.universe);
-                channels.push(fader.address);
-                channels.push(fader_fine.address);
-                values.push(v);
-                values.push(f);
-            }
-            FeatureTile::Tripple {
-                fader,
-                fader_fine,
-                fader_grain,
-                range,
-                ..
-            } => {
-                let (v, f, g) = raw_v.to_fader_value_range_grain(range);
-                universes.push(fader.universe);
-                universes.push(fader_fine.universe);
-                universes.push(fader_grain.universe);
-                channels.push(fader.address);
-                channels.push(fader_fine.address);
-                channels.push(fader_grain.address);
-                values.push(v);
-                values.push(f);
-                values.push(g);
-            }
+        let v = tile.to_raw(raw_v);
+        for (f, v) in v {
+            universes.push(f.universe);
+            channels.push(f.address);
+            values.push(v);
         }
     }
 

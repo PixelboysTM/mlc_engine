@@ -126,10 +126,10 @@
     </div>
     <div class="tabs right">
       <button title="Import Project" class="icon"
-        ><FileUp size={"100%"} /></button
+        ><FileUp size={"1rem"} /></button
       >
       <button title="Create New Project" class="icon"
-        ><Plus size={"100%"} /></button
+        ><Plus size={"1rem"} /></button
       >
     </div>
   </div>
@@ -261,6 +261,7 @@
     width: auto;
     height: 80%;
     margin-left: 0.2rem;
+    color: var(--color-text);
   }
   div.right {
     place-content: end;

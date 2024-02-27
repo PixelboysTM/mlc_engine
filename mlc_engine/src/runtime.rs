@@ -1,6 +1,3 @@
-pub mod effects;
-pub mod endpoints;
-
 use std::{
     collections::{hash_map::Entry, HashMap},
     str::FromStr,
@@ -12,7 +9,8 @@ use rocket::{
     futures::{SinkExt, StreamExt},
     get, post, routes,
     serde::json::Json,
-    tokio::{
+    Shutdown,
+    State, tokio::{
         select,
         sync::{
             broadcast::{self, Receiver, Sender},
@@ -20,18 +18,17 @@ use rocket::{
         },
         time::sleep,
     },
-    Shutdown, State,
 };
 use rocket_ws::{Message, WebSocket};
 
 use crate::{
     data_serving::{Info, ProjectGuard},
     fixture::{
+        DmxRange,
         feature::{
             apply::{ApplyFeature, FeatureSetRequest},
             FixtureFeature,
-        },
-        DmxRange, UniverseAddress, UniverseId, UNIVERSE_SIZE,
+        }, UNIVERSE_SIZE, UniverseAddress, UniverseId,
     },
     module::Module,
     project::Project,
@@ -42,6 +39,9 @@ use self::{
     effects::EffectModule,
     endpoints::{EndPointConfig, EndpointData},
 };
+
+pub mod effects;
+pub mod endpoints;
 
 #[derive(Debug)]
 struct RuntimeI {
@@ -370,9 +370,13 @@ async fn get_value_updates(
 
 fn decode_msg<'a, T: serde::Deserialize<'a>>(msg: &'a Message) -> Option<T> {
     if let Ok(json) = msg.to_text() {
-        if let Ok(val) = serde_json::from_str(json) {
+        let s = serde_json::from_str(json);
+        if let Ok(val) = s {
             return Some(val);
         }
+
+        let err = s.err().unwrap();
+        eprintln!("Error Decoding msg: {:?}", err);
     }
 
     None
@@ -408,8 +412,7 @@ async fn set_value(
                     _ = &mut shutdown => {
                         break;
                     },
-                }
-                ;
+                };
             }
 
             Ok(())
