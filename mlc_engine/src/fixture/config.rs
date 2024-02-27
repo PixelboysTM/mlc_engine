@@ -1,12 +1,12 @@
+use std::collections::HashMap;
+
 use get_size::GetSize;
 use serde::de::Visitor;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_with::formats::PreferMany;
-use serde_with::serde_as;
 use serde_with::OneOrMany;
-
-use std::collections::HashMap;
+use serde_with::serde_as;
 
 pub type Value = u32;
 
@@ -133,11 +133,13 @@ pub struct Effect {}
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
 #[serde(rename_all = "camelCase")]
 pub struct Rotation {
+    #[serde(alias = "speed")]
     pub speed_start: RotationSpeed,
+    #[serde(default)]
     pub speed_end: RotationSpeed,
 }
 
-#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize, get_size::GetSize)]
+#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize, get_size::GetSize, Default)]
 pub enum RotationSpeed {
     #[serde(alias = "slow CW")]
     SlowCw,
@@ -147,6 +149,9 @@ pub enum RotationSpeed {
     FastCw,
     #[serde(alias = "fast CCW")]
     FastCcw,
+    #[serde(alias = "stop")]
+    #[default]
+    Stop,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
@@ -352,5 +357,6 @@ pub enum DmxColor {
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
 pub struct Manufacturer {
     name: String,
+    #[serde(default)]
     website: String,
 }

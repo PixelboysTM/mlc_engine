@@ -36,8 +36,6 @@ pub struct D3PercentTrack {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct RotationTrack {
-    pub(super) min: f32,
-    pub(super) max: f32,
     pub(super) values: Vec<RotationKey>,
 }
 

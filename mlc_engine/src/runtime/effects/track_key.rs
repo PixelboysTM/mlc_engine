@@ -1,7 +1,8 @@
 use chrono::Duration;
+use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
-use serde_with::{formats::Flexible, DurationSecondsWithFrac};
-use crate::utils::easing::Easing;
+
+use crate::utils::easing::{Easing, EasingType};
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
@@ -30,23 +31,64 @@ pub struct RotationKey {
 }
 
 pub trait Key{
-    fn time(&self) -> &Duration;
+    type Value;
+    fn time(&self) -> Duration;
+    fn value(&self) -> Self::Value;
+
+    fn easing(&self) -> Easing;
+}
+
+impl<K: Key> Key for &K {
+    type Value = K::Value;
+
+    fn time(&self) -> Duration {
+        K::time(self)
+    }
+
+    fn value(&self) -> Self::Value {
+        K::value(self)
+    }
+
+    fn easing(&self) -> Easing {
+        K::easing(self)
+    }
 }
 
 impl Key for FaderKey {
-    fn time(&self) -> &Duration {
-        &self.start_time
+    type Value = u8;
+    fn time(&self) -> Duration {
+        self.start_time
+    }
+    fn value(&self) -> Self::Value {
+        self.value
+    }
+    fn easing(&self) -> Easing {
+        Easing::new(EasingType::Const, EasingType::Const)
     }
 }
 
 impl Key for PercentageKey {
-    fn time(&self) -> &Duration {
-        &self.start_time
+    type Value = f32;
+    fn time(&self) -> Duration {
+        self.start_time
+    }
+    fn value(&self) -> Self::Value {
+        self.value
+    }
+    fn easing(&self) -> Easing {
+        self.easing
     }
 }
 
 impl Key for RotationKey {
-    fn time(&self) -> &Duration {
-        &self.start_time
+    type Value = f32;
+    fn time(&self) -> Duration {
+        self.start_time
+    }
+    fn value(&self) -> Self::Value {
+        self.value
+    }
+    fn easing(&self) -> Easing {
+        self.easing
     }
 }
