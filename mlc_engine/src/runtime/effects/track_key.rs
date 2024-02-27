@@ -23,6 +23,20 @@ pub struct PercentageKey {
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct D3PercentageKey {
+    #[serde(alias = "r")]
+    pub x: f32,
+    #[serde(alias = "g")]
+    pub y: f32,
+    #[serde(alias = "b")]
+    pub z: f32,
+    #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
+    pub start_time: Duration,
+    pub easing: Easing,
+}
+
+#[serde_as]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct RotationKey {
     pub value: f32,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
@@ -31,7 +45,7 @@ pub struct RotationKey {
 }
 
 pub trait Key{
-    type Value;
+    type Value: Clone;
     fn time(&self) -> Duration;
     fn value(&self) -> Self::Value;
 
@@ -88,6 +102,22 @@ impl Key for RotationKey {
     fn value(&self) -> Self::Value {
         self.value
     }
+    fn easing(&self) -> Easing {
+        self.easing
+    }
+}
+
+impl Key for D3PercentageKey {
+    type Value = (f32, f32, f32);
+
+    fn time(&self) -> Duration {
+        self.start_time
+    }
+
+    fn value(&self) -> Self::Value {
+        (self.x, self.y, self.z)
+    }
+
     fn easing(&self) -> Easing {
         self.easing
     }
