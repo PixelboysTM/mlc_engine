@@ -147,14 +147,14 @@ async fn bake_feature_track_single_percent(
             .unwrap_or((
                 Duration::seconds(0),
                 vals.first().map(|k| k.value).unwrap_or(0.0),
-                EasingType::Linear,
+                EasingType::Const,
             ));
         let (out_t, out_v, right_e) = out_key
             .map(|k| (k.start_time, k.value, k.easing.in_type))
             .unwrap_or((
                 max_time.clone(),
                 vals.last().map(|k| k.value).unwrap_or(0.0),
-                EasingType::Linear,
+                EasingType::Const,
             ));
 
         let range = (out_t - in_t).num_milliseconds();

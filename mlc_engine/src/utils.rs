@@ -22,6 +22,7 @@ pub mod easing {
         Expo,
         Back,
         Bounce,
+        Const,
     }
 
     #[derive(Debug, Copy, Clone, serde::Deserialize, serde::Serialize)]
@@ -100,6 +101,7 @@ impl EasingType {
                     n1 * (t - 2.625 / d1) * (t - 2.625) + 0.984375
                 }
             }
+            EasingType::Const => 1.0,
         }
     }
 
@@ -139,6 +141,7 @@ impl EasingType {
                 c3 * t * t * t - c1 * t * t
             }
             EasingType::Bounce => 1.0 - EasingType::Bounce.val_right(1.0 - t),
+            EasingType::Const => 0.0,
         }
     }
 }
