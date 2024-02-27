@@ -1,5 +1,7 @@
 use chrono::Duration;
 use serde_with::{DurationSecondsWithFrac, formats::Flexible};
+use serde_with::formats::PreferOne;
+use serde_with::OneOrMany;
 use serde_with::serde_as;
 
 use crate::fixture::feature::FixtureFeatureType;
@@ -9,7 +11,9 @@ use crate::runtime::effects::track_key::{D3PercentageKey, PercentageKey, Rotatio
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct FeatureTrack {
-    pub(super) fixture: FixtureId,
+    #[serde(alias = "fixture")]
+    #[serde_as(deserialize_as = "OneOrMany<_, PreferOne>")]
+    pub(super) fixtures: Vec<FixtureId>,
     pub(super) feature: FixtureFeatureType,
     pub(super) detail: FeatureTrackDetail,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]

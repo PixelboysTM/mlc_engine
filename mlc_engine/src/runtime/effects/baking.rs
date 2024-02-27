@@ -79,25 +79,32 @@ async fn bake_feature_track(
     max_time: &Duration,
     fixtures: &BakedFixtureData,
 ) -> Vec<(FaderAddress, BakedEffectCue)> {
-    let patched: Option<_> = fixtures.iter().find(|u| u.id == track.fixture);
-    if let Some(fixture) = patched {
-        let feature = fixture
-            .features
-            .iter()
-            .find(|feat| feat.name() == track.feature);
-        if let Some(feature) = feature {
-            match &track.detail {
-                FeatureTrackDetail::SinglePercent(t) => bake_feature_track_single_percent(t, max_time, feature, &track.resolution).await,
-                FeatureTrackDetail::D3Percent(t) => bake_feature_track_three_percent(t, max_time, feature, &track.resolution).await,
-                FeatureTrackDetail::SingleRotation(t) => bake_feature_track_single_rotation(t, max_time, feature, &track.resolution).await,
-                FeatureTrackDetail::D2Rotation(_) => todo!(),
+    let mut baked_tracks = vec![];
+
+    for f_id in &track.fixtures {
+        let patched: Option<_> = fixtures.iter().find(|u| &u.id == f_id);
+        let mut cues = if let Some(fixture) = patched {
+            let feature = fixture
+                .features
+                .iter()
+                .find(|feat| feat.name() == track.feature);
+            if let Some(feature) = feature {
+                match &track.detail {
+                    FeatureTrackDetail::SinglePercent(t) => bake_feature_track_single_percent(t, max_time, feature, &track.resolution).await,
+                    FeatureTrackDetail::D3Percent(t) => bake_feature_track_three_percent(t, max_time, feature, &track.resolution).await,
+                    FeatureTrackDetail::SingleRotation(t) => bake_feature_track_single_rotation(t, max_time, feature, &track.resolution).await,
+                    FeatureTrackDetail::D2Rotation(_) => todo!(),
+                }
+            } else {
+                vec![]
             }
         } else {
             vec![]
-        }
-    } else {
-        vec![]
+        };
+        baked_tracks.append(&mut cues);
     }
+
+    baked_tracks
 }
 
 async fn bake_feature_track_single_percent(
