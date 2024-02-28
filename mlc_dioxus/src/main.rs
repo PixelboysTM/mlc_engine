@@ -1,11 +1,16 @@
+use std::ops::Deref;
+
 use dioxus::prelude::*;
 use reqwest::{IntoUrl, Url};
 use wasm_logger::Config;
 
+use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
 
 mod headbar;
 pub mod icons;
+mod configure_panel;
+mod utils;
 
 fn main() {
     wasm_logger::init(Config::default());
@@ -18,7 +23,25 @@ fn app(cx: Scope) -> Element {
 
     cx.render(rsx! {
         Headbar{},
-        "{pane.read():?}"
+        div {
+            width: "100vw",
+            height: "calc(100vh - 3rem)",
+            match pane.read().deref() {
+                Pane::Configure => {
+                    ConfigurePanel(cx)
+                }
+                Pane::Program => {
+                    cx.render(rsx!{
+                        "Program"
+                    })
+                }
+                Pane::Show => {
+                    cx.render(rsx!{
+                        "Show"
+                    })
+                }
+            }
+        }
     })
 }
 

@@ -11,7 +11,8 @@ title = "MLC"
 
 [web.resource]
 style = [
-    "./assets/style.css"
+    "./assets/style.css",
+    "./assets/configure.css",
 ]
 
 [web.resource.dev]

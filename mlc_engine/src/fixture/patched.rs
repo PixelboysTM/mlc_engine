@@ -1,16 +1,18 @@
-pub mod feature;
+use std::fmt::Debug;
+use std::ops::Add;
 
 use get_size::GetSize;
-use std::ops::Add;
-use std::{fmt::Debug, num::ParseIntError};
-
 use rocket::request::FromParam;
-use serde::de::Error;
 use serde::{de::Visitor, Deserialize, Serialize};
+use serde::de::Error;
+
+use mlc_common::patched::UniverseId;
+
+use super::{FixtureChannel, FixtureType, ValueResolution};
 
 use self::feature::FixtureFeature;
 
-use super::{FixtureChannel, FixtureType, ValueResolution};
+pub mod feature;
 
 pub type FixtureId = uuid::Uuid;
 
@@ -149,27 +151,8 @@ impl Debug for UniverseAddress {
     }
 }
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash, get_size::GetSize)]
-pub struct UniverseId(pub u16);
 
-impl FromParam<'_> for UniverseId {
-    type Error = ParseIntError;
 
-    fn from_param(param: &'_ str) -> Result<Self, Self::Error> {
-        param.parse::<u16>().map(UniverseId)
-    }
-}
-
-impl Ord for UniverseId {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
-    }
-}
-impl PartialOrd for UniverseId {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -1,11 +1,16 @@
-use std::{clone, collections::HashMap};
+use std::collections::HashMap;
+use std::num::ParseIntError;
+use std::ops::Deref;
+
+use rocket::request::FromParam;
+
+use mlc_common::patched::UniverseId;
+use mlc_common::universe::UNIVERSE_SIZE;
 
 use super::{
     feature::find_features, FixtureChannel, FixtureType, PatchedChannel, PatchedFixture,
-    UniverseAddress, UniverseId, ValueResolution,
+    UniverseAddress, ValueResolution,
 };
-
-pub const UNIVERSE_SIZE: usize = 512;
 
 #[serde_with::serde_as]
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -181,9 +186,30 @@ impl FindChannelConfig for HashMap<String, FixtureChannel> {
     }
 }
 
+
+pub struct Wrapper(UniverseId);
+
+impl FromParam<'_> for Wrapper {
+    type Error = ParseIntError;
+
+    fn from_param(param: &'_ str) -> Result<Self, Self::Error> {
+        param.parse::<u16>().map(UniverseId).map(Wrapper)
+    }
+}
+
+impl Deref for Wrapper {
+    type Target = UniverseId;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::fixture::{FixtureType, UniverseId};
+    use mlc_common::patched::UniverseId;
+
+    use crate::fixture::FixtureType;
 
     use super::FixtureUniverse;
 

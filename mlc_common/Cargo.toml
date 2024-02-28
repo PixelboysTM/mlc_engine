@@ -1,0 +1,12 @@
+[package]
+name = "mlc_common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.197", features = ["derive"] }
+chrono = { version = "0.4.34", features = ["serde"] }
+serde_with = "3.6.1"
+get-size = { version = "0.1.4", features = ["derive"] }

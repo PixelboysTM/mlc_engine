@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use rocket::{
+    Data,
     data::ToByteUnit,
     fairing::{Fairing, Kind},
     futures::SinkExt,
@@ -8,21 +9,23 @@ use rocket::{
     http::Status,
     post,
     request::{self, FromRequest},
+    Request,
+    Responder,
     response::status::{BadRequest, Custom},
-    routes,
-    serde::json::Json,
-    tokio::{select, sync::broadcast::Sender},
-    Data, Request, Responder, Route, State,
+    Route, routes, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
 };
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
+use mlc_common::patched::UniverseId;
+
 use crate::{fixture::FixtureUniverse, runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::{
-    fixture::{self, UniverseId},
+    fixture::{self},
     module::Module,
     project::Project,
 };
+use crate::fixture::Wrapper;
 
 #[derive(serde::Serialize, Debug, Clone)]
 pub enum Info {
@@ -131,7 +134,7 @@ async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<U
 
 #[get("/universes/<id>")]
 async fn get_universe(
-    id: UniverseId,
+    id: Wrapper,
     project: &State<Project>,
     _g: ProjectGuard,
 ) -> Json<Option<FixtureUniverse>> {

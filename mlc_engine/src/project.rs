@@ -6,16 +6,18 @@ use rocket::{
     tokio::sync::broadcast::Sender,
 };
 
+use mlc_common::{ProjectDefinition, Settings};
+use mlc_common::patched::UniverseId;
+
 use crate::{
     data_serving::Info,
-    fixture::{FixtureType, FixtureUniverse, UniverseId},
+    fixture::{FixtureType, FixtureUniverse},
     runtime::{
         effects::{Effect, EffectPlayerAction},
         endpoints::EndPointConfig,
         RuntimeData,
     },
     send,
-    settings::ProjectDefinition,
 };
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -258,16 +260,7 @@ impl Default for Project {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
-pub struct Settings {
-    save_on_quit: bool,
-}
 
-impl Settings {
-    pub fn save_on_quit(&self) -> bool {
-        self.save_on_quit
-    }
-}
 
 fn get_project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("de", "pixelboystm", "mlc_engine")

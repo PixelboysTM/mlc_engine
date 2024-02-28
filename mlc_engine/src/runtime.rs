@@ -21,6 +21,10 @@ use rocket::{
 };
 use rocket_ws::{Message, WebSocket};
 
+use mlc_common::patched::UniverseId;
+use mlc_common::RuntimeUpdate;
+use mlc_common::universe::UNIVERSE_SIZE;
+
 use crate::{
     data_serving::{Info, ProjectGuard},
     fixture::{
@@ -28,7 +32,7 @@ use crate::{
         feature::{
             apply::{ApplyFeature, FeatureSetRequest},
             FixtureFeature,
-        }, UNIVERSE_SIZE, UniverseAddress, UniverseId,
+        }, UniverseAddress,
     },
     module::Module,
     project::Project,
@@ -252,27 +256,6 @@ impl RuntimeData {
     }
 }
 
-#[allow(clippy::large_enum_variant)]
-#[serde_with::serde_as]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum RuntimeUpdate {
-    ValueUpdated {
-        universe: UniverseId,
-        channel_index: usize,
-        value: u8,
-    },
-    ValuesUpdated {
-        universes: Vec<UniverseId>,
-        channel_indexes: Vec<usize>,
-        values: Vec<u8>,
-    },
-    Universe {
-        universe: UniverseId,
-        #[serde_as(as = "[_;UNIVERSE_SIZE]")]
-        values: [u8; UNIVERSE_SIZE],
-        author: usize,
-    },
-}
 
 pub trait ToFaderValue {
     fn to_fader_value(&self) -> u8;

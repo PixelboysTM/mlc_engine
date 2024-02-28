@@ -1,16 +1,19 @@
-mod artnet;
-mod sacn;
-
 use std::collections::HashMap;
 
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
-use crate::fixture::{UniverseAddress, UniverseId, UNIVERSE_SIZE};
+use mlc_common::patched::UniverseId;
+use mlc_common::universe::UNIVERSE_SIZE;
+
+use crate::fixture::UniverseAddress;
 
 use self::{
     artnet::ArtNetEndpoint,
     sacn::{SacnEndpoint, Speed},
 };
+
+mod artnet;
+mod sacn;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default)]
 pub struct EndPointConfig {

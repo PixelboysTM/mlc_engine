@@ -3,7 +3,7 @@ use std::time::Duration;
 use rocket::tokio::select;
 use sacn::DmxSource;
 
-use crate::fixture::UNIVERSE_SIZE;
+use mlc_common::universe::UNIVERSE_SIZE;
 
 use super::Endpoint;
 
