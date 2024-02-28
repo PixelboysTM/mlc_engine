@@ -131,7 +131,7 @@
     -ms-user-select: none;
     user-select: none;
     position: sticky;
-    top: 0px;
+    top: 0;
     background-color: var(--color-panel);
     padding-top: 0.25rem;
     z-index: 15;

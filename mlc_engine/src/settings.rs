@@ -1,16 +1,18 @@
 use chrono::{DateTime, Local};
 use rocket::{
     fairing::{Fairing, Kind},
-    get, post, routes,
+    get, post, Route,
+    routes,
     serde::json::Json,
-    tokio::{fs, sync::broadcast::Sender},
-    Route, State,
+    State, tokio::{fs, sync::broadcast::Sender},
 };
+
+use mlc_common::{ProjectDefinition, Settings};
 
 use crate::{
     data_serving::{Info, ProjectGuard},
     module::Module,
-    project::{self, Project, Settings},
+    project::{self, Project},
     runtime::{effects::EffectPlayerAction, RuntimeData},
     ui_serving::ProjectSelection,
 };
@@ -29,21 +31,14 @@ async fn update_settings(
     project: &State<Project>,
     settings: Json<Settings>,
     _g: ProjectGuard,
-) -> Result<String, String> {
+) -> Result<Json<String>, String> {
     project
         .update_settings(settings.0)
         .await
-        .map(|_| "Settings successfully updated".to_string())
+        .map(|_| Json("Settings successfully updated".to_string()))
         .map_err(|e| e.to_string())
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub struct ProjectDefinition {
-    pub name: String,
-    #[serde(default)]
-    pub file_name: String,
-    pub last_edited: DateTime<Local>,
-}
 
 #[get("/projects-list")]
 async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
