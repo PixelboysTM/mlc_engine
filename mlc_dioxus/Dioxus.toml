@@ -1,0 +1,17 @@
+[application]
+name = "Marvin Light Control"
+default_platform = "web"
+out_dir = "dist"
+asset_dir = "public"
+
+[web.app]
+title = "MLC"
+
+[web.watcher]
+
+[web.resource]
+style = [
+    "./assets/style.css"
+]
+
+[web.resource.dev]

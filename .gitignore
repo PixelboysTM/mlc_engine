@@ -1,5 +1,6 @@
 /target
 /out
+/mlc_dioxus/dist
 debug.txt
 .idea/
 net.pcapng

@@ -3,11 +3,12 @@ use std::{
     sync::Arc,
 };
 
-use rocket::{fs::NamedFile, futures::lock::Mutex, get, routes, Route, State};
+use rocket::{fs::NamedFile, futures::lock::Mutex, get, Route, routes, State};
 
 use crate::module::Module;
 
-const OUT_PATH: &str = "out/";
+// const OUT_PATH: &str = "out/";
+const OUT_PATH: &str = "mlc_dioxus/dist/";
 
 #[get("/<file..>")]
 async fn files(file: PathBuf) -> Option<NamedFile> {

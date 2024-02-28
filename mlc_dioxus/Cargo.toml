@@ -1,0 +1,16 @@
+[package]
+name = "mlc_dioxus"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = "0.4.3"
+dioxus-web = "0.4.3"
+reqwest = "0.11.24"
+cfg-if = "1.0.0"
+gloo-net = "0.5.0"
+dioxus-html-macro = "0.3.0"
+log = "0.4.20"
+wasm-logger = "0.2.0"
