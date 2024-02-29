@@ -2,8 +2,12 @@ use std::ops::Deref;
 
 use dioxus::hooks::computed::use_tracked_state;
 use dioxus::prelude::*;
-use futures::StreamExt;
-use gloo_net::websocket::Message;
+use futures::{FutureExt, select, SinkExt, StreamExt};
+use futures::future::{Either, select, Select};
+use futures::lock::Mutex;
+use futures::stream::{Next, SplitSink};
+use gloo_net::websocket::{Message, WebSocketError};
+use gloo_net::websocket::futures::WebSocket;
 
 use mlc_common::{ProjectDefinition, RuntimeUpdate, Settings};
 
@@ -156,6 +160,7 @@ fn ProjectSettings(cx: Scope) -> Element {
     })
 }
 
+
 #[component]
 fn FaderPanel(cx: Scope) -> Element {
     let current_universe = use_ref(cx, || 1);
@@ -163,9 +168,6 @@ fn FaderPanel(cx: Scope) -> Element {
         to_owned![current_universe];
         async move {
             if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
-                // if let Some(d_0) = d.get(0) {
-                //     current_universe.set(*d_0);
-                // }
                 d
             } else {
                 vec![]
@@ -177,9 +179,17 @@ fn FaderPanel(cx: Scope) -> Element {
     let create_eval = use_eval(cx);
     let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
 
-    cx.spawn({
-        to_owned![current_values, current_universe];
+    // let mut get_universe = use_state::<Mutex<Option<SplitSink<WebSocket, Message>>>>(cx, || Mutex::new(None));
+
+    let started = use_ref(cx, || false);
+    let get = use_coroutine(cx, |mut rx: UnboundedReceiver<u16>| {
+        to_owned![current_values, current_universe, started];
         async move {
+            if started.read().deref() == &true {
+                return;
+            }
+            started.set(true);
+
             let ws_o = utils::ws(&format!(
                 "ws://{}/runtime/fader-values/get",
                 eval.recv()
@@ -191,47 +201,59 @@ fn FaderPanel(cx: Scope) -> Element {
             ));
 
             if let Ok(mut get_ws) = ws_o {
-                while let Some(Ok(msg)) = get_ws.next().await {
-                    let d = match msg {
-                        Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
-                        Message::Bytes(b) => {
-                            serde_json::from_str::<RuntimeUpdate>(&String::from_utf8(b).unwrap())
+                loop {
+                    let i = select(rx.next(), get_ws.next()).await;
+                    match i {
+                        Either::Left((Some(msg), _)) => {
+                            let _ = get_ws.send(Message::Text(msg.to_string())).await;
                         }
-                    };
-
-                    if let Ok(update) = d {
-                        match update {
-                            RuntimeUpdate::ValueUpdated {
-                                universe,
-                                channel_index,
-                                value,
-                            } => {
-                                if current_universe.read().deref() == &universe.0 {
-                                    current_values.with_mut(|g| g[channel_index] = value);
+                        Either::Right((Some(Ok(msg)), _)) => {
+                            let d = match msg {
+                                Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
+                                Message::Bytes(b) => {
+                                    serde_json::from_str::<RuntimeUpdate>(&String::from_utf8(b).unwrap())
                                 }
-                            }
-                            RuntimeUpdate::ValuesUpdated {
-                                universes,
-                                channel_indexes,
-                                values,
-                            } => {
-                                current_values.with_mut(|g| {
-                                    for (i, index) in channel_indexes.iter().enumerate() {
-                                        if current_universe.read().deref() == &universes[i].0 {
-                                            g[*index] = values[i];
+                            };
+
+                            if let Ok(update) = d {
+                                match update {
+                                    RuntimeUpdate::ValueUpdated {
+                                        universe,
+                                        channel_index,
+                                        value,
+                                    } => {
+                                        if current_universe.read().deref() == &universe.0 {
+                                            current_values.with_mut(|g| g[channel_index] = value);
                                         }
                                     }
-                                });
-                            }
-                            RuntimeUpdate::Universe {
-                                universe, values, ..
-                            } => {
-                                if current_universe.read().deref() == &universe.0 {
-                                    current_values.set(values);
+                                    RuntimeUpdate::ValuesUpdated {
+                                        universes,
+                                        channel_indexes,
+                                        values,
+                                    } => {
+                                        current_values.with_mut(|g| {
+                                            for (i, index) in channel_indexes.iter().enumerate() {
+                                                if current_universe.read().deref() == &universes[i].0 {
+                                                    g[*index] = values[i];
+                                                }
+                                            }
+                                        });
+                                    }
+                                    RuntimeUpdate::Universe {
+                                        universe, values, ..
+                                    } => {
+                                        if current_universe.read().deref() == &universe.0 {
+                                            current_values.set(values);
+                                        }
+                                    }
                                 }
-                            }
+                            };
                         }
-                    }
+
+                        _ => {
+                            log::error!("Error")
+                        }
+                    };
                 }
             } else {
                 log::error!("Error creating {:?}", ws_o.err().unwrap());
@@ -251,6 +273,7 @@ fn FaderPanel(cx: Scope) -> Element {
                         class: "tab {sel(current_universe.read().deref() == u)}",
                         onclick: move |_| {
                             current_universe.set(*u);
+                                        get.send(*u);
                         },
                         {u.to_string()}
                     }
