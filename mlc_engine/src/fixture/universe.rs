@@ -4,12 +4,11 @@ use std::ops::Deref;
 
 use rocket::request::FromParam;
 
-use mlc_common::patched::UniverseId;
+use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
 
 use super::{
-    feature::find_features, FixtureChannel, FixtureType, PatchedChannel, PatchedFixture,
-    UniverseAddress, ValueResolution,
+    feature::find_features, FixtureChannel, FixtureType, PatchedChannel, PatchedFixture, ValueResolution,
 };
 
 #[serde_with::serde_as]

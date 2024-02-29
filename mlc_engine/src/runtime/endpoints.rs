@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
-use mlc_common::patched::UniverseId;
+use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
 
-use crate::fixture::UniverseAddress;
 
 use self::{
     artnet::ArtNetEndpoint,
@@ -45,7 +44,7 @@ impl EndPointConfig {
                         speed: speed.clone(),
                         ..Default::default()
                     }
-                    .register(rx),
+                        .register(rx),
                 }
                 point.push(tx);
             }
@@ -86,6 +85,7 @@ pub enum EndpointData {
 
 #[derive(Default)]
 pub struct LoggerEndpoint;
+
 impl Endpoint for LoggerEndpoint {
     fn register(self, mut rx: Receiver<EndpointData>) {
         rocket::tokio::spawn(async move {

@@ -21,8 +21,8 @@ use rocket::{
 };
 use rocket_ws::{Message, WebSocket};
 
-use mlc_common::patched::UniverseId;
-use mlc_common::RuntimeUpdate;
+use mlc_common::patched::{UniverseAddress, UniverseId};
+use mlc_common::{FaderUpdateRequest, RuntimeUpdate};
 use mlc_common::universe::UNIVERSE_SIZE;
 
 use crate::{
@@ -32,7 +32,7 @@ use crate::{
         feature::{
             apply::{ApplyFeature, FeatureSetRequest},
             FixtureFeature,
-        }, UniverseAddress,
+        },
     },
     module::Module,
     project::Project,
@@ -343,7 +343,8 @@ async fn get_value_updates(
                     _ = &mut shutdown => {
                         break;
                     }
-                };
+                }
+                ;
             }
 
             Ok(())
@@ -365,12 +366,6 @@ fn decode_msg<'a, T: serde::Deserialize<'a>>(msg: &'a Message) -> Option<T> {
     None
 }
 
-#[derive(serde::Deserialize)]
-struct FaderUpdateRequest {
-    universe: UniverseId,
-    channel: UniverseAddress,
-    value: u8,
-}
 
 #[get("/fader-values/set")]
 async fn set_value(
@@ -395,7 +390,8 @@ async fn set_value(
                     _ = &mut shutdown => {
                         break;
                     },
-                };
+                }
+                ;
             }
 
             Ok(())

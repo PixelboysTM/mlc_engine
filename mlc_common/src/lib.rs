@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local};
 
-use crate::patched::UniverseId;
+use crate::patched::{UniverseAddress, UniverseId};
 use crate::universe::UNIVERSE_SIZE;
 
 pub mod patched;
@@ -45,4 +45,11 @@ pub enum RuntimeUpdate {
         values: [u8; UNIVERSE_SIZE],
         author: usize,
     },
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct FaderUpdateRequest {
+    pub universe: UniverseId,
+    pub channel: UniverseAddress,
+    pub value: u8,
 }

@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use dioxus::hooks::computed::use_tracked_state;
+use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use futures::{FutureExt, select, SinkExt, StreamExt};
 use futures::future::{Either, select, Select};
@@ -9,7 +10,8 @@ use futures::stream::{Next, SplitSink};
 use gloo_net::websocket::{Message, WebSocketError};
 use gloo_net::websocket::futures::WebSocket;
 
-use mlc_common::{ProjectDefinition, RuntimeUpdate, Settings};
+use mlc_common::{FaderUpdateRequest, ProjectDefinition, RuntimeUpdate, Settings};
+use mlc_common::patched::{UniverseAddress, UniverseId};
 
 use crate::utils;
 use crate::utils::Loading;
@@ -177,12 +179,11 @@ fn FaderPanel(cx: Scope) -> Element {
     let current_values = use_ref(cx, || [0_u8; 512]);
 
     let create_eval = use_eval(cx);
-    let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
 
-    // let mut get_universe = use_state::<Mutex<Option<SplitSink<WebSocket, Message>>>>(cx, || Mutex::new(None));
 
     let started = use_ref(cx, || false);
     let get = use_coroutine(cx, |mut rx: UnboundedReceiver<u16>| {
+        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
         to_owned![current_values, current_universe, started];
         async move {
             if started.read().deref() == &true {
@@ -246,20 +247,52 @@ fn FaderPanel(cx: Scope) -> Element {
                                             current_values.set(values);
                                         }
                                     }
-                                }
+                                };
                             };
                         }
 
-                        _ => {
-                            log::error!("Error")
+                        d => {
+                            let b = match d {
+                                Either::Left((a, b)) => format!("{:?}", a),
+                                Either::Right((a, b)) => format!("{:?}", a)
+                            };
+                            log::error!("Error {b:?}");
                         }
                     };
+                    async {}.await;
                 }
             } else {
                 log::error!("Error creating {:?}", ws_o.err().unwrap());
             }
         }
     });
+    let set = use_coroutine(cx, |mut rx: UnboundedReceiver<FaderUpdateRequest>| {
+        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
+
+        async move {
+            let ws = utils::ws(&format!(
+                "ws://{}/runtime/fader-values/set",
+                eval.recv()
+                    .await
+                    .map_err(|e| log::error!("Error"))
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+            ));
+
+            if let Ok(mut ws) = ws {
+                loop {
+                    let m = rx.next().await;
+                    if let Some(r) = m {
+                        let r = ws.send(Message::Text(serde_json::to_string(&r).unwrap())).await;
+                    }
+                }
+            } else {
+                log::error!("Error opening websocket: {:?}", ws.err().unwrap());
+            }
+        }
+    });
+
     cx.render(rsx! {
         div {
             class: "slider-panel",
@@ -287,25 +320,39 @@ fn FaderPanel(cx: Scope) -> Element {
             },
             div {
                 class: "faders",
-                for (i,f) in current_values.read().iter().enumerate() {
-                    Fader{
-                        value: {*f},
-                        id: {i as u16}
+                (0..512).map(|i| {
+                    rsx!{
+                        Fader{
+                        value: {current_values.read()[i]},
+                        id: {i as u16},
+                        onchange: move |v| {
+                            set.send(FaderUpdateRequest{
+                                universe: UniverseId(*current_universe.read().deref()),
+                                channel: UniverseAddress::create(i as u16).expect("Must be"),
+                                value: v
+                            });
+                        },
                     }
-                }
+                    }
+                })
             }
         }
     })
 }
 
-#[derive(PartialEq, Props)]
-struct FaderProps {
+#[derive(Props)]
+struct FaderProps<'a> {
     value: u8,
     id: u16,
+    onchange: EventHandler<'a, u8>,
 }
 
 #[component]
-fn Fader(cx: Scope<FaderProps>) -> Element {
+fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
+    let val = use_state(cx, || cx.props.value);
+    let memo = use_memo(cx, &(cx.props.value, ), |(v, )| val.set(v));
+
+    let size = use_state(cx, || 0.0);
     cx.render(rsx! {
         div {
             class: "fader-container",
@@ -316,21 +363,41 @@ fn Fader(cx: Scope<FaderProps>) -> Element {
 
             div{
                 class: "range",
-                div {
-                    class: "filler",
-                    height: "{(1.0 - cx.props.value as f32 / 255.0) * 100.0}%",
+                background: "linear-gradient(0deg, var(--color-accent) 0%, var(--color-text) {(*val.get() as f32 / 255.0) * 100.0}%, transparent {(*val.get() as f32 / 255.0) * 100.0}%, transparent 100%)",
+                onmounted: move |e| {
+                    log::info!("Val: {:?}", val.get());
+                    to_owned![size];
+                    async move {
+                        let s = e.get_client_rect().await;
+                        size.with_mut(|v| *v = s.unwrap().size.height);
+                    }
+
                 },
-                div {
-                    class: "inner",
-                    height: "{(cx.props.value as f32 / 255.0) * 100.0}%",
+
+                onmousemove: move |e| {
+                    if e.data.held_buttons() == MouseButton::Primary {
+                        let p = e.data.element_coordinates();
+                        let x = (1.0 - p.y / size.get()).min(1.0).max(0.0);
+                        let v = (x * 255.0) as u8;
+                        val.set(v);
+                        cx.props.onchange.call(v);
+                    }
+                },
+                onmousedown: move |e| {
+                    if e.data.trigger_button() == Some(MouseButton::Primary) {
+                        let p = e.data.element_coordinates();
+                        let x = (1.0 - p.y / size.get()).min(1.0).max(0.0);
+                        let v = (x * 255.0) as u8;
+                        val.set(v);
+                        cx.props.onchange.call(v);
+                    }
                 }
+
             },
 
             div{
                 class: "value",
-                p {
-                    {make_three_digit(cx.props.value as u16)}
-                }
+                {make_three_digit(*val.get() as u16)}
             }
         }
     })
