@@ -22,11 +22,11 @@ use rocket::{
 use rocket_ws::{Message, WebSocket};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
-use mlc_common::{FaderUpdateRequest, RuntimeUpdate};
+use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 use mlc_common::universe::UNIVERSE_SIZE;
 
 use crate::{
-    data_serving::{Info, ProjectGuard},
+    data_serving::{ProjectGuard},
     fixture::{
         DmxRange,
         feature::{

@@ -363,7 +363,7 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
 
             div{
                 class: "range",
-                background: "linear-gradient(0deg, var(--color-accent) 0%, var(--color-text) {(*val.get() as f32 / 255.0) * 100.0}%, transparent {(*val.get() as f32 / 255.0) * 100.0}%, transparent 100%)",
+                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(*val.get() as f32 / 255.0) * 100.0}%, transparent {(*val.get() as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
                     log::info!("Val: {:?}", val.get());
                     to_owned![size];

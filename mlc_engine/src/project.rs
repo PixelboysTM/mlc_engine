@@ -6,11 +6,10 @@ use rocket::{
     tokio::sync::broadcast::Sender,
 };
 
-use mlc_common::{ProjectDefinition, Settings};
+use mlc_common::{Info, ProjectDefinition, Settings};
 use mlc_common::patched::UniverseId;
 
 use crate::{
-    data_serving::Info,
     fixture::{FixtureType, FixtureUniverse},
     runtime::{
         effects::{Effect, EffectPlayerAction},
@@ -88,7 +87,10 @@ impl Project {
             if let Ok(json_data) = std::fs::read_to_string(path) {
                 let new_data: ProjectI =
                     // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
-                    serde_json::from_str(&json_data).map_err(|e| { eprintln!("{:#?}", e); "Failed deserializing data"})?;
+                    serde_json::from_str(&json_data).map_err(|e| {
+                        eprintln!("{:#?}", e);
+                        "Failed deserializing data"
+                    })?;
                 let mut data = self.project.lock().await;
                 *data = new_data;
                 data.file_name = name.to_string();
@@ -259,7 +261,6 @@ impl Default for Project {
         }
     }
 }
-
 
 
 fn get_project_dirs() -> Option<directories::ProjectDirs> {

@@ -6,6 +6,19 @@ use crate::universe::UNIVERSE_SIZE;
 pub mod patched;
 pub mod universe;
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy)]
+pub enum Info {
+    FixtureTypesUpdated,
+    ProjectSaved,
+    ProjectLoaded,
+    SystemShutdown,
+    UniversePatchChanged(UniverseId),
+    UniversesUpdated,
+    EndpointConfigChanged,
+    EffectListChanged,
+    None,
+}
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct ProjectDefinition {
     pub name: String,

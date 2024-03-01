@@ -9,13 +9,14 @@ mod utils;
 
 use std::net::{IpAddr, Ipv4Addr};
 
-use data_serving::{DataServingModule, Info};
+use data_serving::{DataServingModule};
 use module::{Application, Module};
 use project::Project;
 use rocket::{
     catch, catchers, config::Ident, get, launch, routes, serde::json::Json,
     tokio::sync::broadcast::Sender, Config, State,
 };
+use mlc_common::Info;
 use runtime::RuntimeModule;
 use settings::SettingsModule;
 use ui_serving::UiServingModule;
@@ -48,24 +49,6 @@ impl Module for MainModule {
     fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = rocket::tokio::sync::broadcast::channel::<Info>(100);
 
-        // let project = pollster::block_on(async {
-        //     let project = Project::default();
-        //     if project.load("test", &tx).await.is_err() {
-        //         let json = include_str!("../../test_fixtures/led_par_56.json");
-        //         let fix = fixture::parse_fixture(json).unwrap();
-        //         // project
-        //         //     .insert_fixture(
-        //         //         fixture::parse_fixture(include_str!("../../led-par-56.json")).unwrap(),
-        //         //         &tx,
-        //         //     )
-        //         //     .await;
-        //         project.insert_fixture(fix[0].clone(), &tx).await;
-        //         project.try_patch(&fix[0], 0, true, &tx).await;
-        //         project.save_as("test", &tx).await.unwrap();
-        //     }
-        //     project
-        // });
-
         let config = Config {
             address: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
             cli_colors: true,
@@ -82,6 +65,7 @@ impl Module for MainModule {
             .mount("/util", routes![heart_beat, create_empty])
     }
 }
+
 #[catch(404)]
 fn catch_404() -> &'static str {
     "Resource not available"

@@ -7,10 +7,10 @@ use rocket::{
     State, tokio::{fs, sync::broadcast::Sender},
 };
 
-use mlc_common::{ProjectDefinition, Settings};
+use mlc_common::{Info, ProjectDefinition, Settings};
 
 use crate::{
-    data_serving::{Info, ProjectGuard},
+    data_serving::{ProjectGuard},
     module::Module,
     project::{self, Project},
     runtime::{effects::EffectPlayerAction, RuntimeData},
@@ -127,12 +127,12 @@ impl Fairing for ShutdownSaver {
         &'life0 self,
         rocket: &'life1 rocket::Rocket<rocket::Orbit>,
     ) -> core::pin::Pin<
-        Box<dyn core::future::Future<Output = ()> + core::marker::Send + 'async_trait>,
+        Box<dyn core::future::Future<Output=()> + core::marker::Send + 'async_trait>,
     >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
+        where
+            'life0: 'async_trait,
+            'life1: 'async_trait,
+            Self: 'async_trait,
     {
         Box::pin(async {
             let project: Option<&Project> = rocket.state();

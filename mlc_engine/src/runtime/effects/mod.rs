@@ -13,9 +13,10 @@ use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
 use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
+use mlc_common::Info;
 
 use crate::{fixture::FaderAddress, module::Module, send};
-use crate::data_serving::{Info, ProjectGuard};
+use crate::data_serving::{ProjectGuard};
 use crate::project::{Project, ProjectI};
 use crate::runtime::effects::baking::{BakedEffect, BakedFixtureData, BakingNotification};
 use crate::runtime::effects::feature_track::FeatureTrack;

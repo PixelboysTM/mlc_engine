@@ -1,11 +1,16 @@
 use std::ops::Deref;
+use std::time::Duration;
 
 use dioxus::prelude::*;
+use futures::StreamExt;
+use gloo_net::websocket::Message;
 use reqwest::{IntoUrl, Url};
 use wasm_logger::Config;
+use mlc_common::Info;
 
 use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
+use crate::utils::Loading;
 
 mod headbar;
 pub mod icons;
@@ -17,11 +22,65 @@ fn main() {
     dioxus_web::launch(app);
 }
 
+
 fn app(cx: Scope) -> Element {
     use_shared_state_provider(cx, || Pane::Configure);
     let pane = use_shared_state::<Pane>(cx).unwrap();
 
+    let info = use_state(cx, || Info::None);
+
+    let started = use_state(cx, || false);
+    let create_eval = use_eval(cx);
+    let info_watcher = use_future(
+        cx,
+        (),
+        |_| {
+            let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
+
+            to_owned![info, started];
+            async move {
+                if *started.get() {
+                    return;
+                }
+                started.set(true);
+                log::info!("Started");
+
+                let ws_url = &format!(
+                    "ws://{}/data/info",
+                    eval.recv()
+                        .await
+                        .map_err(|e| log::error!("Error"))
+                        .unwrap()
+                        .as_str()
+                        .unwrap()
+                );
+
+                let mut ws = utils::ws(ws_url);
+                if let Ok(mut ws) = ws {
+                    while let Some(Ok(msg)) = ws.next().await {
+                        let msg = match msg {
+                            Message::Text(t) => { t }
+                            Message::Bytes(b) => { String::from_utf8(b).unwrap() }
+                        };
+
+                        let i = serde_json::from_str::<Info>(&msg).unwrap();
+                        info.set(i);
+
+                        log::info!("Updating");
+                    }
+                    log::error!("Error with msg");
+                } else {
+                    log::info!("Error creating ws {:?}", ws.err().unwrap());
+                }
+            }
+        },
+    );
+
+
     cx.render(rsx! {
+        DisconnectHelper {
+            info: {info.get().clone()}
+        },
         Headbar{},
         div {
             width: "100vw",
@@ -45,23 +104,63 @@ fn app(cx: Scope) -> Element {
     })
 }
 
-async fn get_project_list() -> String {
-    let d = gloo_net::http::Request::get(&build_url("/projects/projects-list"))
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await
-        .unwrap();
-    d
+#[derive(Props, PartialEq)]
+struct DHProps {
+    info: Info,
 }
 
-fn build_url(url: &str) -> String {
-    let u = if cfg!(debug_assertions) {
-        "https://localhost:8000"
-    } else {
-        ""
-    };
+#[component]
+fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
+    let active = use_state(cx, || false);
+    use_memo(cx, &(cx.props.info, ), |(i, )| {
+        if i == Info::SystemShutdown {
+            active.set(true);
+        }
+    });
 
-    u.to_string() + url
+    // active.set(*info.read() == Info::SystemShutdown);
+    let eval = use_eval(cx);
+
+    let guard = use_future(cx, (), |_| {
+        to_owned![active];
+        async move {
+            let mut failed = 0;
+            while failed <= 5 {
+                let r = utils::fetch::<String>("/util/heartbeat").await;
+                if r.is_ok() {
+                    async_std::task::sleep(Duration::from_secs(5)).await;
+                } else {
+                    failed += 1;
+                    log::warn!("Failed heartbeat {} times", failed);
+                }
+            }
+
+            active.set(true);
+        }
+    });
+
+    if *active.get() {
+        cx.render(rsx! {
+            div {
+                class: "disconnect-helper overlay",
+                div {
+                    class: "overlay-content",
+                    h3 {
+                        "Backend shutdown please restart and reload!"
+                    },
+                    Loading {},
+                    button {
+                        onclick: move |e| {
+                            let _ = eval("window.location.reload()");
+                        },
+                        "Reload"
+                    }
+                }
+            }
+        })
+    } else {
+        cx.render(rsx! {
+            ""
+        })
+    }
 }

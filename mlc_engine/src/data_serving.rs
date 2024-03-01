@@ -16,6 +16,7 @@ use rocket::{
 };
 use rocket_ws::WebSocket;
 use uuid::Uuid;
+use mlc_common::Info;
 
 use mlc_common::patched::UniverseId;
 
@@ -27,17 +28,6 @@ use crate::{
 };
 use crate::fixture::Wrapper;
 
-#[derive(serde::Serialize, Debug, Clone)]
-pub enum Info {
-    FixtureTypesUpdated,
-    ProjectSaved,
-    ProjectLoaded,
-    SystemShutdown,
-    UniversePatchChanged(UniverseId),
-    UniversesUpdated,
-    EndpointConfigChanged,
-    EffectListChanged,
-}
 
 #[get("/info")]
 async fn gen_info(
@@ -65,7 +55,8 @@ async fn gen_info(
                         )).await;
                         break;
                     },
-                };
+                }
+                ;
             }
 
             Ok(())
