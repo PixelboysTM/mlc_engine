@@ -19,8 +19,9 @@ use uuid::Uuid;
 use mlc_common::{FixtureInfo, Info};
 
 use mlc_common::patched::UniverseId;
+use mlc_common::universe::FixtureUniverse;
 
-use crate::{fixture::FixtureUniverse, runtime::RuntimeData, ui_serving::ProjectSelection};
+use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::{
     fixture::{self},
     module::Module,

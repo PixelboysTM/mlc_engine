@@ -3,6 +3,33 @@ use std::ops::Add;
 use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 use serde::de::{Error, Visitor};
+use crate::config::{FixtureChannel, FixtureType, ValueResolution};
+use crate::patched::feature::FixtureFeature;
+
+pub mod feature;
+
+
+pub type FixtureId = uuid::Uuid;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+pub struct PatchedFixture {
+    pub config: FixtureType,
+    pub num_channels: u8,
+    pub channels: Vec<PatchedChannel>,
+    pub start_channel: UniverseAddress,
+    pub name: String,
+    pub mode: usize,
+    pub features: Vec<FixtureFeature>,
+    #[get_size(ignore)]
+    pub id: FixtureId,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+pub struct PatchedChannel {
+    pub config: FixtureChannel,
+    pub channel_address: UniverseAddress,
+    pub resolution: ValueResolution,
+}
 
 #[derive(
 Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash, get_size::GetSize,

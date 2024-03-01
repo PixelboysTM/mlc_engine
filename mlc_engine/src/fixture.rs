@@ -11,8 +11,3 @@ mod fixture_parser;
 mod patched;
 mod universe;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, get_size::GetSize)]
-pub struct FaderAddress {
-    pub universe: UniverseId,
-    pub address: UniverseAddress,
-}

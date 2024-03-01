@@ -82,7 +82,7 @@ button:hover {
     overflow: auto;
     min-width: 0;
 
-    h3.header {
+    .header {
         text-align: center;
         margin: 0;
         width: 100%;
@@ -94,6 +94,7 @@ button:hover {
         padding-top: 0.25rem;
         position: sticky;
         top: 0;
+        background-color: var(--color-panel);
     }
 
     p {

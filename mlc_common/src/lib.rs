@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local};
-use crate::config::FixtureMode;
+use crate::config::{DmxRange, FixtureMode};
 
 use crate::patched::{UniverseAddress, UniverseId};
 use crate::universe::UNIVERSE_SIZE;
@@ -7,6 +7,8 @@ use crate::universe::UNIVERSE_SIZE;
 pub mod patched;
 pub mod config;
 pub mod universe;
+
+pub mod fixture;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy)]
 pub enum Info {
@@ -74,4 +76,36 @@ pub struct FixtureInfo {
     pub name: String,
     pub id: uuid::Uuid,
     pub modes: Vec<FixtureMode>,
+}
+
+pub trait ToFaderValue {
+    fn to_fader_value(&self) -> u8;
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8;
+    fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8);
+    fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8);
+}
+
+impl ToFaderValue for f32 {
+    fn to_fader_value(&self) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (255.0 * v) as u8
+    }
+
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (range.range(0, 255) as f32 * v) as u8 + range.start.to_value(0, 255) as u8
+    }
+
+    fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8) {
+        let v = self.min(1.0).max(0.0);
+        let val = (range.range(0, 65535) as f32 * v) as u16 + range.start.to_value(0, 65535) as u16;
+        ((val >> 8) as u8, val as u8)
+    }
+
+    fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
+        let v = self.min(1.0).max(0.0);
+        let val =
+            (range.range(0, 16777215) as f32 * v) as u32 + range.start.to_value(0, 16777215) as u32;
+        ((val >> 16) as u8, (val >> 8) as u8, val as u8)
+    }
 }

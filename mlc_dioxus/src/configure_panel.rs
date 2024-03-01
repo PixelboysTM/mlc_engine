@@ -11,7 +11,8 @@ use gloo_net::websocket::{Message, WebSocketError};
 use gloo_net::websocket::futures::WebSocket;
 
 use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
-use mlc_common::patched::{UniverseAddress, UniverseId};
+use mlc_common::patched::{PatchedChannel, UniverseAddress, UniverseId};
+use mlc_common::universe::{FixtureUniverse, PatchedChannelIndex};
 
 use crate::{icons, utils};
 use crate::utils::Loading;
@@ -65,7 +66,7 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
             },
             div {
                 class: "panel universe-explorer",
-                utils::Loading {}
+                UniverseExplorer {}
             },
             div {
                 class: "panel project-settings",
@@ -479,4 +480,105 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
             }
         }
     })
+}
+
+#[component]
+fn UniverseExplorer(cx: Scope) -> Element {
+    let universes = use_future(cx, (), |_| {
+        async move {
+            utils::fetch::<Vec<UniverseId>>("/data/universes").await.map_err(|e| {
+                log::error!("Error fetching universes: {:?}", e);
+            }).unwrap_or(vec![])
+        }
+    });
+
+    let selected = use_state(cx, || UniverseId(1));
+    let universe = use_future(cx, (selected, ), |(sel, )| {
+        async move {
+            utils::fetch::<FixtureUniverse>(&format!("/data/universes/{}", sel.get().0)).await.map_err(|e| {
+                log::error!("Error fetching universes: {:?}", e);
+            }).ok()
+        }
+    });
+
+    match universes.value() {
+        Some(d) => {
+            cx.render(rsx! {
+                h3 {
+                    class: "header",
+                    "Universe Explorer",
+                },
+                div {
+                    class: "universe-explorer-container",
+                    div {
+                        class: "tabs",
+                        for id in d {
+                            div {
+                                class: "tab {sel(selected.get() == id)}",
+                                {id.0.to_string()}
+                            }
+                        }
+                    },
+                    match universe.value() {
+                        Some(Some(data)) => {
+                            cx.render(rsx!{
+                                div {
+                                    class: "channels",
+                                    for (i, channel) in data.channels.iter().enumerate() {
+                                        if let Some(c) = channel {
+                                            rsx!{
+                                                div {
+                                                    class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize,i)}",
+                                                    if c.channel_index == 0 {
+                                                        rsx! {
+                                                            code {
+                                                                {i.to_string()}
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            rsx!{
+                                                div {
+                                                    class: "channel",
+                                                    code {
+                                                        {i.to_string()}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                        Some(None) => {
+                            cx.render(rsx!{
+                                p {
+                                    "Error loading universe data"
+                                }
+                            })
+                        }
+                        None => utils::Loading(cx)
+                    }
+                }
+
+            })
+        }
+        None => utils::Loading(cx)
+    }
+}
+
+fn channel_type(amount: usize, i: usize) -> &'static str {
+    if i == 0 {
+        if amount == 1 {
+            "start end"
+        } else {
+            "start"
+        }
+    } else if i == amount - 1 {
+        "end"
+    } else {
+        "middle"
+    }
 }

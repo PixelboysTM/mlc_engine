@@ -3,9 +3,10 @@ use std::slice::Iter;
 
 use chrono::Duration;
 use tap::{Pipe, Tap};
+use mlc_common::fixture::FaderAddress;
+use mlc_common::patched::feature::FixtureFeature;
+use mlc_common::patched::PatchedFixture;
 
-use crate::fixture::{FaderAddress, PatchedFixture};
-use crate::fixture::feature::FixtureFeature;
 use crate::runtime::effects::{Effect, FaderTrack, Track};
 use crate::runtime::effects::feature_track::{D3PercentTrack, FeatureTrack, FeatureTrackDetail, PercentTrack, RotationTrack};
 use crate::runtime::effects::track_key::{D3PercentageKey, Key, PercentageKey, RotationKey};
@@ -33,6 +34,7 @@ impl BakedEffect {
         }
     }
 }
+
 pub(crate) async fn bake(effect: &Effect, patched_fixtures: BakedFixtureData) -> BakedEffect {
     let mut faders = HashMap::new();
 
@@ -138,7 +140,6 @@ async fn bake_feature_track_single_percent(
     );
 
     convert_to_cues::<PercentageKey, _>(&time_steps, |v| feature_tile.to_raw(v))
-
 }
 
 async fn bake_feature_track_single_rotation(t: &RotationTrack, max_time: &Duration, fixture_feature: &FixtureFeature, resolution: &Duration) -> Vec<(FaderAddress, BakedEffectCue)> {

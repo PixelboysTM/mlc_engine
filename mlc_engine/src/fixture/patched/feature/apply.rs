@@ -1,6 +1,6 @@
-use crate::runtime::{RuntimeData, ToFaderValue};
+use mlc_common::patched::feature::{Dimmer, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
+use crate::runtime::{RuntimeData};
 
-use super::{Dimmer, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
 
 pub trait ApplyFeature {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
@@ -41,7 +41,7 @@ impl ApplyFeature for Vec<FixtureFeature> {
                         &[(rgb.red, red), (rgb.blue, blue), (rgb.green, green)],
                         runtime_data,
                     )
-                    .await;
+                        .await;
                 }
             }
             FeatureSetRequest::Rotation { value } => {
@@ -104,6 +104,7 @@ fn find_dimmer(features: &[FixtureFeature]) -> Option<Dimmer> {
 
     None
 }
+
 fn find_rotation(features: &[FixtureFeature]) -> Option<Rotation> {
     for f in features {
         match f {
@@ -114,6 +115,7 @@ fn find_rotation(features: &[FixtureFeature]) -> Option<Rotation> {
 
     None
 }
+
 fn find_white(features: &[FixtureFeature]) -> Option<Dimmer> {
     for f in features {
         match f {
@@ -124,6 +126,7 @@ fn find_white(features: &[FixtureFeature]) -> Option<Dimmer> {
 
     None
 }
+
 fn find_amber(features: &[FixtureFeature]) -> Option<Dimmer> {
     for f in features {
         match f {
@@ -134,6 +137,7 @@ fn find_amber(features: &[FixtureFeature]) -> Option<Dimmer> {
 
     None
 }
+
 fn find_rgb(features: &[FixtureFeature]) -> Option<Rgb> {
     for f in features {
         match f {

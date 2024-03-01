@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
-use super::FixtureType;
 use serde_with::OneOrMany;
+use mlc_common::config::FixtureType;
 
 pub fn parse_fixture(json: &str) -> Result<Vec<FixtureType>, String> {
     let mut data: Wrapper =
