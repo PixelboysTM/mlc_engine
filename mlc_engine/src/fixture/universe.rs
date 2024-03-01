@@ -3,6 +3,7 @@ use std::num::ParseIntError;
 use std::ops::Deref;
 
 use rocket::request::FromParam;
+use mlc_common::config::FixtureMode;
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
@@ -116,7 +117,7 @@ impl FixtureUniverse {
         len: usize,
         mode_index: usize,
         start_index: usize,
-        mode: &super::FixtureMode,
+        mode: &FixtureMode,
     ) -> Result<PatchedFixture, &'static str> {
         let mut resolution: ValueResolution = ValueResolution::U8;
         let mut cs = (0..len).map(|i| -> Result<_, &'static str> {

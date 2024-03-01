@@ -10,3 +10,4 @@ serde = { version = "1.0.197", features = ["derive"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 serde_with = "3.6.1"
 get-size = { version = "0.1.4", features = ["derive"] }
+uuid = { version = "1.7.0", features = ["serde"] }

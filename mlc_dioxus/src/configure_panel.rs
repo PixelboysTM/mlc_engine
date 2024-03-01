@@ -10,10 +10,10 @@ use futures::stream::{Next, SplitSink};
 use gloo_net::websocket::{Message, WebSocketError};
 use gloo_net::websocket::futures::WebSocket;
 
-use mlc_common::{FaderUpdateRequest, ProjectDefinition, RuntimeUpdate, Settings};
+use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
 use mlc_common::patched::{UniverseAddress, UniverseId};
 
-use crate::utils;
+use crate::{icons, utils};
 use crate::utils::Loading;
 
 #[component]
@@ -61,7 +61,7 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
             },
             div {
                 class: "panel fixture-types",
-                utils::Loading {}
+                FixtureTypeExplorer {}
             },
             div {
                 class: "panel universe-explorer",
@@ -141,6 +141,16 @@ fn ProjectSettings(cx: Scope) -> Element {
             div {
                 class: "btns",
                 button {
+                    title: "Endpoints",
+                    onclick: move |_| {
+
+                    },
+                    icons::Cable {
+                        width: "1rem",
+                        height: "1rem",
+                    },
+                },
+                button {
                     onclick: move |_| {
                         to_owned![changed_settings];
                         async move {
@@ -156,12 +166,12 @@ fn ProjectSettings(cx: Scope) -> Element {
                         }
                     },
                     "Update"
-                }
+                },
+
             }
         }
     })
 }
-
 
 #[component]
 fn FaderPanel(cx: Scope) -> Element {
@@ -413,4 +423,60 @@ fn sel(b: bool) -> &'static str {
     } else {
         ""
     }
+}
+
+#[component]
+fn FixtureTypeExplorer(cx: Scope) -> Element {
+    let fixture_query = use_future(cx, (), |_| {
+        async move {
+            let r = utils::fetch::<Vec<FixtureInfo>>("/data/get/fixture-types").await;
+            if let Ok(infos) = r {
+                infos
+            } else {
+                log::error!("Couldn't fetch types: {:?}", r.err().unwrap());
+                vec![]
+            }
+        }
+    });
+
+    cx.render(rsx! {
+        div {
+            class: "fixture-type-explorer",
+            h3 {
+                class: "header",
+                "Fixture Types",
+            },
+
+            match fixture_query.value() {
+                Some(infos) => {
+                        cx.render(rsx!{
+                    for info in infos {
+                            div {
+                                class: "fixture-type",
+                                h3 {
+                                    class: "name",
+                                    {info.name.clone()}
+                                },
+                                p {
+                                    class: "id",
+                                    {info.id.to_string()}
+                                },
+                                div {
+                                    class: "modes",
+
+                                    for mode in &info.modes {
+                                        li {
+                                            class: "mode",
+                                            {mode.get_name()}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+                None => {utils::Loading(cx)}
+            }
+        }
+    })
 }

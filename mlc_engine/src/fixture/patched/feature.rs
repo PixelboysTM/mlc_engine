@@ -2,8 +2,9 @@ pub mod apply;
 
 use get_size::GetSize;
 use std::fmt::{Display, Formatter, Write};
+use mlc_common::config::FixtureMode;
 use crate::fixture::{
-    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureChannel, FixtureMode, FixtureType,
+    DmxColor, DmxRange, FaderAddress, FixtureCapability, FixtureChannel, FixtureType,
     RotationSpeed,
 };
 use crate::runtime::ToFaderValue;
@@ -169,7 +170,7 @@ pub fn find_features(
 }
 
 type FeatureFinder =
-    dyn Fn(&FixtureType, &[String], UniverseId, UniverseAddress) -> Option<FixtureFeature>;
+dyn Fn(&FixtureType, &[String], UniverseId, UniverseAddress) -> Option<FixtureFeature>;
 
 fn search_dimmer(
     fixture: &FixtureType,
@@ -398,7 +399,7 @@ fn search_rotation(
                     if ((matches!(d.speed_start, RotationSpeed::SlowCw)
                         && matches!(d.speed_end, RotationSpeed::FastCw))
                         || (matches!(d.speed_start, RotationSpeed::FastCw)
-                            && matches!(d.speed_end, RotationSpeed::SlowCw)))
+                        && matches!(d.speed_end, RotationSpeed::SlowCw)))
                         && cw.is_none()
                     {
                         cw = Some(make_feature_tile(
@@ -414,7 +415,7 @@ fn search_rotation(
                     if ((matches!(d.speed_start, RotationSpeed::SlowCcw)
                         && matches!(d.speed_end, RotationSpeed::FastCcw))
                         || (matches!(d.speed_start, RotationSpeed::FastCcw)
-                            && matches!(d.speed_end, RotationSpeed::SlowCcw)))
+                        && matches!(d.speed_end, RotationSpeed::SlowCcw)))
                         && ccw.is_none()
                     {
                         ccw = Some(make_feature_tile(
@@ -434,7 +435,7 @@ fn search_rotation(
     if let (Some(cw), Some(ccw)) = (cw, ccw) {
         Some(FixtureFeature::Rotation(Rotation {
             cw,
-            ccw
+            ccw,
         }))
     } else {
         None

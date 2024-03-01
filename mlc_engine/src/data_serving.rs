@@ -16,7 +16,7 @@ use rocket::{
 };
 use rocket_ws::WebSocket;
 use uuid::Uuid;
-use mlc_common::Info;
+use mlc_common::{FixtureInfo, Info};
 
 use mlc_common::patched::UniverseId;
 
@@ -64,12 +64,6 @@ async fn gen_info(
     })
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
-struct FixtureInfo {
-    name: String,
-    id: uuid::Uuid,
-    modes: Vec<String>,
-}
 
 #[get("/get/fixture-types")]
 async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<FixtureInfo>> {
@@ -82,11 +76,7 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
             .map(|f| FixtureInfo {
                 id: *f.get_id(),
                 name: f.get_name().to_string(),
-                modes: f
-                    .get_modes()
-                    .iter()
-                    .map(|m| m.get_name().to_string())
-                    .collect(),
+                modes: f.get_modes().to_vec(),
             })
             .collect::<Vec<FixtureInfo>>(),
     )

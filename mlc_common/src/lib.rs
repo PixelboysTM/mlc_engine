@@ -1,9 +1,11 @@
 use chrono::{DateTime, Local};
+use crate::config::FixtureMode;
 
 use crate::patched::{UniverseAddress, UniverseId};
 use crate::universe::UNIVERSE_SIZE;
 
 pub mod patched;
+pub mod config;
 pub mod universe;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy)]
@@ -65,4 +67,11 @@ pub struct FaderUpdateRequest {
     pub universe: UniverseId,
     pub channel: UniverseAddress,
     pub value: u8,
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct FixtureInfo {
+    pub name: String,
+    pub id: uuid::Uuid,
+    pub modes: Vec<FixtureMode>,
 }

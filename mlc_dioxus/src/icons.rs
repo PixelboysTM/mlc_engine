@@ -1,18 +1,26 @@
+use dioxus::core::AttributeValue;
 use dioxus::prelude::*;
 
+#[derive(PartialEq, Props)]
+pub struct IconProps<'a> {
+    width: Option<&'a str>,
+    height: Option<&'a str>,
+}
+
 #[component]
-pub fn Settings(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn Settings<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(
         rsx! {
             svg {
                 stroke_linecap: "round",
                 stroke_linejoin: "round",
-                height: "{size}",
+                height: width,
+                width: height,
                 xmlns: "http://www.w3.org/2000/svg",
                 view_box: "0 0 24 24",
                 stroke: "currentColor",
-                width: "{size}",
                 fill: "none",
                 stroke_width: "2",
                 class: "lucide lucide-settings",
@@ -23,19 +31,20 @@ pub fn Settings(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn Pencil(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn Pencil<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! {
         svg {
             stroke_width: "2",
             xmlns: "http://www.w3.org/2000/svg",
             stroke_linejoin: "round",
             fill: "none",
-            width: "{size}",
+            width: width,
+            height: height,
             stroke: "currentColor",
             stroke_linecap: "round",
             view_box: "0 0 24 24",
-            height: "{size}",
             class: "lucide lucide-pencil",
             path { d: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" }
             path { d: "m15 5 4 4" }
@@ -44,16 +53,17 @@ pub fn Pencil(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn LightBulb(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn LightBulb<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! {
         svg {
             fill: "none",
             view_box: "0 0 24 24",
-            height: "{size}",
+            width: width,
+            height: height,
             stroke_width: "2",
             xmlns: "http://www.w3.org/2000/svg",
-            width: "{size}",
             stroke: "currentColor",
             stroke_linecap: "round",
             stroke_linejoin: "round",
@@ -66,13 +76,14 @@ pub fn LightBulb(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn Save(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn Save<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! {
          svg {
-        height: "{size}",
+        width: width,
+        height: height,
         stroke_linecap: "round",
-        width: "{size}",
         xmlns: "http://www.w3.org/2000/svg",
         view_box: "0 0 24 24",
         fill: "none",
@@ -89,16 +100,17 @@ pub fn Save(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn UploadCloud(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn UploadCloud<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! {
             svg {
         stroke_linejoin: "round",
         fill: "none",
         stroke_linecap: "round",
-        height: "{size}",
+        width: width,
+        height: height,
         view_box: "0 0 24 24",
-        width: "{size}",
         stroke: "currentColor",
         stroke_width: "2",
         xmlns: "http://www.w3.org/2000/svg",
@@ -111,18 +123,19 @@ pub fn UploadCloud(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn ExternalLink(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn ExternalLink<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! { svg {
             stroke_linecap: "round",
             xmlns: "http://www.w3.org/2000/svg",
             view_box: "0 0 24 24",
             stroke: "currentColor",
             stroke_linejoin: "round",
-            width: "{size}",
+            width: width,
+            height: height,
             fill: "none",
             stroke_width: "2",
-            height: "{size}",
             class: "lucide lucide-external-link",
             path { d: "M15 3h6v6" }
             path { d: "M10 14 21 3" }
@@ -132,22 +145,50 @@ pub fn ExternalLink(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn TabletSmartphone(cx: Scope) -> Element {
-    let size = "1.25rem";
+pub fn TabletSmartphone<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! {svg {
         view_box: "0 0 24 24",
         fill: "none",
         stroke_linecap: "round",
-        height: "24",
+        width: width,
+        height: height,
         stroke_linejoin: "round",
         stroke_width: "2",
-        width: "24",
         stroke: "currentColor",
         xmlns: "http://www.w3.org/2000/svg",
         class: "lucide lucide-tablet-smartphone",
         rect { width: "10", rx: "2", height: "14", y: "8", x: "3" }
         path { d: "M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4" }
         path { d: "M8 18h.01" }
+    }
+
+    })
+}
+
+#[component]
+pub fn Cable<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! {svg {
+        fill: "none",
+        stroke_linejoin: "round",
+        stroke: "currentColor",
+        width: width,
+        height: height,
+        stroke_width: "2",
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke_linecap: "round",
+        view_box: "0 0 24 24",
+        class: "lucide lucide-cable",
+        path { d: "M4 9a2 2 0 0 1-2-2V5h6v2a2 2 0 0 1-2 2Z" }
+        path { d: "M3 5V3" }
+        path { d: "M7 5V3" }
+        path { d: "M19 15V6.5a3.5 3.5 0 0 0-7 0v11a3.5 3.5 0 0 1-7 0V9" }
+        path { d: "M17 21v-2" }
+        path { d: "M21 21v-2" }
+        path { d: "M22 19h-6v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2Z" }
     }
 
     })

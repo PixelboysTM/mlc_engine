@@ -23,6 +23,7 @@
     --color-error: #ff3e3e;
     --color-background-transparent: #000000e5;
     --color-button: #1a1a1a;
+    --color-disabled: #5a5a5a;
     --number-border-radius: 0.2rem;
 }
 
@@ -87,11 +88,16 @@ button:hover {
         width: 100%;
         -webkit-touch-callout: none;
         -webkit-user-select: none;
-        -khtml-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
         padding-top: 0.25rem;
+        position: sticky;
+        top: 0;
+    }
+
+    p {
+        margin: 0.2rem 0 0;
     }
 }
 

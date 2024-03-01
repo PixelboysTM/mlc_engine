@@ -7,6 +7,7 @@ use serde::Serialize;
 use serde_with::formats::PreferMany;
 use serde_with::OneOrMany;
 use serde_with::serde_as;
+use mlc_common::config::FixtureMode;
 
 pub type Value = u32;
 
@@ -55,22 +56,6 @@ impl FixtureType {
     }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
-#[serde(rename_all = "camelCase")]
-pub struct FixtureMode {
-    name: String,
-    short_name: String,
-    channels: Vec<String>,
-}
-
-impl FixtureMode {
-    pub fn get_channels(&self) -> &[String] {
-        &self.channels
-    }
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-}
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
@@ -246,57 +231,57 @@ impl<'de> Visitor<'de> for DmxRangeValueVisitor {
     }
 
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Value(v))
     }
 
     fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Value(v as u32))
     }
 
     fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Value(v as u32))
     }
 
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Value(v as u32))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Value(v as u32))
     }
 
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Percentage(v))
     }
 
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         Ok(DmxRangeValue::Percentage(v as f32))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         if !v.ends_with("%") {
             return Err(E::custom("Not a percentage"));
@@ -314,8 +299,8 @@ impl<'de> Visitor<'de> for DmxRangeValueVisitor {
 
 impl<'de> Deserialize<'de> for DmxRangeValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+        where
+            D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_any(DmxRangeValueVisitor)
     }
@@ -323,8 +308,8 @@ impl<'de> Deserialize<'de> for DmxRangeValue {
 
 impl Serialize for DmxRangeValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
+        where
+            S: serde::Serializer,
     {
         match self {
             DmxRangeValue::Value(v) => serializer.serialize_u32(*v),
