@@ -1768,6 +1768,7 @@ dependencies = [
  "mlc_common",
  "pollster",
  "regex",
+ "reqwest",
  "rocket",
  "rocket_ws",
  "sacn",

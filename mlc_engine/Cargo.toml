@@ -22,3 +22,4 @@ regex = { version = "*" }
 tap = "*"
 get-size = { version = "0.1.4", features = ["derive"] }
 mlc_common = { path = "../mlc_common" }
+reqwest = "0.11.24"

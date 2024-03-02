@@ -14,7 +14,7 @@ use crate::utils::Loading;
 
 mod headbar;
 pub mod icons;
-mod configure_panel;
+pub(crate) mod configure_panel;
 mod utils;
 
 fn main() {

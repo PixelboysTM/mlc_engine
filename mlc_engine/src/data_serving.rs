@@ -14,9 +14,11 @@ use rocket::{
     response::status::{BadRequest, Custom},
     Route, routes, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
 };
+use rocket::http::hyper::body::HttpBody;
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 use mlc_common::{FixtureInfo, Info};
+use mlc_common::config::Manufacturer;
 
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
@@ -81,6 +83,25 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
             })
             .collect::<Vec<FixtureInfo>>(),
     )
+}
+
+#[get("/add/fixture-ofl/<manufacturer>/<name>")]
+async fn add_fixture_ofl(
+    project: &State<Project>,
+    info: &State<Sender<Info>>,
+    manufacturer: &str,
+    name: &str,
+    _g: ProjectGuard,
+) -> Result<(), BadRequest<String>> {
+    let data = reqwest::get(format!("https://open-fixture-library.org/{}/{}.aglight", manufacturer, name)).await.map_err(|e| BadRequest(e.to_string()))?;
+    let json = data.text().await.map_err(|e| BadRequest(e.to_string()))?;
+    let fix = fixture::parse_fixture(&json).map_err(|e| {
+        BadRequest(e.to_string())
+    })?;
+    for fixture in fix {
+        project.insert_fixture(fixture, info).await;
+    }
+    Ok(())
 }
 
 #[post("/add/fixture", data = "<data>")]
@@ -206,6 +227,7 @@ fn get_routes() -> Vec<Route> {
         gen_info,
         get_fixture_types,
         add_fixture,
+        add_fixture_ofl,
         save_project,
         get_universes,
         patch_fixture,

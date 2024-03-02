@@ -7,6 +7,7 @@ use log::log;
 use crate::icons::{
     ExternalLink, LightBulb, Pencil, Save, Settings, TabletSmartphone, UploadCloud,
 };
+use crate::{configure_panel, utils};
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Pane {
@@ -18,8 +19,19 @@ pub enum Pane {
 #[component]
 pub fn Headbar(cx: Scope) -> Element {
     let pane = use_shared_state::<Pane>(cx).unwrap();
+    let upload_fixture = use_state(cx, || false);
 
     render! {
+        if *upload_fixture.get() {
+            rsx!{
+                configure_panel::UploadFixturePopup {
+                    on_close: move |_| {
+                        upload_fixture.set(false);
+                    }
+                }
+            }
+        }
+
         div {
             class: "headbar",
             img {
@@ -66,7 +78,7 @@ pub fn Headbar(cx: Scope) -> Element {
                         class: "icon",
                         title: "Upload Fixture",
                         onclick: move |_event| {
-                            log::info!("Clicked Save")
+                                upload_fixture.set(true);
                         },
                         UploadCloud {},
                     },
@@ -103,7 +115,9 @@ pub fn Headbar(cx: Scope) -> Element {
                     class: "icon",
                     title: "Save Project",
                     onclick: move |_event| {
-                        log::info!("Clicked Save")
+                        async move {
+                            let _ = utils::fetch::<String>("/data/save").await;
+                        }
                     },
                     Save {}
                 },

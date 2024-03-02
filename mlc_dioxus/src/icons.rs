@@ -193,3 +193,27 @@ pub fn Cable<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
 
     })
 }
+
+#[component]
+pub fn Download<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        stroke: "currentColor",
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke_width: "2",
+        stroke_linecap: "round",
+        width: width,
+        height: height,
+        view_box: "0 0 24 24",
+        fill: "none",
+        stroke_linejoin: "round",
+        class: "lucide lucide-download",
+        path { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }
+        polyline { points: "7 10 12 15 17 10" }
+        line { y2: "3", x1: "12", x2: "12", y1: "15" }
+    }
+
+
+    })
+}

@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use dioxus::hooks::computed::use_tracked_state;
+use dioxus::html::iframe;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use futures::{FutureExt, select, SinkExt, StreamExt};
@@ -581,4 +582,190 @@ fn channel_type(amount: usize, i: usize) -> &'static str {
     } else {
         "middle"
     }
+}
+
+#[derive(PartialEq, Copy, Clone)]
+enum FixtureSource {
+    Ofl,
+    Json,
+}
+
+#[derive(serde::Serialize)]
+#[allow(non_snake_case)]
+struct SearchBody {
+    searchQuery: &'static str,
+    manufacturersQuery: [&'static str; 0],
+    categoriesQuery: [&'static str; 0],
+}
+
+#[derive(serde::Deserialize)]
+struct AvailableFixture {
+    manufacturer: String,
+    name: String,
+}
+
+#[derive(Props)]
+pub struct UFPProps<'a> {
+    on_close: EventHandler<'a, ()>,
+}
+
+#[component]
+pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
+    let source = use_state(cx, || FixtureSource::Ofl);
+
+    let available_fixtures = use_future(cx, (), |_| {
+        async move {
+            let r = utils::fetch_post::<Vec<String>, _>("https://open-fixture-library.org/api/v1/get-search-results", SearchBody {
+                searchQuery: "",
+                categoriesQuery: [],
+                manufacturersQuery: [],
+            }).await;
+
+            r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e)).ok()
+                .map(|v| {
+                    v.iter().map(|e| {
+                        let mut s = e.split("/");
+                        AvailableFixture {
+                            manufacturer: s.next().unwrap().to_string(),
+                            name: s.next().unwrap().to_string(),
+                        }
+                    }).collect::<Vec<_>>()
+                })
+        }
+    });
+
+    let search = use_state(cx, || "".to_string());
+
+    cx.render(rsx! {
+        div {
+            class: "overlay",
+            onclick: move |e| {
+                cx.props.on_close.call(());
+            },
+
+            div {
+                class: "overlay-content upload-fixture",
+                onclick: move |e| {
+                    e.stop_propagation();
+                },
+
+                h3 {
+                    "Import Fixture",
+                },
+
+                div {
+                    class: "tabs",
+
+                    div {
+                        class: "tab {sel(*source.get() == FixtureSource::Ofl)}",
+                        onclick: move |_| {
+                            source.set(FixtureSource::Ofl);
+                        },
+                        "OFL"
+                    },
+                    div {
+                        class: "tab {sel(*source.get() == FixtureSource::Json)}",
+                        onclick: move |_| {
+                            source.set(FixtureSource::Json);
+                        },
+                        "Json"
+                    }
+                },
+
+                div {
+                    class: "content",
+                    match source.get() {
+                        FixtureSource::Ofl => {
+                            match available_fixtures.value() {
+                                Some(Some(fs)) => {
+                                    cx.render(rsx!{
+                                        div {
+                                            class: "searchbar",
+                                            input {
+                                                r#type: "text",
+                                                onchange: move |e| {
+                                                    search.set(e.value.clone());
+                                                }
+                                            }
+                                        },
+                                        div {
+                                            class: "results",
+                                            for available in filter_search(fs, &search.get()) {
+                                                div {
+                                                    class: "result",
+                                                    p {
+                                                        class: "manufacturer",
+                                                        {available.manufacturer.clone()}
+                                                    },
+                                                    p {
+                                                        class: "name",
+                                                        {available.name.clone()}
+                                                    },
+                                                    //  input {
+                                                    //     r#type: "button",
+                                                    //     value: "Import",
+                                                    //     onclick: move |e| {
+                                                    //         log::info!("Import fixture");
+                                                    //     }
+                                                    // }
+
+                                                    button {
+                                                        class: "icon",
+                                                        title: "Import",
+                                                        onclick: move |e| {
+                                                            let m = available.manufacturer.clone();
+                                                            let n = available.name.clone();
+                                                            async move {
+                                                                log::info!("Import fixture");
+                                                                let r = utils::fetch::<()>(&format!("/data/add/fixture-ofl/{}/{}", m, n)).await.map_err(|e| {
+                                                                    log::error!("Error importing: {:?}", e);
+                                                                });
+                                                            }
+                                                        },
+                                                        icons::Download {
+
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                                Some(None) => {cx.render(rsx!{
+                                    "Failed to query fixtures from ofl. Is your device connected to the internet?"
+                                })}
+                                None => {cx.render (rsx!(utils::Loading {}))}
+                            }
+                        }
+                        FixtureSource::Json => {cx.render (rsx!{
+                            "Currently not available"
+                        })}
+                    }
+                }
+            }
+        }
+    })
+}
+
+fn fits_search(f: &AvailableFixture, search: &str) -> bool {
+    let i = format!("{}/{}", f.manufacturer.to_lowercase(), f.name.to_lowercase());
+    let mut keywords = search.split(" ");
+    for keyword in keywords {
+        if !i.contains(&keyword.to_lowercase()) {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn filter_search<'a>(fs: &'a Vec<AvailableFixture>, search: &str) -> Vec<&'a AvailableFixture> {
+    let mut r = vec![];
+    for f in fs {
+        if fits_search(f, search) {
+            r.push(f);
+        }
+    }
+
+    r
 }
