@@ -70,7 +70,7 @@ async fn load_project(
     info: &State<Sender<Info>>,
     runtime: &State<RuntimeData>,
     effect_handler: &State<Sender<EffectPlayerAction>>,
-) -> Result<String, String> {
+) -> Result<Json<String>, String> {
     if project_selection.0.lock().await.is_some() {
         return Err("Project already loaded why on this page.".to_string());
     }
@@ -80,12 +80,12 @@ async fn load_project(
         .await;
     if result.is_err() {
         eprintln!("{:?}", result.unwrap_err());
-        return result.map_err(|e| e.to_string()).map(|_| "".to_string());
+        return result.map_err(|e| e.to_string()).map(|_| Json("".to_string()));
     }
     let mut p = project_selection.0.lock().await;
     *p = Some(name.to_string());
 
-    Ok("Loaded succsessful".to_string())
+    Ok(Json("Loaded succsessful".to_string()))
 }
 
 #[get("/current")]

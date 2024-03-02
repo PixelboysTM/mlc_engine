@@ -3,12 +3,19 @@ use std::{
     sync::Arc,
 };
 
-use rocket::{fs::NamedFile, futures::lock::Mutex, get, Route, routes, State};
+use rocket::{fs::NamedFile, futures::lock::Mutex, get, Responder, Route, routes, State};
+use rocket::response::Redirect;
 
 use crate::module::Module;
 
 // const OUT_PATH: &str = "out/";
 const OUT_PATH: &str = "mlc_dioxus/dist/";
+
+#[derive(Responder)]
+enum UiResponse {
+    File(Option<NamedFile>),
+    Redirect(Redirect),
+}
 
 #[get("/<file..>")]
 async fn files(file: PathBuf) -> Option<NamedFile> {
@@ -22,15 +29,30 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/")]
-async fn index(project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
+async fn index(project_selection: &State<ProjectSelection>) -> UiResponse {
     if project_selection.inner().0.lock().await.is_some() {
-        NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+        UiResponse::File(NamedFile::open(Path::new(OUT_PATH).join("index.html"))
             .await
-            .ok()
+            .ok())
     } else {
-        NamedFile::open(Path::new(OUT_PATH).join("project.html"))
+        UiResponse::Redirect(Redirect::to("/projects"))
+        // NamedFile::open(Path::new(OUT_PATH).join("project.html"))
+        //     .await
+        //     .ok()
+    }
+}
+
+#[get("/projects")]
+async fn projects(project_selection: &State<ProjectSelection>) -> UiResponse {
+    if project_selection.inner().0.lock().await.is_some() {
+        // NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+        //     .await
+        //     .ok()
+        UiResponse::Redirect(Redirect::to("/"))
+    } else {
+        UiResponse::File(NamedFile::open(Path::new(OUT_PATH).join("index.html"))
             .await
-            .ok()
+            .ok())
     }
 }
 
@@ -48,7 +70,7 @@ async fn viewer3d(project_selection: &State<ProjectSelection>) -> Option<NamedFi
 }
 
 fn get_routes() -> Vec<Route> {
-    routes![index, files, viewer3d]
+    routes![index, files, viewer3d, projects]
 }
 
 pub struct UiServingModule;

@@ -217,3 +217,64 @@ pub fn Download<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
 
     })
 }
+
+#[component]
+pub fn FileUp<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        width: width,
+        height: height,
+        stroke_linecap: "round",
+        stroke_width: "2",
+        view_box: "0 0 24 24",
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke: "#ffffff",
+        stroke_linejoin: "round",
+        fill: "none",
+        class: "lucide lucide-file-up",
+        path { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" }
+        path { d: "M14 2v4a2 2 0 0 0 2 2h4" }
+        path { d: "M12 12v6" }
+        path { d: "m15 15-3-3-3 3" }
+    }})
+}
+
+#[component]
+pub fn Plus<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        fill: "none",
+        stroke: "#ffffff",
+        stroke_width: "2",
+        stroke_linecap: "round",
+        width: width,
+        height: height,
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke_linejoin: "round",
+        view_box: "0 0 24 24",
+        class: "lucide lucide-plus",
+        path { d: "M5 12h14" }
+        path { d: "M12 5v14" }
+    }})
+}
+
+#[component]
+pub fn FolderOpen<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        height: "24",
+        fill: "none",
+        stroke_width: "2",
+        stroke_linejoin: "round",
+        width: "24",
+        stroke: "#ffffff",
+        stroke_linecap: "round",
+        xmlns: "http://www.w3.org/2000/svg",
+        view_box: "0 0 24 24",
+        class: "lucide lucide-folder-open",
+        path { d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" }
+    }})
+}

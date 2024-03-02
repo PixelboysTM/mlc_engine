@@ -722,9 +722,7 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                                                                 });
                                                             }
                                                         },
-                                                        icons::Download {
-
-                                                        }
+                                                        icons::Download {}
                                                     }
                                                 }
                                             }

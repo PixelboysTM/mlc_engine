@@ -1,0 +1,38 @@
+.project-list {
+    min-height: calc(100vh - 3.25rem);
+    padding: 0.25rem 0.25rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    overflow-y: auto;
+    gap: 0.25rem;
+
+    .project {
+        width: 16rem;
+        height: 12rem;
+        padding: 0.25rem;
+
+        background-color: var(--color-panel);
+        border-radius: var(--number-border-radius);
+
+        display: grid;
+        grid-template-rows: 1fr 1fr 1fr 3rem;
+
+        h2 {
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        p {
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        button {
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+}

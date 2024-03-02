@@ -2,6 +2,7 @@ use std::ops::Deref;
 use std::time::Duration;
 
 use dioxus::prelude::*;
+use dioxus_router::prelude::{Routable, Router};
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use reqwest::{IntoUrl, Url};
@@ -13,15 +14,40 @@ use crate::headbar::{Headbar, Pane};
 use crate::utils::Loading;
 
 mod headbar;
+mod project_selection;
 pub mod icons;
 pub(crate) mod configure_panel;
 mod utils;
 
 fn main() {
     wasm_logger::init(Config::default());
-    dioxus_web::launch(app);
+    dioxus_web::launch(start);
 }
 
+fn start(cx: Scope) -> Element {
+    render! {
+        Router::<Route> {}
+    }
+}
+
+
+#[derive(Routable, Clone)]
+enum Route {
+    #[route("/")]
+    Index {},
+    #[route("/projects")]
+    Projects {},
+}
+
+#[allow(non_snake_case)]
+fn Index(cx: Scope) -> Element {
+    app(cx)
+}
+
+#[allow(non_snake_case)]
+fn Projects(cx: Scope) -> Element {
+    project_selection::ProjectSelection(cx)
+}
 
 fn app(cx: Scope) -> Element {
     use_shared_state_provider(cx, || Pane::Configure);
