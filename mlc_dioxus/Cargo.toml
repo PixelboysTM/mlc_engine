@@ -22,3 +22,4 @@ gloo-utils = "0.2.0"
 futures = "0.3.30"
 async-std = "1.12.0"
 dioxus-router = "0.4.3"
+clap = { version = "4.5.1", features = ["derive"] }

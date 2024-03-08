@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
+use mlc_common::endpoints::{EndPointConfig, EPConfigItem};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
@@ -8,16 +9,13 @@ use mlc_common::universe::UNIVERSE_SIZE;
 
 use self::{
     artnet::ArtNetEndpoint,
-    sacn::{SacnEndpoint, Speed},
+    sacn::{SacnEndpoint},
 };
 
 mod artnet;
 mod sacn;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default)]
-pub struct EndPointConfig {
-    endpoints: HashMap<UniverseId, Vec<EPConfigItem>>,
-}
+
 
 macro_rules! register_default {
     ($type:ty, $rx:expr) => {
@@ -25,8 +23,12 @@ macro_rules! register_default {
     };
 }
 
-impl EndPointConfig {
-    pub async fn create_endpoints(&self) -> HashMap<UniverseId, Vec<Sender<EndpointData>>> {
+pub trait CreateEndpoints {
+    async fn create_endpoints(&self) -> HashMap<UniverseId, Vec<Sender<EndpointData>>>;
+}
+
+impl CreateEndpoints for EndPointConfig {
+    async fn create_endpoints(&self) -> HashMap<UniverseId, Vec<Sender<EndpointData>>> {
         let mut points = HashMap::new();
         for (k, v) in &self.endpoints {
             let mut point = vec![];
@@ -55,12 +57,6 @@ impl EndPointConfig {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
-pub enum EPConfigItem {
-    Logger,
-    ArtNet,
-    Sacn { universe: u16, speed: Speed },
-}
 
 pub trait Endpoint: Default {
     fn register(self, rx: Receiver<EndpointData>);

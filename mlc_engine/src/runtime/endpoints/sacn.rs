@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use rocket::tokio::select;
 use sacn::DmxSource;
+use mlc_common::endpoints::Speed;
 
 use mlc_common::universe::UNIVERSE_SIZE;
 
@@ -13,22 +14,6 @@ pub struct SacnEndpoint {
     pub speed: Speed,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
-pub enum Speed {
-    Slow,   // 200ms
-    Medium, // 100ms
-    Fast,   // 30ms
-}
-
-impl Speed {
-    fn get_duration(&self) -> Duration {
-        match self {
-            Speed::Slow => Duration::from_millis(200),
-            Speed::Medium => Duration::from_millis(100),
-            Speed::Fast => Duration::from_millis(30),
-        }
-    }
-}
 
 impl Default for SacnEndpoint {
     fn default() -> Self {

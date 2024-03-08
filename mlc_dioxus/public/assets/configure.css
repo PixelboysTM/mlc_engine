@@ -382,7 +382,7 @@
                 display: grid;
                 /*flex-direction: row;*/
                 /*justify-content: space-between;*/
-                grid-template-columns: 1fr 1fr auto;
+                grid-template-columns: 1fr 1fr 1fr auto;
                 width: 100%;
                 height: 3rem;
                 border-bottom: var(--color-accent) 1px solid;
@@ -398,6 +398,7 @@
 
                 button {
                     display: none;
+                    grid-column: 4 / 4;
                 }
 
                 &:hover {
@@ -407,5 +408,19 @@
                 }
             }
         }
+    }
+}
+
+.overlay-content.endpoint-mapping {
+    width: 60vw;
+    height: 90vh;
+
+    h3 {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 2rem;
+        text-align: center;
+        border-bottom: var(--color-accent) 1px solid;
     }
 }

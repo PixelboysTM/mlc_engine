@@ -1,22 +1,22 @@
 use std::ops::Deref;
 
-use dioxus::hooks::computed::use_tracked_state;
-use dioxus::html::iframe;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::{FutureExt, select, SinkExt, StreamExt};
-use futures::future::{Either, select, Select};
-use futures::lock::Mutex;
-use futures::stream::{Next, SplitSink};
-use gloo_net::websocket::{Message, WebSocketError};
-use gloo_net::websocket::futures::WebSocket;
+use futures::{FutureExt, SinkExt, StreamExt};
+use futures::future::{Either, select};
+use gloo_net::websocket::Message;
 
 use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
-use mlc_common::patched::{PatchedChannel, UniverseAddress, UniverseId};
-use mlc_common::universe::{FixtureUniverse, PatchedChannelIndex};
+use mlc_common::endpoints::EndPointConfig;
+use mlc_common::patched::{UniverseAddress, UniverseId};
+use mlc_common::universe::FixtureUniverse;
 
 use crate::{icons, utils};
 use crate::utils::Loading;
+
+mod fixture_tester;
+
+use fixture_tester::FixtureTester;
 
 #[component]
 pub fn ConfigurePanel(cx: Scope) -> Element {
@@ -84,8 +84,19 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
 #[component]
 fn ProjectSettings(cx: Scope) -> Element {
     let settings = use_future(cx, (), |_| utils::fetch::<Settings>("/settings/get"));
+    let endpoint_mapping = use_state(cx, || false);
     let changed_settings = use_state(cx, || None);
     cx.render(rsx! {
+        if *endpoint_mapping.get() {
+            rsx!{
+                EndPointMapping {
+                    onclose: move |_| {
+                        endpoint_mapping.set(false);
+                    }
+                }
+            }
+        }
+
         div {
             class: "project-settings-panel",
             h3 {
@@ -145,7 +156,7 @@ fn ProjectSettings(cx: Scope) -> Element {
                 button {
                     title: "Endpoints",
                     onclick: move |_| {
-
+                        endpoint_mapping.set(true);
                     },
                     icons::Cable {
                         width: "1rem",
@@ -441,7 +452,20 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
         }
     });
 
+    let detail_fixture = use_state::<Option<FixtureInfo>>(cx, || None);
+
     cx.render(rsx! {
+        if let Some(f) = detail_fixture.get() {
+            rsx!{
+                FixtureTester {
+                    info: f.clone(),
+                    onclose: move |_| {
+                        detail_fixture.set(None);
+                    }
+                }
+            }
+        }
+
         div {
             class: "fixture-type-explorer",
             h3 {
@@ -455,6 +479,9 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                     for info in infos {
                             div {
                                 class: "fixture-type",
+                                onclick: move |e| {
+                                    detail_fixture.set(Some(info.clone()));
+                                },
                                 h3 {
                                     class: "name",
                                     {info.name.clone()}
@@ -766,4 +793,76 @@ fn filter_search<'a>(fs: &'a Vec<AvailableFixture>, search: &str) -> Vec<&'a Ava
     }
 
     r
+}
+
+#[derive(Props)]
+struct EPMProps<'a> {
+    onclose: EventHandler<'a>,
+}
+
+#[component]
+fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
+    let config = use_future(cx, (), |_| {
+        async move {
+            let r = utils::fetch::<EndPointConfig>("/runtime/endpoints/get").await;
+            match r {
+                Ok(c) => {
+                    let us = utils::fetch::<Vec<UniverseId>>("/data/universes").await;
+                    us.map(|us| (us, c)).ok()
+                }
+                Err(e) => {
+                    log::error!("Error fetching endpoint config: {:?}", e);
+                    None
+                }
+            }
+        }
+    });
+
+    cx.render(rsx! {
+        div {
+            class: "overlay",
+            onclick: move |_| {
+                cx.props.onclose.call(());
+            },
+
+            div {
+                class: "overlay-content endpoint-mapping",
+                onclick: move |e| {
+                    e.stop_propagation();
+                },
+
+                h3 {
+                    "Endpoint Mapping"
+                },
+
+                match config.value() {
+                    Some(Some((us, c))) => {
+                        rsx!{
+                            for u in us {
+                                div {
+                                    class: "universe",
+                                    p {
+                                        {u.0.to_string()}
+                                    },
+                                    div {
+                                        class: "endpoints",
+                                        for e in c.endpoints.get(u).unwrap_or(&vec![]) {
+                                            div {
+                                                class: "endpoint",
+                                                "e"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Some(None) => {rsx!{"Error fetching config see console for more information!"}}
+                    None => {
+                        rsx!{utils::Loading{}}
+                    }
+                }
+            }
+        }
+    })
 }

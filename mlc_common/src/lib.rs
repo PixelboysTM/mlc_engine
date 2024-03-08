@@ -7,8 +7,8 @@ use crate::universe::UNIVERSE_SIZE;
 pub mod patched;
 pub mod config;
 pub mod universe;
-
 pub mod fixture;
+pub mod endpoints;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy)]
 pub enum Info {
@@ -71,7 +71,7 @@ pub struct FaderUpdateRequest {
     pub value: u8,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
 pub struct FixtureInfo {
     pub name: String,
     pub id: uuid::Uuid,

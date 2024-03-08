@@ -1,3 +1,4 @@
+use mlc_common::endpoints::EndPointConfig;
 use std::{
     collections::{hash_map::Entry, HashMap},
     str::FromStr,
@@ -37,10 +38,11 @@ use crate::{
     project::Project,
     send,
 };
+use crate::runtime::endpoints::CreateEndpoints;
 
 use self::{
     effects::EffectModule,
-    endpoints::{EndPointConfig, EndpointData},
+    endpoints::{EndpointData},
 };
 
 pub mod effects;
