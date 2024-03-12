@@ -1,20 +1,9 @@
-use mlc_common::patched::feature::{Dimmer, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
+use mlc_common::patched::feature::{Dimmer, FeatureSetRequest, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
 use crate::runtime::{RuntimeData};
 
 
 pub trait ApplyFeature {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
-}
-
-#[derive(Debug, Clone, serde::Deserialize)]
-pub enum FeatureSetRequest {
-    Dimmer { value: f32 },
-    Rgb { red: f32, green: f32, blue: f32 },
-    White { value: f32 },
-    Amber { value: f32 },
-    Rotation { value: f32 },
-    PanTilt { pan: f32, tilt: f32 },
-    GetAvailableFeatures,
 }
 
 impl ApplyFeature for Vec<FixtureFeature> {

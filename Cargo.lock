@@ -553,6 +553,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "186dce98367766de751c42c4f03970fc60fc012296e706ccbb9d5df9b6c1e271"
 
 [[package]]
+name = "color-art"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5da77a68c3f4dcc13fd78da1ea266ff93f436389ccf4f4904af182fba3e7a5f4"
+dependencies = [
+ "lazy_static",
+ "rand 0.8.5",
+ "thiserror",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2052,6 +2063,7 @@ dependencies = [
  "async-std",
  "cfg-if 1.0.0",
  "clap",
+ "color-art",
  "dioxus 0.4.3",
  "dioxus-html-macro",
  "dioxus-router",

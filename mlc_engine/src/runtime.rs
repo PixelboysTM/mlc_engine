@@ -24,14 +24,14 @@ use rocket_ws::{Message, WebSocket};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
-use mlc_common::patched::feature::FixtureFeature;
+use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
 use mlc_common::universe::UNIVERSE_SIZE;
 
 use crate::{
     data_serving::{ProjectGuard},
     fixture::{
         feature::{
-            apply::{ApplyFeature, FeatureSetRequest},
+            apply::{ApplyFeature},
         },
     },
     module::Module,

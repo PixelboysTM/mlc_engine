@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::time::Duration;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
@@ -8,7 +9,7 @@ use gloo_net::websocket::Message;
 
 use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
 use mlc_common::endpoints::EndPointConfig;
-use mlc_common::patched::{UniverseAddress, UniverseId};
+use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
 
 use crate::{icons, utils};
@@ -347,7 +348,7 @@ fn FaderPanel(cx: Scope) -> Element {
                     rsx!{
                         Fader{
                         value: {current_values.read()[i]},
-                        id: {i as u16},
+                        id: {make_three_digit(i as u16)},
                         onchange: move |v| {
                             set.send(FaderUpdateRequest{
                                 universe: UniverseId(*current_universe.read().deref()),
@@ -366,7 +367,8 @@ fn FaderPanel(cx: Scope) -> Element {
 #[derive(Props)]
 struct FaderProps<'a> {
     value: u8,
-    id: u16,
+    #[props(into)]
+    id: String,
     onchange: EventHandler<'a, u8>,
 }
 
@@ -381,7 +383,7 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
             class: "fader-container",
             div {
                class: "name",
-                {make_three_digit(cx.props.id)}
+                {cx.props.id.clone()}
             },
 
             div{
@@ -391,6 +393,7 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
                     log::info!("Val: {:?}", val.get());
                     to_owned![size];
                     async move {
+                        async_std::task::sleep(Duration::from_millis(250)).await;
                         let s = e.get_client_rect().await;
                         size.with_mut(|v| *v = s.unwrap().size.height);
                     }
@@ -457,12 +460,7 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
     cx.render(rsx! {
         if let Some(f) = detail_fixture.get() {
             rsx!{
-                FixtureTester {
-                    info: f.clone(),
-                    onclose: move |_| {
-                        detail_fixture.set(None);
-                    }
-                }
+                ""
             }
         }
 
@@ -529,9 +527,23 @@ fn UniverseExplorer(cx: Scope) -> Element {
         }
     });
 
+    let detail_fixture = use_state::<Option<PatchedFixture>>(cx, || None);
+
+
     match universes.value() {
         Some(d) => {
             cx.render(rsx! {
+                if let Some(f) = detail_fixture.get() {
+                    rsx!{
+                        FixtureTester {
+                            info: f.clone(),
+                            onclose: move |_| {
+                                detail_fixture.set(None);
+                            }
+                        }
+                    }
+                }
+
                 h3 {
                     class: "header",
                     "Universe Explorer",
@@ -557,6 +569,9 @@ fn UniverseExplorer(cx: Scope) -> Element {
                                             rsx!{
                                                 div {
                                                     class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize,i)}",
+                                                    onclick: move |e| {
+                                                        detail_fixture.set(Some(data.fixtures[c.fixture_index].clone()));
+                                                    },
                                                     if c.channel_index == 0 {
                                                         rsx! {
                                                             code {
@@ -664,23 +679,15 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
     let search = use_state(cx, || "".to_string());
 
     cx.render(rsx! {
-        div {
-            class: "overlay",
-            onclick: move |e| {
-                cx.props.on_close.call(());
+        utils::Overlay{
+            title: "Import Fixture Types",
+            class: "upload-fixture",
+            icon: cx.render(rsx!(icons::LampDesk {})),
+            onclose: move |_| {
+              cx.props.on_close.call(());
             },
 
             div {
-                class: "overlay-content upload-fixture",
-                onclick: move |e| {
-                    e.stop_propagation();
-                },
-
-                h3 {
-                    "Import Fixture",
-                },
-
-                div {
                     class: "tabs",
 
                     div {
@@ -700,7 +707,7 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                 },
 
                 div {
-                    class: "content",
+                    class: "list-content",
                     match source.get() {
                         FixtureSource::Ofl => {
                             match available_fixtures.value() {
@@ -767,9 +774,30 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                         })}
                     }
                 }
-            }
         }
     })
+
+    // cx.render(rsx! {
+    //     div {
+    //         class: "overlay",
+    //         onclick: move |e| {
+    //             cx.props.on_close.call(());
+    //         },
+    //
+    //         div {
+    //             class: "overlay-content upload-fixture",
+    //             onclick: move |e| {
+    //                 e.stop_propagation();
+    //             },
+    //
+    //             h3 {
+    //                 "Import Fixture",
+    //             },
+    //
+    //
+    //         }
+    //     }
+    // })
 }
 
 fn fits_search(f: &AvailableFixture, search: &str) -> bool {
@@ -819,23 +847,15 @@ fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
     });
 
     cx.render(rsx! {
-        div {
-            class: "overlay",
-            onclick: move |_| {
-                cx.props.onclose.call(());
+        utils::Overlay {
+            title: "Endpoint Mapping",
+            class: "endpoint-mapping",
+            icon: cx.render(rsx!(icons::Cable {})),
+            onclose: move |_| {
+              cx.props.onclose.call(());
             },
 
-            div {
-                class: "overlay-content endpoint-mapping",
-                onclick: move |e| {
-                    e.stop_propagation();
-                },
-
-                h3 {
-                    "Endpoint Mapping"
-                },
-
-                match config.value() {
+            match config.value() {
                     Some(Some((us, c))) => {
                         rsx!{
                             for u in us {
@@ -862,7 +882,54 @@ fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
                         rsx!{utils::Loading{}}
                     }
                 }
-            }
         }
     })
+
+    // cx.render(rsx! {
+    //     div {
+    //         class: "overlay",
+    //         onclick: move |_| {
+    //             cx.props.onclose.call(());
+    //         },
+    //
+    //         div {
+    //             class: "overlay-content endpoint-mapping",
+    //             onclick: move |e| {
+    //                 e.stop_propagation();
+    //             },
+    //
+    //             h3 {
+    //                 "Endpoint Mapping"
+    //             },
+    //
+    //             match config.value() {
+    //                 Some(Some((us, c))) => {
+    //                     rsx!{
+    //                         for u in us {
+    //                             div {
+    //                                 class: "universe",
+    //                                 p {
+    //                                     {u.0.to_string()}
+    //                                 },
+    //                                 div {
+    //                                     class: "endpoints",
+    //                                     for e in c.endpoints.get(u).unwrap_or(&vec![]) {
+    //                                         div {
+    //                                             class: "endpoint",
+    //                                             "e"
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //                 Some(None) => {rsx!{"Error fetching config see console for more information!"}}
+    //                 None => {
+    //                     rsx!{utils::Loading{}}
+    //                 }
+    //             }
+    //         }
+    //     }
+    // })
 }

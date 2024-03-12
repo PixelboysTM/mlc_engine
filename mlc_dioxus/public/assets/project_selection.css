@@ -36,3 +36,22 @@
         }
     }
 }
+
+.project-bar {
+    animation: project-color-spin 30s infinite linear;
+}
+
+@keyframes project-color-spin {
+    0% {
+        border-bottom: 1px solid var(--color-accent);
+    }
+    33% {
+        border-bottom: 1px solid var(--color-secondary);
+    }
+    66% {
+        border-bottom: 1px solid var(--color-tertiary);
+    }
+    100% {
+        border-bottom: 1px solid var(--color-accent);
+    }
+}

@@ -135,6 +135,7 @@ impl FeatureTile {
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
 pub struct FeatureChannel(usize);
 
+//TODO: Probably should not be here
 pub fn find_features(
     fixture: &FixtureType,
     mode: &FixtureMode,
@@ -161,6 +162,18 @@ pub fn find_features(
     }
 
     features
+}
+
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub enum FeatureSetRequest {
+    Dimmer { value: f32 },
+    Rgb { red: f32, green: f32, blue: f32 },
+    White { value: f32 },
+    Amber { value: f32 },
+    Rotation { value: f32 },
+    PanTilt { pan: f32, tilt: f32 },
+    GetAvailableFeatures,
 }
 
 type FeatureFinder =

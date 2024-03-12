@@ -18,7 +18,6 @@ use rocket::http::hyper::body::HttpBody;
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 use mlc_common::{FixtureInfo, Info};
-use mlc_common::config::Manufacturer;
 
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;

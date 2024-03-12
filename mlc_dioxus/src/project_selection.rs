@@ -13,7 +13,7 @@ pub fn ProjectSelection(cx: Scope) -> Element {
 
     cx.render(rsx! {
         div {
-            class: "headbar",
+            class: "headbar project-bar",
             img {
                 class: "iconMarvin",
                 src: "./images/icon.png",
