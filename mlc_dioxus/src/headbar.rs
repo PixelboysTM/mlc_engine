@@ -9,7 +9,7 @@ use crate::icons::{
 };
 use crate::{configure_panel, utils};
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Pane {
     Configure,
     Program,

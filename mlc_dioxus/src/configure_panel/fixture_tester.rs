@@ -72,7 +72,9 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
                             updater: updater
                         }})}
                         FixtureFeatureType::Rotation => {cx.render(rsx!{"Rotation"})}
-                        FixtureFeatureType::PanTilt => {cx.render(rsx!{"PanTilt"})}
+                        FixtureFeatureType::PanTilt => {cx.render(rsx!{PanTiltTester{
+                            updater: updater
+                        }})}
                         FixtureFeatureType::Amber => {cx.render(rsx!{AmberTester{
                             updater: updater
                         }})}
@@ -156,7 +158,36 @@ fn RgbTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> El
             },
 
             utils::RgbWidget{
-                initial: (0.75,1.0,0.5),
+                initial: (0.42,0.420,0.69),
+                onchange: move |(r,g,b)| {
+                    updater.send(FeatureSetRequest::Rgb {
+                        red: r,
+                        green: g,
+                        blue: b,
+                    });
+                }
+            }
+        },
+    })
+}
+
+#[component]
+fn PanTiltTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
+    cx.render(rsx! {
+        div {
+           class: "feature-tester pan-tilt",
+            h3 {
+                "Pan/Tilt"
+            },
+
+            utils::PanTiltWidget {
+                initial: (0.5,0.5),
+                onchange: move |(p,t)| {
+                    updater.send(FeatureSetRequest::PanTilt {
+                        pan: p,
+                        tilt: t,
+                    });
+                }
             }
         },
     })
