@@ -167,11 +167,17 @@ pub fn find_features(
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub enum FeatureSetRequest {
+    // 0.0 -> 1.0
     Dimmer { value: f32 },
+    // (0.0, 0.0, 0.0) -> (1.0, 1.0, 1.0)
     Rgb { red: f32, green: f32, blue: f32 },
+    // 0.0 -> 1.0
     White { value: f32 },
+    // 0.0 -> 1.0
     Amber { value: f32 },
+    // -1.0 -> 1.0  TODO: Needs an update in naming etc. is not clear what is meant (is it speed, value, ...)
     Rotation { value: f32 },
+    // (0.0, 0.0) -> (1.0, 1.0)
     PanTilt { pan: f32, tilt: f32 },
     GetAvailableFeatures,
 }

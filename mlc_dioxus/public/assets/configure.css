@@ -445,7 +445,7 @@
                 gap: 0.25rem;
             }
 
-            &.rgb {
+            &.rgb, &.pan-tilt {
                 display: grid;
                 grid-template-rows: 2rem 1fr;
                 place-items: center;

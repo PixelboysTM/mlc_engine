@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use dioxus_router::prelude::{Routable, Router};
 use futures::StreamExt;
 use gloo_net::websocket::Message;
+use gloo_storage::Storage;
 use reqwest::{IntoUrl, Url};
 use wasm_logger::Config;
 use mlc_common::Info;
@@ -50,8 +51,15 @@ fn Projects(cx: Scope) -> Element {
 }
 
 fn app(cx: Scope) -> Element {
-    use_shared_state_provider(cx, || Pane::Configure);
+    use_shared_state_provider(cx, || gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
     let pane = use_shared_state::<Pane>(cx).unwrap();
+
+    use_effect(cx, (pane, ), |(p, )| {
+        let pa = p.read().clone();
+        async move {
+            gloo_storage::LocalStorage::set("lastTab", pa).expect("Writing failed");
+        }
+    });
 
     let info = use_state(cx, || Info::None);
 
