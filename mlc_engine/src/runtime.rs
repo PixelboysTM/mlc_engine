@@ -20,6 +20,9 @@ use rocket::{
         time::sleep,
     },
 };
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_routes_spec, openapi_get_spec};
+use rocket_okapi::okapi::merge::merge_specs;
 use rocket_ws::{Message, WebSocket};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
@@ -261,23 +264,34 @@ impl RuntimeData {
 pub struct RuntimeModule;
 
 impl Module for RuntimeModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = broadcast::channel::<RuntimeUpdate>(512);
 
-        let app = app.manage(rx).manage(RuntimeData::new(tx)).mount(
-            "/runtime",
-            routes![
+        let (routes) = routes![
                 get_value_updates,
                 set_value,
                 get_endpoint_config,
                 set_endpoint_config,
                 set_feature
-            ],
+            ];
+
+        let s = openapi_get_spec![
+                get_value_updates,
+                set_value,
+                get_endpoint_config,
+                set_endpoint_config,
+            ];
+        merge_specs(spec, &"/runtime".to_string(), &s).expect("Failed merging OpenApi");
+
+        let app = app.manage(rx).manage(RuntimeData::new(tx)).mount(
+            "/runtime",
+            routes,
         );
-        EffectModule.setup(app)
+        EffectModule.setup(app, spec)
     }
 }
 
+#[openapi(tag = "Runtime")]
 #[get("/fader-values/get")]
 async fn get_value_updates(
     runtime: &State<RuntimeData>,
@@ -335,7 +349,7 @@ fn decode_msg<'a, T: serde::Deserialize<'a>>(msg: &'a Message) -> Option<T> {
     None
 }
 
-
+#[openapi(tag = "Runtime")]
 #[get("/fader-values/set")]
 async fn set_value(
     runtime: &State<RuntimeData>,
@@ -368,12 +382,14 @@ async fn set_value(
     })
 }
 
+#[openapi(tag = "Runtime")]
 #[get("/endpoints/get")]
 async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json<EndPointConfig> {
     let config = project.get_endpoint_config().await;
     Json(config)
 }
 
+#[openapi(tag = "Runtime")]
 #[post("/endpoints/set", data = "<data>")]
 async fn set_endpoint_config(
     project: &State<Project>,
@@ -387,6 +403,7 @@ async fn set_endpoint_config(
     send!(tx, Info::EndpointConfigChanged);
 }
 
+// #[openapi]
 #[get("/feature/<fix_id>")]
 async fn set_feature<'a>(
     ws: WebSocket,

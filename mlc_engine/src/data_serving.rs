@@ -15,6 +15,12 @@ use rocket::{
     Route, routes, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
 };
 use rocket::http::hyper::body::HttpBody;
+use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
+use rocket_okapi::{JsonSchema, openapi, openapi_get_routes_spec, OpenApiFromRequest};
+use rocket_okapi::gen::OpenApiGenerator;
+use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::response::OpenApiResponderInner;
+use rocket_okapi::util::add_default_response_schema;
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 use mlc_common::{FixtureInfo, Info};
@@ -30,7 +36,7 @@ use crate::{
 };
 use crate::fixture::Wrapper;
 
-
+#[openapi(tag = "Data Serving")]
 #[get("/info")]
 async fn gen_info(
     ws: WebSocket,
@@ -66,7 +72,7 @@ async fn gen_info(
     })
 }
 
-
+#[openapi(tag = "Data Serving")]
 #[get("/get/fixture-types")]
 async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<FixtureInfo>> {
     Json(
@@ -84,6 +90,7 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
     )
 }
 
+#[openapi(tag = "Data Serving")]
 #[get("/add/fixture-ofl/<manufacturer>/<name>")]
 async fn add_fixture_ofl(
     project: &State<Project>,
@@ -103,6 +110,7 @@ async fn add_fixture_ofl(
     Ok(())
 }
 
+#[openapi(tag = "Data Serving")]
 #[post("/add/fixture", data = "<data>")]
 async fn add_fixture(
     data: Data<'_>,
@@ -127,6 +135,7 @@ async fn add_fixture(
     Ok(())
 }
 
+#[openapi(tag = "Data Serving")]
 #[get("/universes")]
 async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<UniverseId>> {
     let mut data = project.get_universes().await;
@@ -134,6 +143,7 @@ async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<U
     Json(data)
 }
 
+#[openapi(tag = "Data Serving")]
 #[get("/universes/<id>")]
 async fn get_universe(
     id: Wrapper,
@@ -148,6 +158,7 @@ async fn get_universe(
     }
 }
 
+#[openapi(tag = "Data Serving")]
 #[get("/save")]
 async fn save_project(
     project: &State<Project>,
@@ -160,7 +171,7 @@ async fn save_project(
         .map_err(|e| Custom(rocket::http::Status::InternalServerError, e))
 }
 
-#[derive(Responder)]
+#[derive(Responder, JsonSchema)]
 enum PatchResult {
     #[response(status = 400)]
     IdInvalid(String),
@@ -175,6 +186,15 @@ enum PatchResult {
     Succsess(String),
 }
 
+impl OpenApiResponderInner for PatchResult {
+    fn responses(gen: &mut OpenApiGenerator) -> rocket_okapi::Result<Responses> {
+        let mut r = Responses::default();
+        add_default_response_schema(&mut r, "text/plain", gen.json_schema::<PatchResult>());
+        Ok(r)
+    }
+}
+
+#[openapi(tag = "Data Serving")]
 #[get("/patch/<id>/<mode>?<create>")]
 fn patch_fixture(
     project: &State<Project>,
@@ -221,8 +241,8 @@ fn patch_fixture(
     })
 }
 
-fn get_routes() -> Vec<Route> {
-    routes![
+fn get_routes() -> (Vec<Route>, OpenApi) {
+    openapi_get_routes_spec![
         gen_info,
         get_fixture_types,
         add_fixture,
@@ -237,11 +257,14 @@ fn get_routes() -> Vec<Route> {
 pub struct DataServingModule;
 
 impl Module for DataServingModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-        app.mount("/data", get_routes())
+    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+        let (routes, s) = get_routes();
+        merge_specs(spec, &"/data".to_string(), &s).expect("Merging OpenAPi failed");
+        app.mount("/data", routes)
     }
 }
 
+#[derive(JsonSchema, OpenApiFromRequest)]
 pub struct ProjectGuard;
 
 #[rocket::async_trait]

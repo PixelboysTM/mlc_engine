@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 use std::time::Duration;
+use schemars::JsonSchema;
 use crate::patched::UniverseId;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default, JsonSchema)]
 pub struct EndPointConfig {
     pub endpoints: HashMap<UniverseId, Vec<EPConfigItem>>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub enum EPConfigItem {
     Logger,
     ArtNet,
@@ -15,7 +16,7 @@ pub enum EPConfigItem {
 }
 
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub enum Speed {
     Slow,
     // 200ms

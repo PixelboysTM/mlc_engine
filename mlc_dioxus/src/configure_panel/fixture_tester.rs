@@ -1,8 +1,6 @@
-use dioxus::html::title;
 use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
-use mlc_common::FixtureInfo;
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeatureType};
 use mlc_common::patched::PatchedFixture;
 use crate::configure_panel::Fader;

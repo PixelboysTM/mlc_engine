@@ -1,36 +1,37 @@
 use std::fmt::{Display, Formatter};
 use crate::config::{DmxColor, DmxRange, FixtureCapability, FixtureChannel, FixtureMode, FixtureType, RotationSpeed};
 use get_size::GetSize;
+use schemars::JsonSchema;
 use crate::fixture::FaderAddress;
 use crate::patched::{UniverseAddress, UniverseId};
 use crate::ToFaderValue;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct Dimmer {
     pub dimmer: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct Rgb {
     pub red: FeatureTile,
     pub green: FeatureTile,
     pub blue: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct Rotation {
     pub cw: FeatureTile,
     pub ccw: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct PanTilt {
     pub pan: FeatureTile,
     pub tilt: FeatureTile,
 }
 
 // Indexes are offsets from the start_index of the Fixture
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub enum FixtureFeature {
     Dimmer(Dimmer),
     White(Dimmer),
@@ -76,7 +77,7 @@ impl FixtureFeature {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub enum FeatureTile {
     Single {
         channel: FeatureChannel,
@@ -132,7 +133,7 @@ impl FeatureTile {
 }
 
 /// The Offset of channelss from the start of the Fixture Fader = start_index + self
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct FeatureChannel(usize);
 
 //TODO: Probably should not be here

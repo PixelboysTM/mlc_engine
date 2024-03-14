@@ -9,6 +9,9 @@ use rocket::serde::json::Json;
 use rocket::time::Instant;
 use rocket::tokio::select;
 use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_routes, openapi_get_routes_spec, openapi_get_spec};
+use rocket_okapi::okapi::merge::merge_specs;
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
 use serde_with::{DurationSecondsWithFrac, formats::Flexible};
@@ -32,7 +35,7 @@ mod track_key;
 pub struct EffectModule;
 
 impl Module for EffectModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
         let (baking_tx, baking_rx) = broadcast::channel::<BakingNotification>(512);
 
         let tx = startup_effect_player(
@@ -40,6 +43,10 @@ impl Module for EffectModule {
             app.state::<Project>().unwrap().clone(),
             baking_tx.clone(),
         );
+
+        let (routes) = routes![get_effect_handler, get_effect_list, get_baking_notifications];
+        let s = openapi_get_spec![get_effect_list];
+        merge_specs(spec, &"/effects".to_string(), &s).expect("Merging OpenApi failed");
 
         app.manage(tx)
             .manage(baking_rx)
@@ -54,11 +61,12 @@ impl Module for EffectModule {
             }))
             .mount(
                 "/effects",
-                routes![get_effect_handler, get_effect_list, get_baking_notifications],
+                routes,
             )
     }
 }
 
+#[openapi(tag = "Effects")]
 #[get("/get")]
 async fn get_effect_list(
     project: &State<Project>,
@@ -127,6 +135,7 @@ pub enum EffectHandlerRequest {
     List,
 }
 
+// #[openapi]
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
@@ -164,6 +173,7 @@ async fn get_effect_handler<'a>(
     })
 }
 
+// #[openapi]
 #[get("/baking")]
 async fn get_baking_notifications<'a>(
     ws: WebSocket,

@@ -2,13 +2,14 @@ use serde_with::formats::PreferMany;
 use serde_with::OneOrMany;
 use std::collections::HashMap;
 use get_size::GetSize;
+use schemars::JsonSchema;
 use serde::de::Visitor;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 pub type Value = u32;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureType {
     name: String,
@@ -55,7 +56,7 @@ impl FixtureType {
 
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureChannel {
     #[serde(default = "zero")]
@@ -74,7 +75,7 @@ pub struct FixtureChannel {
     pub capabilities: Vec<FixtureCapabilityCommon>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Default, Copy, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Default, Copy, get_size::GetSize, JsonSchema)]
 pub enum ValueResolution {
     #[default]
     Implied,
@@ -90,29 +91,29 @@ fn zero() -> Value {
     0
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct NoFunction {}
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Maintenance {}
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Intensity {}
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ColorIntensity {
     pub color: DmxColor,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Effect {}
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Rotation {
     #[serde(alias = "speed")]
@@ -121,7 +122,7 @@ pub struct Rotation {
     pub speed_end: RotationSpeed,
 }
 
-#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize, get_size::GetSize, Default)]
+#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize, get_size::GetSize, Default, JsonSchema)]
 pub enum RotationSpeed {
     #[serde(alias = "slow CW")]
     SlowCw,
@@ -136,21 +137,21 @@ pub enum RotationSpeed {
     Stop,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PanTilt {
     angle_start: u32,
     angle_end: u32,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PanTiltSpeed {
     speed_start: Speed,
     speed_end: Speed,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 pub enum Speed {
     #[serde(alias = "fast")]
     Fast,
@@ -158,7 +159,7 @@ pub enum Speed {
     Slow,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureCapabilityCommon {
     #[serde(default = "full_range")]
@@ -168,7 +169,7 @@ pub struct FixtureCapabilityCommon {
     pub detail: FixtureCapability,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(tag = "type")]
 pub enum FixtureCapability {
     NoFunction(NoFunction),
@@ -186,14 +187,14 @@ pub enum FixtureCapability {
     Generic,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct DmxRange {
     pub start: DmxRangeValue,
     pub end: DmxRangeValue,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, get_size::GetSize)]
+#[derive(Debug, PartialEq, Clone, Copy, get_size::GetSize, JsonSchema)]
 pub enum DmxRangeValue {
     Value(Value),
     Percentage(f32),
@@ -322,7 +323,7 @@ fn full_range() -> DmxRange {
     }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 pub enum DmxColor {
     #[serde(alias = "#ff0000")]
     Red,
@@ -336,14 +337,14 @@ pub enum DmxColor {
     Amber,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 pub struct Manufacturer {
     name: String,
     #[serde(default)]
     website: String,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureMode {
     name: String,

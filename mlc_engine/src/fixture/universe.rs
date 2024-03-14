@@ -3,12 +3,14 @@ use std::num::ParseIntError;
 use std::ops::Deref;
 
 use rocket::request::FromParam;
+use schemars::JsonSchema;
 use mlc_common::config::{FixtureChannel, FixtureMode, ValueResolution};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::{FixtureUniverse, UNIVERSE_SIZE};
 
 
+#[derive(JsonSchema)]
 pub struct Wrapper(UniverseId);
 
 impl FromParam<'_> for Wrapper {

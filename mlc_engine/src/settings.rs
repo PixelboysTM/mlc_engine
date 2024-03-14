@@ -6,6 +6,9 @@ use rocket::{
     serde::json::Json,
     State, tokio::{fs, sync::broadcast::Sender},
 };
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_routes_spec};
+use rocket_okapi::okapi::merge::merge_specs;
 
 use mlc_common::{Info, ProjectDefinition, Settings};
 
@@ -17,6 +20,7 @@ use crate::{
     ui_serving::ProjectSelection,
 };
 
+#[openapi(tag = "Settings")]
 #[get("/get")]
 async fn get_settings(
     project: &State<Project>,
@@ -26,6 +30,7 @@ async fn get_settings(
     Ok(Json(settings))
 }
 
+#[openapi(tag = "Settings")]
 #[post("/update", data = "<settings>")]
 async fn update_settings(
     project: &State<Project>,
@@ -39,7 +44,7 @@ async fn update_settings(
         .map_err(|e| e.to_string())
 }
 
-
+#[openapi(tag = "Projects")]
 #[get("/projects-list")]
 async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
     let path = project::make_path("test")
@@ -62,6 +67,7 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
     Json(projects)
 }
 
+#[openapi(tag = "Projects")]
 #[get("/load/<name>")]
 async fn load_project(
     name: &str,
@@ -88,6 +94,7 @@ async fn load_project(
     Ok(Json("Loaded succsessful".to_string()))
 }
 
+#[openapi(ignore = "_g", tag = "Projects")]
 #[get("/current")]
 async fn get_current_project(
     project: &State<Project>,
@@ -96,19 +103,23 @@ async fn get_current_project(
     Json(project.get_definition().await)
 }
 
-fn get_routes() -> Vec<Route> {
-    routes![get_settings, update_settings]
+fn get_routes() -> (Vec<Route>, OpenApi) {
+    openapi_get_routes_spec![get_settings, update_settings]
 }
 
 pub struct SettingsModule;
 
 impl Module for SettingsModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-        app.mount("/settings", get_routes())
+    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+        let (routes, s) = openapi_get_routes_spec![get_available_projects, load_project, get_current_project];
+        merge_specs(spec, &"/projects".to_string(), &s).expect("Merging OpenApi failed");
+        let (routes2, s2) = get_routes();
+        merge_specs(spec, &"/settings".to_string(), &s2).expect("Merging OpenApi failed");
+        app.mount("/settings", routes2)
             .attach(ShutdownSaver)
             .mount(
                 "/projects",
-                routes![get_available_projects, load_project, get_current_project],
+                routes,
             )
     }
 }

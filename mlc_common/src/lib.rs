@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local};
+use schemars::JsonSchema;
 use crate::config::{DmxRange, FixtureMode};
 
 use crate::patched::{UniverseAddress, UniverseId};
@@ -23,7 +24,7 @@ pub enum Info {
     None,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, JsonSchema)]
 pub struct ProjectDefinition {
     pub name: String,
     #[serde(default)]
@@ -31,7 +32,7 @@ pub struct ProjectDefinition {
     pub last_edited: DateTime<Local>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub struct Settings {
     pub save_on_quit: bool,
 }
@@ -71,7 +72,7 @@ pub struct FaderUpdateRequest {
     pub value: u8,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, JsonSchema)]
 pub struct FixtureInfo {
     pub name: String,
     pub id: uuid::Uuid,

@@ -1,21 +1,23 @@
 use std::collections::HashMap;
+use schemars::JsonSchema;
 use crate::config::{FixtureChannel, FixtureMode, FixtureType, ValueResolution};
 use crate::patched::{PatchedChannel, PatchedFixture, UniverseAddress, UniverseId};
 use crate::patched::feature::find_features;
 
 pub const UNIVERSE_SIZE: usize = 512;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub struct PatchedChannelIndex {
     pub fixture_index: usize,
     pub channel_index: usize,
 }
 
 #[serde_with::serde_as]
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub struct FixtureUniverse {
     id: UniverseId,
     #[serde_as(as = "[_;UNIVERSE_SIZE]")]
+    #[schemars(with = "[Option<PatchedChannelIndex>]")]
     pub channels: [Option<PatchedChannelIndex>; UNIVERSE_SIZE],
     pub fixtures: Vec<PatchedFixture>,
 }
