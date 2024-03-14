@@ -1,4 +1,3 @@
-use dioxus::core::AttributeValue;
 use dioxus::prelude::*;
 
 #[derive(PartialEq, Props)]
@@ -284,20 +283,20 @@ pub fn X<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
     let width = cx.props.width.unwrap_or("1.25rem");
     let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! { svg {
-        view_box: "0 0 24 24",
-        width: width,
-        height: height,
-        stroke: "currentColor",
-        stroke_linejoin: "round",
-        xmlns: "http://www.w3.org/2000/svg",
-        fill: "none",
-        stroke_width: "2",
-        stroke_linecap: "round",
-        class: "lucide lucide-x",
-        path { d: "M18 6 6 18" }
-        path { d: "m6 6 12 12" }
-    }
-})
+            view_box: "0 0 24 24",
+            width: width,
+            height: height,
+            stroke: "currentColor",
+            stroke_linejoin: "round",
+            xmlns: "http://www.w3.org/2000/svg",
+            fill: "none",
+            stroke_width: "2",
+            stroke_linecap: "round",
+            class: "lucide lucide-x",
+            path { d: "M18 6 6 18" }
+            path { d: "m6 6 12 12" }
+        }
+    })
 }
 
 #[component]
@@ -305,22 +304,22 @@ pub fn Lamp<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
     let width = cx.props.width.unwrap_or("1.25rem");
     let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! { svg {
-        stroke_linecap: "round",
-        width: width,
-        height: height,
-        view_box: "0 0 24 24",
-        fill: "none",
-        stroke_width: "2",
-        xmlns: "http://www.w3.org/2000/svg",
-        stroke: "currentColor",
-        stroke_linejoin: "round",
-        class: "lucide lucide-lamp",
-        path { d: "M8 2h8l4 10H4L8 2Z" }
-        path { d: "M12 12v6" }
-        path { d: "M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z" }
-    }
+            stroke_linecap: "round",
+            width: width,
+            height: height,
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke_width: "2",
+            xmlns: "http://www.w3.org/2000/svg",
+            stroke: "currentColor",
+            stroke_linejoin: "round",
+            class: "lucide lucide-lamp",
+            path { d: "M8 2h8l4 10H4L8 2Z" }
+            path { d: "M12 12v6" }
+            path { d: "M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z" }
+        }
 
-})
+    })
 }
 
 #[component]
@@ -328,20 +327,20 @@ pub fn LampDesk<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
     let width = cx.props.width.unwrap_or("1.25rem");
     let height = cx.props.height.unwrap_or("1.25rem");
     cx.render(rsx! { svg {
-        width: width,
-        height: height,
-        stroke_linecap: "round",
-        fill: "none",
-        stroke_width: "2",
-        stroke: "currentColor",
-        stroke_linejoin: "round",
-        xmlns: "http://www.w3.org/2000/svg",
-        view_box: "0 0 24 24",
-        class: "lucide lucide-lamp-desk",
-        path { d: "m14 5-3 3 2 7 8-8-7-2Z" }
-        path { d: "m14 5-3 3-3-3 3-3 3 3Z" }
-        path { d: "M9.5 6.5 4 12l3 6" }
-        path { d: "M3 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H3Z" }
-    }
-})
+            width: width,
+            height: height,
+            stroke_linecap: "round",
+            fill: "none",
+            stroke_width: "2",
+            stroke: "currentColor",
+            stroke_linejoin: "round",
+            xmlns: "http://www.w3.org/2000/svg",
+            view_box: "0 0 24 24",
+            class: "lucide lucide-lamp-desk",
+            path { d: "m14 5-3 3 2 7 8-8-7-2Z" }
+            path { d: "m14 5-3 3-3-3 3-3 3 3Z" }
+            path { d: "M9.5 6.5 4 12l3 6" }
+            path { d: "M3 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H3Z" }
+        }
+    })
 }

@@ -32,7 +32,10 @@ impl Application {
             rocket = m.setup(rocket, &mut spec);
         }
 
-        rocket.mount("/", vec![rocket_okapi::handlers::OpenApiHandler::new(spec)
-            .into_route(&OpenApiSettings::new().json_path)])
+        rocket.mount(
+            "/",
+            vec![rocket_okapi::handlers::OpenApiHandler::new(spec)
+                .into_route(OpenApiSettings::new().json_path)],
+        )
     }
 }

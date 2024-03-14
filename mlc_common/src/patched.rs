@@ -1,14 +1,13 @@
-use std::fmt::Debug;
-use std::ops::Add;
-use get_size::GetSize;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use serde::de::{Error, Visitor};
 use crate::config::{FixtureChannel, FixtureType, ValueResolution};
 use crate::patched::feature::FixtureFeature;
+use get_size::GetSize;
+use schemars::JsonSchema;
+use serde::de::{Error, Visitor};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::ops::Add;
 
 pub mod feature;
-
 
 pub type FixtureId = uuid::Uuid;
 
@@ -33,7 +32,16 @@ pub struct PatchedChannel {
 }
 
 #[derive(
-Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash, get_size::GetSize, JsonSchema
+    Debug,
+    Clone,
+    Copy,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    get_size::GetSize,
+    JsonSchema,
 )]
 pub struct UniverseId(pub u16);
 
@@ -64,8 +72,8 @@ impl UniverseAddress {
 
 impl Serialize for UniverseAddress {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
+    where
+        S: serde::Serializer,
     {
         serializer.serialize_u16((*self).into())
     }
@@ -73,8 +81,8 @@ impl Serialize for UniverseAddress {
 
 impl<'de> Deserialize<'de> for UniverseAddress {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
+    where
+        D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_u128(UAVisitor)
     }
@@ -90,8 +98,8 @@ impl<'de> Visitor<'de> for UAVisitor {
     }
 
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
-        where
-            E: serde::de::Error,
+    where
+        E: serde::de::Error,
     {
         UniverseAddress::create(v).map_err(|e| {
             eprintln!("{:#?}", e);
@@ -100,8 +108,8 @@ impl<'de> Visitor<'de> for UAVisitor {
     }
 
     fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
-        where
-            E: Error,
+    where
+        E: Error,
     {
         Ok(UniverseAddress::from(v as usize))
     }
@@ -164,7 +172,6 @@ impl Debug for UniverseAddress {
             .finish()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

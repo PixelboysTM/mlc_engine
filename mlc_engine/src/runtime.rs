@@ -10,8 +10,7 @@ use rocket::{
     futures::{SinkExt, StreamExt},
     get, post, routes,
     serde::json::Json,
-    Shutdown,
-    State, tokio::{
+    tokio::{
         select,
         sync::{
             broadcast::{self, Receiver, Sender},
@@ -19,34 +18,25 @@ use rocket::{
         },
         time::sleep,
     },
+    Shutdown, State,
 };
-use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_routes_spec, openapi_get_spec};
 use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_spec};
 use rocket_ws::{Message, WebSocket};
 
-use mlc_common::patched::{UniverseAddress, UniverseId};
-use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
+use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
+use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 
-use crate::{
-    data_serving::{ProjectGuard},
-    fixture::{
-        feature::{
-            apply::{ApplyFeature},
-        },
-    },
-    module::Module,
-    project::Project,
-    send,
-};
 use crate::runtime::endpoints::CreateEndpoints;
-
-use self::{
-    effects::EffectModule,
-    endpoints::{EndpointData},
+use crate::{
+    data_serving::ProjectGuard, fixture::feature::apply::ApplyFeature, module::Module,
+    project::Project, send,
 };
+
+use self::{effects::EffectModule, endpoints::EndpointData};
 
 pub mod effects;
 pub mod endpoints;
@@ -260,33 +250,36 @@ impl RuntimeData {
     }
 }
 
-
 pub struct RuntimeModule;
 
 impl Module for RuntimeModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = broadcast::channel::<RuntimeUpdate>(512);
 
-        let (routes) = routes![
-                get_value_updates,
-                set_value,
-                get_endpoint_config,
-                set_endpoint_config,
-                set_feature
-            ];
+        let routes = routes![
+            get_value_updates,
+            set_value,
+            get_endpoint_config,
+            set_endpoint_config,
+            set_feature
+        ];
 
         let s = openapi_get_spec![
-                get_value_updates,
-                set_value,
-                get_endpoint_config,
-                set_endpoint_config,
-            ];
+            get_value_updates,
+            set_value,
+            get_endpoint_config,
+            set_endpoint_config,
+        ];
         merge_specs(spec, &"/runtime".to_string(), &s).expect("Failed merging OpenApi");
 
-        let app = app.manage(rx).manage(RuntimeData::new(tx)).mount(
-            "/runtime",
-            routes,
-        );
+        let app = app
+            .manage(rx)
+            .manage(RuntimeData::new(tx))
+            .mount("/runtime", routes);
         EffectModule.setup(app, spec)
     }
 }
@@ -413,7 +406,7 @@ async fn set_feature<'a>(
     project: &'a State<Project>,
     _g: ProjectGuard,
 ) -> rocket_ws::Channel<'a> {
-    let id = uuid::Uuid::from_str(&fix_id);
+    let id = uuid::Uuid::from_str(fix_id);
 
     async fn get_features(id: uuid::Uuid, project: &Project) -> Option<Vec<FixtureFeature>> {
         let universes = project.get_universes().await;

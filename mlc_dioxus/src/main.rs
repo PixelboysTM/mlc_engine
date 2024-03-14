@@ -6,18 +6,17 @@ use dioxus_router::prelude::{Routable, Router};
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use gloo_storage::Storage;
-use reqwest::{IntoUrl, Url};
-use wasm_logger::Config;
 use mlc_common::Info;
+use wasm_logger::Config;
 
 use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
 use crate::utils::Loading;
 
-mod headbar;
-mod project_selection;
-pub mod icons;
 pub(crate) mod configure_panel;
+mod headbar;
+pub mod icons;
+mod project_selection;
 mod utils;
 
 fn main() {
@@ -30,7 +29,6 @@ fn start(cx: Scope) -> Element {
         Router::<Route> {}
     }
 }
-
 
 #[derive(Routable, Clone)]
 enum Route {
@@ -51,11 +49,13 @@ fn Projects(cx: Scope) -> Element {
 }
 
 fn app(cx: Scope) -> Element {
-    use_shared_state_provider(cx, || gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
+    use_shared_state_provider(cx, || {
+        gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program)
+    });
     let pane = use_shared_state::<Pane>(cx).unwrap();
 
     use_effect(cx, (pane, ), |(p, )| {
-        let pa = p.read().clone();
+        let pa = *p.read();
         async move {
             gloo_storage::LocalStorage::set("lastTab", pa).expect("Writing failed");
         }
@@ -65,55 +65,50 @@ fn app(cx: Scope) -> Element {
 
     let started = use_state(cx, || false);
     let create_eval = use_eval(cx);
-    let info_watcher = use_future(
-        cx,
-        (),
-        |_| {
-            let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
+    let _info_watcher = use_future(cx, (), |_| {
+        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
 
-            to_owned![info, started];
-            async move {
-                if *started.get() {
-                    return;
-                }
-                started.set(true);
-                log::info!("Started");
-
-                let ws_url = &format!(
-                    "ws://{}/data/info",
-                    eval.recv()
-                        .await
-                        .map_err(|e| log::error!("Error"))
-                        .unwrap()
-                        .as_str()
-                        .unwrap()
-                );
-
-                let mut ws = utils::ws(ws_url);
-                if let Ok(mut ws) = ws {
-                    while let Some(Ok(msg)) = ws.next().await {
-                        let msg = match msg {
-                            Message::Text(t) => { t }
-                            Message::Bytes(b) => { String::from_utf8(b).unwrap() }
-                        };
-
-                        let i = serde_json::from_str::<Info>(&msg).unwrap();
-                        info.set(i);
-
-                        log::info!("Updating");
-                    }
-                    log::error!("Error with msg");
-                } else {
-                    log::info!("Error creating ws {:?}", ws.err().unwrap());
-                }
+        to_owned![info, started];
+        async move {
+            if *started.get() {
+                return;
             }
-        },
-    );
+            started.set(true);
+            log::info!("Started");
 
+            let ws_url = &format!(
+                "ws://{}/data/info",
+                eval.recv()
+                    .await
+                    .map_err(|e| log::error!("Error: {e:?}"))
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+            );
+
+            let ws = utils::ws(ws_url);
+            if let Ok(mut ws) = ws {
+                while let Some(Ok(msg)) = ws.next().await {
+                    let msg = match msg {
+                        Message::Text(t) => t,
+                        Message::Bytes(b) => String::from_utf8(b).unwrap(),
+                    };
+
+                    let i = serde_json::from_str::<Info>(&msg).unwrap();
+                    info.set(i);
+
+                    log::info!("Updating");
+                }
+                log::error!("Error with msg");
+            } else {
+                log::info!("Error creating ws {:?}", ws.err().unwrap());
+            }
+        }
+    });
 
     cx.render(rsx! {
         DisconnectHelper {
-            info: {info.get().clone()}
+            info: *info.get()
         },
         Headbar{},
         div {
@@ -146,7 +141,7 @@ struct DHProps {
 #[component]
 fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
     let active = use_state(cx, || false);
-    use_memo(cx, &(cx.props.info, ), |(i, )| {
+    let _ = use_memo(cx, &(cx.props.info, ), |(i, )| {
         if i == Info::SystemShutdown {
             active.set(true);
         }
@@ -155,7 +150,7 @@ fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
     // active.set(*info.read() == Info::SystemShutdown);
     let eval = use_eval(cx);
 
-    let guard = use_future(cx, (), |_| {
+    let _guard = use_future(cx, (), |_| {
         to_owned![active];
         async move {
             let mut failed = 0;
@@ -184,7 +179,7 @@ fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
                     },
                     Loading {},
                     button {
-                        onclick: move |e| {
+                        onclick: move |_| {
                             let _ = eval("window.location.reload()");
                         },
                         "Reload"

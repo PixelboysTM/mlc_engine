@@ -1,14 +1,15 @@
+use crate::{icons, utils};
 use dioxus::core::Scope;
 use dioxus::prelude::*;
 use mlc_common::ProjectDefinition;
-use crate::{icons, utils};
 
 #[component]
 pub fn ProjectSelection(cx: Scope) -> Element {
-    let projects = use_future(cx, (), |_| {
-        async move {
-            utils::fetch::<Vec<ProjectDefinition>>("/projects/projects-list").await.map_err(|e| log::error!("Error Loading Project list")).ok()
-        }
+    let projects = use_future(cx, (), |_| async move {
+        utils::fetch::<Vec<ProjectDefinition>>("/projects/projects-list")
+            .await
+            .map_err(|e| log::error!("Error Loading Project list: {e}"))
+            .ok()
     });
 
     cx.render(rsx! {

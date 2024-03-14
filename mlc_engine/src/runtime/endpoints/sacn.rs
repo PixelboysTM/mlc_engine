@@ -1,8 +1,6 @@
-use std::time::Duration;
-
+use mlc_common::endpoints::Speed;
 use rocket::tokio::select;
 use sacn::DmxSource;
-use mlc_common::endpoints::Speed;
 
 use mlc_common::universe::UNIVERSE_SIZE;
 
@@ -13,7 +11,6 @@ pub struct SacnEndpoint {
     pub universe: u16,
     pub speed: Speed,
 }
-
 
 impl Default for SacnEndpoint {
     fn default() -> Self {

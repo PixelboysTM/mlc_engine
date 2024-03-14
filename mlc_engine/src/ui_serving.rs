@@ -3,15 +3,14 @@ use std::{
     sync::Arc,
 };
 
-use rocket::{fs::NamedFile, futures::lock::Mutex, get, Responder, Route, routes, State};
 use rocket::response::Redirect;
-use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
-use rocket_okapi::{JsonSchema, openapi, openapi_get_routes_spec, OpenApiFromRequest};
+use rocket::{fs::NamedFile, futures::lock::Mutex, get, Responder, Route, State};
 use rocket_okapi::gen::OpenApiGenerator;
 use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
 use rocket_okapi::response::OpenApiResponderInner;
-use rocket_okapi::settings::OpenApiSettings;
 use rocket_okapi::util::add_default_response_schema;
+use rocket_okapi::{openapi, openapi_get_routes_spec, JsonSchema};
 
 use crate::module::Module;
 
@@ -19,6 +18,7 @@ use crate::module::Module;
 const OUT_PATH: &str = "mlc_dioxus/dist/";
 
 #[derive(Responder, JsonSchema)]
+#[allow(variant_size_differences, clippy::large_enum_variant)]
 enum UiResponse {
     #[schemars(skip)]
     File(Option<NamedFile>),
@@ -50,9 +50,11 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
 #[get("/")]
 async fn index(project_selection: &State<ProjectSelection>) -> UiResponse {
     if project_selection.inner().0.lock().await.is_some() {
-        UiResponse::File(NamedFile::open(Path::new(OUT_PATH).join("index.html"))
-            .await
-            .ok())
+        UiResponse::File(
+            NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+                .await
+                .ok(),
+        )
     } else {
         UiResponse::Redirect(Redirect::to("/projects"))
         // NamedFile::open(Path::new(OUT_PATH).join("project.html"))
@@ -70,9 +72,11 @@ async fn projects(project_selection: &State<ProjectSelection>) -> UiResponse {
         //     .ok()
         UiResponse::Redirect(Redirect::to("/"))
     } else {
-        UiResponse::File(NamedFile::open(Path::new(OUT_PATH).join("index.html"))
-            .await
-            .ok())
+        UiResponse::File(
+            NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+                .await
+                .ok(),
+        )
     }
 }
 
@@ -97,10 +101,13 @@ fn get_routes() -> (Vec<Route>, OpenApi) {
 pub struct UiServingModule;
 
 impl Module for UiServingModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
         let (routes, s) = get_routes();
         merge_specs(spec, &"/".to_string(), &s).expect("Merging OpenApi failed");
-
 
         app.mount("/", routes)
             .manage(ProjectSelection(Arc::new(Mutex::new(None))))

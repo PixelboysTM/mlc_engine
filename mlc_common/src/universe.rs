@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use schemars::JsonSchema;
 use crate::config::{FixtureChannel, FixtureMode, FixtureType, ValueResolution};
-use crate::patched::{PatchedChannel, PatchedFixture, UniverseAddress, UniverseId};
 use crate::patched::feature::find_features;
+use crate::patched::{PatchedChannel, PatchedFixture, UniverseAddress, UniverseId};
+use schemars::JsonSchema;
+use std::collections::HashMap;
 
 pub const UNIVERSE_SIZE: usize = 512;
 

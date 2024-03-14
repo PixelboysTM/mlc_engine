@@ -1,6 +1,6 @@
 use chrono::Duration;
-use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
+use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
 use crate::utils::easing::{Easing, EasingType};
 
@@ -44,7 +44,7 @@ pub struct RotationKey {
     pub easing: Easing,
 }
 
-pub trait Key{
+pub trait Key {
     type Value: Clone;
     fn time(&self) -> Duration;
     fn value(&self) -> Self::Value;

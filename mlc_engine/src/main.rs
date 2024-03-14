@@ -1,3 +1,24 @@
+use std::net::{IpAddr, Ipv4Addr};
+
+use rocket::{
+    catch, catchers, config::Ident, get, launch, serde::json::Json, tokio::sync::broadcast::Sender,
+    Config, State,
+};
+use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::rapidoc::{GeneralConfig, HideShowConfig, RapiDocConfig};
+use rocket_okapi::settings::UrlObject;
+use rocket_okapi::swagger_ui::SwaggerUIConfig;
+use rocket_okapi::{openapi, openapi_get_routes_spec};
+
+use data_serving::DataServingModule;
+use mlc_common::Info;
+use module::{Application, Module};
+use project::Project;
+use runtime::RuntimeModule;
+use settings::SettingsModule;
+use ui_serving::UiServingModule;
+
 mod data_serving;
 mod fixture;
 mod module;
@@ -6,26 +27,6 @@ mod runtime;
 mod settings;
 mod ui_serving;
 mod utils;
-
-use std::net::{IpAddr, Ipv4Addr};
-
-use data_serving::{DataServingModule};
-use module::{Application, Module};
-use project::Project;
-use rocket::{
-    catch, catchers, config::Ident, get, launch, routes, serde::json::Json,
-    tokio::sync::broadcast::Sender, Config, State,
-};
-use rocket_okapi::{openapi, openapi_get_routes_spec};
-use rocket_okapi::okapi::merge::merge_specs;
-use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::rapidoc::{GeneralConfig, HideShowConfig, RapiDocConfig};
-use rocket_okapi::settings::UrlObject;
-use rocket_okapi::swagger_ui::SwaggerUIConfig;
-use mlc_common::Info;
-use runtime::RuntimeModule;
-use settings::SettingsModule;
-use ui_serving::UiServingModule;
 
 #[launch]
 async fn rocket() -> _ {
@@ -51,7 +52,11 @@ async fn heart_beat() -> Json<&'static str> {
 }
 
 impl Module for MainModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = rocket::tokio::sync::broadcast::channel::<Info>(100);
 
         let config = Config {
@@ -71,24 +76,28 @@ impl Module for MainModule {
             .register("/", catchers![catch_404])
             .configure(config)
             .mount("/util", routes)
-            .mount("/api", rocket_okapi::swagger_ui::make_swagger_ui(&SwaggerUIConfig {
-                url: "../openapi.json".to_owned(),
-                ..Default::default()
-            })).mount(
-            "/rapi",
-            rocket_okapi::rapidoc::make_rapidoc(&RapiDocConfig {
-                general: GeneralConfig {
-                    spec_urls: vec![UrlObject::new("General", "../openapi.json")],
+            .mount(
+                "/api",
+                rocket_okapi::swagger_ui::make_swagger_ui(&SwaggerUIConfig {
+                    url: "../openapi.json".to_owned(),
                     ..Default::default()
-                },
-                hide_show: HideShowConfig {
-                    allow_spec_file_load: false,
-                    allow_spec_url_load: false,
+                }),
+            )
+            .mount(
+                "/rapi",
+                rocket_okapi::rapidoc::make_rapidoc(&RapiDocConfig {
+                    general: GeneralConfig {
+                        spec_urls: vec![UrlObject::new("General", "../openapi.json")],
+                        ..Default::default()
+                    },
+                    hide_show: HideShowConfig {
+                        allow_spec_file_load: false,
+                        allow_spec_url_load: false,
+                        ..Default::default()
+                    },
                     ..Default::default()
-                },
-                ..Default::default()
-            }),
-        )
+                }),
+            )
     }
 }
 

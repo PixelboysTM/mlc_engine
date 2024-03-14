@@ -1,21 +1,15 @@
 use std::collections::HashMap;
 
+use mlc_common::endpoints::{EPConfigItem, EndPointConfig};
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
-use mlc_common::endpoints::{EndPointConfig, EPConfigItem};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
 
-
-use self::{
-    artnet::ArtNetEndpoint,
-    sacn::{SacnEndpoint},
-};
+use self::{artnet::ArtNetEndpoint, sacn::SacnEndpoint};
 
 mod artnet;
 mod sacn;
-
-
 
 macro_rules! register_default {
     ($type:ty, $rx:expr) => {
@@ -46,7 +40,7 @@ impl CreateEndpoints for EndPointConfig {
                         speed: speed.clone(),
                         ..Default::default()
                     }
-                        .register(rx),
+                    .register(rx),
                 }
                 point.push(tx);
             }
@@ -56,7 +50,6 @@ impl CreateEndpoints for EndPointConfig {
         points
     }
 }
-
 
 pub trait Endpoint: Default {
     fn register(self, rx: Receiver<EndpointData>);

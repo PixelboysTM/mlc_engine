@@ -3,17 +3,17 @@ use std::time::Duration;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::{FutureExt, SinkExt, StreamExt};
-use futures::future::{Either, select};
+use futures::future::{select, Either};
+use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 
-use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
 
-use crate::{icons, utils};
 use crate::utils::Loading;
+use crate::{icons, utils};
 
 mod fixture_tester;
 
@@ -58,7 +58,7 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
                             {d.last_edited.format("%d.%m.%Y %H:%M:%S").to_string()}
                         }
                     })},
-                    Some(Err(e)) => {cx.render(rsx!{"Error Loading Project Info"})},
+                    Some(Err(_e)) => {cx.render(rsx!{"Error Loading Project Info"})},
                     None => {Loading(cx)}
                 }
             },
@@ -128,18 +128,16 @@ fn ProjectSettings(cx: Scope) -> Element {
                                     },
                                     input {
                                         r#type: "checkbox",
-                                        checked: {s.save_on_quit},
+                                        checked: s.save_on_quit,
                                         onchange: move |v| {
                                             log::info!("{}", v.value);
-                                            if let Some(ss) = changed_settings.get() {
+                                            if let Some(_ss) = changed_settings.get() {
                                                 changed_settings.set(Some(Settings{
                                                 save_on_quit: v.value == "true",
-                                                ..*ss
                                                 }))
                                             } else {
                                                 changed_settings.set(Some(Settings{
                                                     save_on_quit: v.value == "true",
-                                                        ..*s
                                                 }))
                                             }
                                         }
@@ -148,7 +146,7 @@ fn ProjectSettings(cx: Scope) -> Element {
                             }
                         )
                     }
-                    Some(Err(s)) => {cx.render(rsx!("Error Fetching settings"))}
+                    Some(Err(_s)) => {cx.render(rsx!("Error Fetching settings"))}
                     None => {utils::Loading(cx)}
                 }
             },
@@ -170,7 +168,7 @@ fn ProjectSettings(cx: Scope) -> Element {
                         async move {
                             if let Some(s) = changed_settings.get() {
                                 let s = utils::fetch_post::<String, _>("/settings/update", s.clone()).await;
-                                if let Ok(_) = s {
+                                if s.is_ok() {
                                     changed_settings.set(None);
 
                                 } else {
@@ -191,7 +189,6 @@ fn ProjectSettings(cx: Scope) -> Element {
 fn FaderPanel(cx: Scope) -> Element {
     let current_universe = use_ref(cx, || 1);
     let universes = use_future(cx, (), |()| {
-        to_owned![current_universe];
         async move {
             if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
                 d
@@ -203,7 +200,6 @@ fn FaderPanel(cx: Scope) -> Element {
     let current_values = use_ref(cx, || [0_u8; 512]);
 
     let create_eval = use_eval(cx);
-
 
     let started = use_ref(cx, || false);
     let get = use_coroutine(cx, |mut rx: UnboundedReceiver<u16>| {
@@ -219,7 +215,7 @@ fn FaderPanel(cx: Scope) -> Element {
                 "ws://{}/runtime/fader-values/get",
                 eval.recv()
                     .await
-                    .map_err(|e| log::error!("Error"))
+                    .map_err(|e| log::error!("Error: {e:?}"))
                     .unwrap()
                     .as_str()
                     .unwrap()
@@ -235,9 +231,9 @@ fn FaderPanel(cx: Scope) -> Element {
                         Either::Right((Some(Ok(msg)), _)) => {
                             let d = match msg {
                                 Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
-                                Message::Bytes(b) => {
-                                    serde_json::from_str::<RuntimeUpdate>(&String::from_utf8(b).unwrap())
-                                }
+                                Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
+                                    &String::from_utf8(b).unwrap(),
+                                ),
                             };
 
                             if let Ok(update) = d {
@@ -258,7 +254,9 @@ fn FaderPanel(cx: Scope) -> Element {
                                     } => {
                                         current_values.with_mut(|g| {
                                             for (i, index) in channel_indexes.iter().enumerate() {
-                                                if current_universe.read().deref() == &universes[i].0 {
+                                                if current_universe.read().deref()
+                                                    == &universes[i].0
+                                                {
                                                     g[*index] = values[i];
                                                 }
                                             }
@@ -277,8 +275,8 @@ fn FaderPanel(cx: Scope) -> Element {
 
                         d => {
                             let b = match d {
-                                Either::Left((a, b)) => format!("{:?}", a),
-                                Either::Right((a, b)) => format!("{:?}", a)
+                                Either::Left((a, _b)) => format!("{:?}", a),
+                                Either::Right((a, _b)) => format!("{:?}", a),
                             };
                             log::error!("Error {b:?}");
                         }
@@ -298,7 +296,7 @@ fn FaderPanel(cx: Scope) -> Element {
                 "ws://{}/runtime/fader-values/set",
                 eval.recv()
                     .await
-                    .map_err(|e| log::error!("Error"))
+                    .map_err(|e| log::error!("Error: {e:?}"))
                     .unwrap()
                     .as_str()
                     .unwrap()
@@ -308,7 +306,9 @@ fn FaderPanel(cx: Scope) -> Element {
                 loop {
                     let m = rx.next().await;
                     if let Some(r) = m {
-                        let r = ws.send(Message::Text(serde_json::to_string(&r).unwrap())).await;
+                        let _ = ws
+                            .send(Message::Text(serde_json::to_string(&r).unwrap()))
+                            .await;
                     }
                 }
             } else {
@@ -347,8 +347,8 @@ fn FaderPanel(cx: Scope) -> Element {
                 (0..512).map(|i| {
                     rsx!{
                         Fader{
-                        value: {current_values.read()[i]},
-                        id: {make_three_digit(i as u16)},
+                        value: current_values.read()[i],
+                        id: make_three_digit(i as u16),
                         onchange: move |v| {
                             set.send(FaderUpdateRequest{
                                 universe: UniverseId(*current_universe.read().deref()),
@@ -375,7 +375,7 @@ struct FaderProps<'a> {
 #[component]
 fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
     let val = use_state(cx, || cx.props.value);
-    let memo = use_memo(cx, &(cx.props.value, ), |(v, )| val.set(v));
+    let _ = use_memo(cx, &(cx.props.value, ), |(v, )| val.set(v));
 
     let size = use_state(cx, || 0.0);
     cx.render(rsx! {
@@ -443,22 +443,20 @@ fn sel(b: bool) -> &'static str {
 
 #[component]
 fn FixtureTypeExplorer(cx: Scope) -> Element {
-    let fixture_query = use_future(cx, (), |_| {
-        async move {
-            let r = utils::fetch::<Vec<FixtureInfo>>("/data/get/fixture-types").await;
-            if let Ok(infos) = r {
-                infos
-            } else {
-                log::error!("Couldn't fetch types: {:?}", r.err().unwrap());
-                vec![]
-            }
+    let fixture_query = use_future(cx, (), |_| async move {
+        let r = utils::fetch::<Vec<FixtureInfo>>("/data/get/fixture-types").await;
+        if let Ok(infos) = r {
+            infos
+        } else {
+            log::error!("Couldn't fetch types: {:?}", r.err().unwrap());
+            vec![]
         }
     });
 
     let detail_fixture = use_state::<Option<FixtureInfo>>(cx, || None);
 
     cx.render(rsx! {
-        if let Some(f) = detail_fixture.get() {
+        if let Some(_f) = detail_fixture.get() {
             rsx!{
                 ""
             }
@@ -477,7 +475,7 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                     for info in infos {
                             div {
                                 class: "fixture-type",
-                                onclick: move |e| {
+                                onclick: move |_| {
                                     detail_fixture.set(Some(info.clone()));
                                 },
                                 h3 {
@@ -510,25 +508,26 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
 
 #[component]
 fn UniverseExplorer(cx: Scope) -> Element {
-    let universes = use_future(cx, (), |_| {
-        async move {
-            utils::fetch::<Vec<UniverseId>>("/data/universes").await.map_err(|e| {
+    let universes = use_future(cx, (), |_| async move {
+        utils::fetch::<Vec<UniverseId>>("/data/universes")
+            .await
+            .map_err(|e| {
                 log::error!("Error fetching universes: {:?}", e);
-            }).unwrap_or(vec![])
-        }
+            })
+            .unwrap_or(vec![])
     });
 
     let selected = use_state(cx, || UniverseId(1));
-    let universe = use_future(cx, (selected, ), |(sel, )| {
-        async move {
-            utils::fetch::<FixtureUniverse>(&format!("/data/universes/{}", sel.get().0)).await.map_err(|e| {
+    let universe = use_future(cx, (selected, ), |(sel, )| async move {
+        utils::fetch::<FixtureUniverse>(&format!("/data/universes/{}", sel.get().0))
+            .await
+            .map_err(|e| {
                 log::error!("Error fetching universes: {:?}", e);
-            }).ok()
-        }
+            })
+            .ok()
     });
 
     let detail_fixture = use_state::<Option<PatchedFixture>>(cx, || None);
-
 
     match universes.value() {
         Some(d) => {
@@ -569,7 +568,7 @@ fn UniverseExplorer(cx: Scope) -> Element {
                                             rsx!{
                                                 div {
                                                     class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize,i)}",
-                                                    onclick: move |e| {
+                                                    onclick: move |_| {
                                                         detail_fixture.set(Some(data.fixtures[c.fixture_index].clone()));
                                                     },
                                                     if c.channel_index == 0 {
@@ -655,25 +654,30 @@ pub struct UFPProps<'a> {
 pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
     let source = use_state(cx, || FixtureSource::Ofl);
 
-    let available_fixtures = use_future(cx, (), |_| {
-        async move {
-            let r = utils::fetch_post::<Vec<String>, _>("https://open-fixture-library.org/api/v1/get-search-results", SearchBody {
+    let available_fixtures = use_future(cx, (), |_| async move {
+        let r = utils::fetch_post::<Vec<String>, _>(
+            "https://open-fixture-library.org/api/v1/get-search-results",
+            SearchBody {
                 searchQuery: "",
                 categoriesQuery: [],
                 manufacturersQuery: [],
-            }).await;
+            },
+        )
+            .await;
 
-            r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e)).ok()
-                .map(|v| {
-                    v.iter().map(|e| {
-                        let mut s = e.split("/");
+        r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
+            .ok()
+            .map(|v| {
+                v.iter()
+                    .map(|e| {
+                        let mut s = e.split('/');
                         AvailableFixture {
                             manufacturer: s.next().unwrap().to_string(),
                             name: s.next().unwrap().to_string(),
                         }
-                    }).collect::<Vec<_>>()
-                })
-        }
+                    })
+                    .collect::<Vec<_>>()
+            })
     });
 
     let search = use_state(cx, || "".to_string());
@@ -746,12 +750,12 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                                                     button {
                                                         class: "icon",
                                                         title: "Import",
-                                                        onclick: move |e| {
+                                                        onclick: move |_| {
                                                             let m = available.manufacturer.clone();
                                                             let n = available.name.clone();
                                                             async move {
                                                                 log::info!("Import fixture");
-                                                                let r = utils::fetch::<()>(&format!("/data/add/fixture-ofl/{}/{}", m, n)).await.map_err(|e| {
+                                                                let _ = utils::fetch::<()>(&format!("/data/add/fixture-ofl/{}/{}", m, n)).await.map_err(|e| {
                                                                     log::error!("Error importing: {:?}", e);
                                                                 });
                                                             }
@@ -801,8 +805,12 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
 }
 
 fn fits_search(f: &AvailableFixture, search: &str) -> bool {
-    let i = format!("{}/{}", f.manufacturer.to_lowercase(), f.name.to_lowercase());
-    let mut keywords = search.split(" ");
+    let i = format!(
+        "{}/{}",
+        f.manufacturer.to_lowercase(),
+        f.name.to_lowercase()
+    );
+    let keywords = search.split(' ');
     for keyword in keywords {
         if !i.contains(&keyword.to_lowercase()) {
             return false;
@@ -830,18 +838,16 @@ struct EPMProps<'a> {
 
 #[component]
 fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
-    let config = use_future(cx, (), |_| {
-        async move {
-            let r = utils::fetch::<EndPointConfig>("/runtime/endpoints/get").await;
-            match r {
-                Ok(c) => {
-                    let us = utils::fetch::<Vec<UniverseId>>("/data/universes").await;
-                    us.map(|us| (us, c)).ok()
-                }
-                Err(e) => {
-                    log::error!("Error fetching endpoint config: {:?}", e);
-                    None
-                }
+    let config = use_future(cx, (), |_| async move {
+        let r = utils::fetch::<EndPointConfig>("/runtime/endpoints/get").await;
+        match r {
+            Ok(c) => {
+                let us = utils::fetch::<Vec<UniverseId>>("/data/universes").await;
+                us.map(|us| (us, c)).ok()
+            }
+            Err(e) => {
+                log::error!("Error fetching endpoint config: {:?}", e);
+                None
             }
         }
     });
@@ -866,7 +872,7 @@ fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
                                     },
                                     div {
                                         class: "endpoints",
-                                        for e in c.endpoints.get(u).unwrap_or(&vec![]) {
+                                        for _e in c.endpoints.get(u).unwrap_or(&vec![]) {
                                             div {
                                                 class: "endpoint",
                                                 "e"

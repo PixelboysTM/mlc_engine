@@ -1,10 +1,10 @@
-use std::time::Duration;
+use crate::icons;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use gloo_net::websocket::futures::WebSocket;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::icons;
+use std::time::Duration;
 
 pub async fn fetch<T>(url: &str) -> Result<T, gloo_net::Error>
     where
@@ -49,18 +49,17 @@ pub fn Loading(cx: Scope) -> Element {
 
     if *l.get() {
         cx.render(rsx! {
-        div {
-            class: "loading-spinner",
             div {
-                class: "inner",
+                class: "loading-spinner",
+                div {
+                    class: "inner",
+                }
             }
-        }
-    })
+        })
     } else {
         cx.render(rsx!(""))
     }
 }
-
 
 #[derive(Props)]
 pub struct OverlayProps<'a> {
@@ -118,10 +117,16 @@ pub fn Overlay<'a>(cx: Scope<'a, OverlayProps<'a>>) -> Element<'a> {
 }
 
 #[component]
-pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHandler<'a, (f32, f32, f32)>) -> Element<'a> {
+pub fn RgbWidget<'a>(
+    cx: Scope<'a>,
+    initial: (f32, f32, f32),
+    onchange: EventHandler<'a, (f32, f32, f32)>,
+) -> Element<'a> {
     // let initial: (f32, f32, f32) = (1.0, 1.0, 1.0);
     // let i = color_art::Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap();
-    let color = use_state(cx, || color_art::Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap());
+    let color = use_state(cx, || {
+        color_art::Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap()
+    });
 
     let hsv = use_memo(cx, (color, ), |(c, )| {
         (c.hue(), c.hsv_saturation(), c.hsv_value())
@@ -131,21 +136,22 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
         color_art::Color::from_hsv(c.hue(), 1.0, 1.0).unwrap().hex()
     });
 
-    let rgb = use_memo(cx, (color, ), |c, | {
-        (color.red(), color.green(), color.blue())
-    });
+    let rgb = use_memo(cx, (color, ), |(c, )| (c.red(), c.green(), c.blue()));
 
-    let e = use_effect(cx, (color, ), |(c, )| {
-        let c = c.get().clone();
-        onchange.call((c.red() as f32 / 255.0, c.green() as f32 / 255.0, c.blue() as f32 / 255.0));
+    use_effect(cx, (color, ), |(c, )| {
+        onchange.call((
+            c.red() as f32 / 255.0,
+            c.green() as f32 / 255.0,
+            c.blue() as f32 / 255.0,
+        ));
         async move {}
     });
 
-    let mut hue_e = use_state(cx, || None);
-    let mut red_e = use_state(cx, || None);
-    let mut green_e = use_state(cx, || None);
-    let mut blue_e = use_state(cx, || None);
-    let mut sat_e = use_state(cx, || None);
+    let hue_e = use_state(cx, || None);
+    let red_e = use_state(cx, || None);
+    let green_e = use_state(cx, || None);
+    let blue_e = use_state(cx, || None);
+    let sat_e = use_state(cx, || None);
 
     cx.render(rsx! {
         div {
@@ -161,7 +167,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                     async move {
                         let s = 1.0 - e.element_coordinates().x / sat_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width;
                         let v = 1.0 - e.element_coordinates().y / sat_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_hsv(old.hsv_hue(), s.clamp(0.0, 1.0), v.clamp(0.0,1.0)).expect("We have a problem!"));
                     }
                 },
@@ -173,7 +179,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                         }
                         let s = 1.0 - e.element_coordinates().x / sat_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width;
                         let v = 1.0 - e.element_coordinates().y / sat_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_hsv(old.hsv_hue(), s.clamp(0.0,1.0), v.clamp(0.0,1.0)).expect("We have a problem!"));
                     }
                 },
@@ -191,7 +197,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                     to_owned![hue_e, color];
                     async move {
                         let h = e.element_coordinates().y / hue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height * 360.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
                     }
                 },
@@ -202,7 +208,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                             return;
                         }
                         let h = e.element_coordinates().y / hue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height * 360.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
                     }
                 },
@@ -220,7 +226,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                     to_owned![red_e, color];
                     async move {
                         let r = e.element_coordinates().x / red_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!"));
                     }
                 },
@@ -231,7 +237,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                             return;
                         }
                         let r = e.element_coordinates().x / red_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!"));
                     }
                 },
@@ -249,7 +255,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                     to_owned![green_e, color];
                     async move {
                         let g = e.element_coordinates().x / green_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!"));
                     }
                 },
@@ -260,7 +266,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                             return;
                         }
                         let g = e.element_coordinates().x / green_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!"));
                     }
                 },
@@ -278,7 +284,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                     to_owned![blue_e, color];
                     async move {
                         let b = e.element_coordinates().x / blue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!"));
                     }
                 },
@@ -289,7 +295,7 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
                             return;
                         }
                         let b = e.element_coordinates().x / blue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
-                        let old = color.get().clone();
+                        let old = *color.get();
                         color.set(color_art::Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!"));
                     }
                 },
@@ -303,26 +309,26 @@ pub fn RgbWidget<'a>(cx: Scope<'a>, initial: (f32, f32, f32), onchange: EventHan
 }
 
 #[component]
-pub fn PanTiltWidget<'a>(cx: Scope<'a>, initial: (f32, f32), onchange: EventHandler<'a, (f32, f32)>) -> Element<'a> {
-    let pt = use_state(cx, || initial.clone());
+pub fn PanTiltWidget<'a>(
+    cx: Scope<'a>,
+    initial: (f32, f32),
+    onchange: EventHandler<'a, (f32, f32)>,
+) -> Element<'a> {
+    let pt = use_state(cx, || *initial);
 
-    let pan = use_memo(cx, (pt, ), |(p, )| {
-        p.0
-    });
+    let pan = use_memo(cx, (pt, ), |(p, )| p.0);
 
-    let tilt = use_memo(cx, (pt, ), |(t, )| {
-        t.1
-    });
+    let tilt = use_memo(cx, (pt, ), |(t, )| t.1);
 
-    let e = use_effect(cx, (pt, ), |(pt, )| {
-        let pt = pt.get().clone();
+    use_effect(cx, (pt, ), |(pt, )| {
+        let pt = *pt.get();
         onchange.call(pt);
         async move {}
     });
 
-    let mut pan_e = use_state(cx, || None);
-    let mut tilt_e = use_state(cx, || None);
-    let mut zone_e = use_state(cx, || None);
+    let pan_e = use_state(cx, || None);
+    let tilt_e = use_state(cx, || None);
+    let zone_e = use_state(cx, || None);
 
     cx.render(rsx! {
         div {
@@ -362,7 +368,7 @@ pub fn PanTiltWidget<'a>(cx: Scope<'a>, initial: (f32, f32), onchange: EventHand
                     to_owned![pan_e, pt];
                     async move {
                         let p = e.element_coordinates().y / pan_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
-                        let old = pt.get().clone();
+                        let old = *pt.get();
                         pt.set((p.clamp(0.0,1.0) as f32, old.1));
                     }
                 },
@@ -373,7 +379,7 @@ pub fn PanTiltWidget<'a>(cx: Scope<'a>, initial: (f32, f32), onchange: EventHand
                             return;
                         }
                         let p = e.element_coordinates().y / pan_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
-                        let old = pt.get().clone();
+                        let old = *pt.get();
                         pt.set((p.clamp(0.0,1.0) as f32, old.1));
                     }
                 },
@@ -392,7 +398,7 @@ pub fn PanTiltWidget<'a>(cx: Scope<'a>, initial: (f32, f32), onchange: EventHand
                     to_owned![tilt_e, pt];
                     async move {
                         let t = e.element_coordinates().x / tilt_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width;
-                        let old = pt.get().clone();
+                        let old = *pt.get();
                         pt.set((old.0, t.clamp(0.0,1.0) as f32));
                     }
                 },
@@ -403,7 +409,7 @@ pub fn PanTiltWidget<'a>(cx: Scope<'a>, initial: (f32, f32), onchange: EventHand
                             return;
                         }
                         let t = e.element_coordinates().x / tilt_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width;
-                        let old = pt.get().clone();
+                        let old = *pt.get();
                         pt.set((old.0, t.clamp(0.0,1.0) as f32));
                     }
                 },

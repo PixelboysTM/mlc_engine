@@ -1,10 +1,12 @@
-use std::fmt::{Display, Formatter};
-use crate::config::{DmxColor, DmxRange, FixtureCapability, FixtureChannel, FixtureMode, FixtureType, RotationSpeed};
-use get_size::GetSize;
-use schemars::JsonSchema;
+use crate::config::{
+    DmxColor, DmxRange, FixtureCapability, FixtureChannel, FixtureMode, FixtureType, RotationSpeed,
+};
 use crate::fixture::FaderAddress;
 use crate::patched::{UniverseAddress, UniverseId};
 use crate::ToFaderValue;
+use get_size::GetSize;
+use schemars::JsonSchema;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
 pub struct Dimmer {
@@ -165,7 +167,6 @@ pub fn find_features(
     features
 }
 
-
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub enum FeatureSetRequest {
     // 0.0 -> 1.0
@@ -200,7 +201,7 @@ fn search_dimmer(
             }
 
             for cap in &caps.capabilities {
-                if let FixtureCapability::Intensity(d) = &cap.detail {
+                if let FixtureCapability::Intensity(_) = &cap.detail {
                     let dimmer = make_feature_tile(
                         caps,
                         start_index,
@@ -226,7 +227,7 @@ fn make_feature_tile(
     range: &DmxRange,
     channels: &[String],
 ) -> FeatureTile {
-    let fine = if channel.fine_channel_aliases.len() == 0 {
+    let fine = if channel.fine_channel_aliases.is_empty() {
         None
     } else {
         channels
@@ -381,13 +382,7 @@ fn search_rgb(
     }
 
     if let (Some(red), Some(green), Some(blue)) = (red, green, blue) {
-        Some(FixtureFeature::Rgb(
-            Rgb {
-                red,
-                green,
-                blue,
-            }
-        ))
+        Some(FixtureFeature::Rgb(Rgb { red, green, blue }))
     } else {
         None
     }
@@ -447,10 +442,7 @@ fn search_rotation(
     }
 
     if let (Some(cw), Some(ccw)) = (cw, ccw) {
-        Some(FixtureFeature::Rotation(Rotation {
-            cw,
-            ccw,
-        }))
+        Some(FixtureFeature::Rotation(Rotation { cw, ccw }))
     } else {
         None
     }
@@ -500,10 +492,7 @@ fn search_pantilt(
     }
 
     if let (Some(pan), Some(tilt)) = (pan, tilt) {
-        Some(FixtureFeature::PanTilt(PanTilt {
-            pan,
-            tilt,
-        }))
+        Some(FixtureFeature::PanTilt(PanTilt { pan, tilt }))
     } else {
         None
     }

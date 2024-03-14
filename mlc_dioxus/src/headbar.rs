@@ -2,7 +2,6 @@ use std::ops::Deref;
 
 use dioxus::core::{Element, Scope};
 use dioxus::prelude::*;
-use log::log;
 
 use crate::icons::{
     ExternalLink, LightBulb, Pencil, Save, Settings, TabletSmartphone, UploadCloud,

@@ -1,7 +1,7 @@
+use crate::patched::UniverseId;
+use schemars::JsonSchema;
 use std::collections::HashMap;
 use std::time::Duration;
-use schemars::JsonSchema;
-use crate::patched::UniverseId;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default, JsonSchema)]
 pub struct EndPointConfig {
@@ -15,14 +15,13 @@ pub enum EPConfigItem {
     Sacn { universe: u16, speed: Speed },
 }
 
-
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
 pub enum Speed {
     Slow,
     // 200ms
     Medium,
     // 100ms
-    Fast,   // 30ms
+    Fast, // 30ms
 }
 
 impl Speed {

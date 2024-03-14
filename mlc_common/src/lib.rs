@@ -1,15 +1,15 @@
+use crate::config::{DmxRange, FixtureMode};
 use chrono::{DateTime, Local};
 use schemars::JsonSchema;
-use crate::config::{DmxRange, FixtureMode};
 
 use crate::patched::{UniverseAddress, UniverseId};
 use crate::universe::UNIVERSE_SIZE;
 
-pub mod patched;
 pub mod config;
-pub mod universe;
-pub mod fixture;
 pub mod endpoints;
+pub mod fixture;
+pub mod patched;
+pub mod universe;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy)]
 pub enum Info {
@@ -106,7 +106,7 @@ impl ToFaderValue for f32 {
     fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
         let v = self.min(1.0).max(0.0);
         let val =
-            (range.range(0, 16777215) as f32 * v) as u32 + range.start.to_value(0, 16777215) as u32;
+            (range.range(0, 16777215) as f32 * v) as u32 + range.start.to_value(0, 16777215);
         ((val >> 16) as u8, (val >> 8) as u8, val as u8)
     }
 }

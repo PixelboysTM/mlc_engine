@@ -2,14 +2,16 @@ use std::collections::HashMap;
 use std::slice::Iter;
 
 use chrono::Duration;
-use tap::{Pipe, Tap};
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeature;
 use mlc_common::patched::PatchedFixture;
+use tap::{Tap};
 
-use crate::runtime::effects::{Effect, FaderTrack, Track};
-use crate::runtime::effects::feature_track::{D3PercentTrack, FeatureTrack, FeatureTrackDetail, PercentTrack, RotationTrack};
+use crate::runtime::effects::feature_track::{
+    D3PercentTrack, FeatureTrack, FeatureTrackDetail, PercentTrack, RotationTrack,
+};
 use crate::runtime::effects::track_key::{D3PercentageKey, Key, PercentageKey, RotationKey};
+use crate::runtime::effects::{Effect, FaderTrack, Track};
 use crate::utils::easing::{Easing, EasingType};
 
 pub type BakedEffectCue = Vec<(Duration, u8)>;
@@ -92,9 +94,18 @@ async fn bake_feature_track(
                 .find(|feat| feat.name() == track.feature);
             if let Some(feature) = feature {
                 match &track.detail {
-                    FeatureTrackDetail::SinglePercent(t) => bake_feature_track_single_percent(t, max_time, feature, &track.resolution).await,
-                    FeatureTrackDetail::D3Percent(t) => bake_feature_track_three_percent(t, max_time, feature, &track.resolution).await,
-                    FeatureTrackDetail::SingleRotation(t) => bake_feature_track_single_rotation(t, max_time, feature, &track.resolution).await,
+                    FeatureTrackDetail::SinglePercent(t) => {
+                        bake_feature_track_single_percent(t, max_time, feature, &track.resolution)
+                            .await
+                    }
+                    FeatureTrackDetail::D3Percent(t) => {
+                        bake_feature_track_three_percent(t, max_time, feature, &track.resolution)
+                            .await
+                    }
+                    FeatureTrackDetail::SingleRotation(t) => {
+                        bake_feature_track_single_rotation(t, max_time, feature, &track.resolution)
+                            .await
+                    }
                     FeatureTrackDetail::D2Rotation(_) => todo!(),
                 }
             } else {
@@ -130,19 +141,19 @@ async fn bake_feature_track_single_percent(
 
     let vals = get_valid_keys_sorted(t.values.iter(), max_time);
 
-    let time_steps = build_time_steps(
-        resolution,
-        max_time,
-        &vals,
-        0.0,
-        0.0,
-        |in_v, out_v, val| in_v + (out_v - in_v) * val,
-    );
+    let time_steps = build_time_steps(resolution, max_time, &vals, 0.0, 0.0, |in_v, out_v, val| {
+        in_v + (out_v - in_v) * val
+    });
 
     convert_to_cues::<PercentageKey, _>(&time_steps, |v| feature_tile.to_raw(v))
 }
 
-async fn bake_feature_track_single_rotation(t: &RotationTrack, max_time: &Duration, fixture_feature: &FixtureFeature, resolution: &Duration) -> Vec<(FaderAddress, BakedEffectCue)> {
+async fn bake_feature_track_single_rotation(
+    t: &RotationTrack,
+    max_time: &Duration,
+    fixture_feature: &FixtureFeature,
+    resolution: &Duration,
+) -> Vec<(FaderAddress, BakedEffectCue)> {
     let (feature_tile_cw, feature_tile_ccw) = match fixture_feature {
         FixtureFeature::Rotation(r) => (&r.cw, &r.ccw),
         _ => {
@@ -156,14 +167,9 @@ async fn bake_feature_track_single_rotation(t: &RotationTrack, max_time: &Durati
 
     let vals = get_valid_keys_sorted(t.values.iter(), max_time);
 
-    let time_steps = build_time_steps(
-        resolution,
-        max_time,
-        &vals,
-        0.0,
-        0.0,
-        |in_v, out_v, val| in_v + (out_v - in_v) * val,
-    );
+    let time_steps = build_time_steps(resolution, max_time, &vals, 0.0, 0.0, |in_v, out_v, val| {
+        in_v + (out_v - in_v) * val
+    });
 
     convert_to_cues::<RotationKey, _>(&time_steps, |v| {
         if v >= &0.0 {
@@ -199,14 +205,22 @@ async fn bake_feature_track_three_percent(
         &vals,
         (0.0, 0.0, 0.0),
         (0.0, 0.0, 0.0),
-        |(in_x, in_y, in_z), (out_x, out_y, out_z), val| (
-            in_x + (out_x - in_x) * val,
-            in_y + (out_y - in_y) * val,
-            in_z + (out_z - in_z) * val
-        ),
+        |(in_x, in_y, in_z), (out_x, out_y, out_z), val| {
+            (
+                in_x + (out_x - in_x) * val,
+                in_y + (out_y - in_y) * val,
+                in_z + (out_z - in_z) * val,
+            )
+        },
     );
 
-    convert_to_cues::<D3PercentageKey, _>(&time_steps, |v| vec![d1.to_raw(&v.0), d2.to_raw(&v.1), d3.to_raw(&v.2)].iter().flatten().copied().collect::<Vec<_>>())
+    convert_to_cues::<D3PercentageKey, _>(&time_steps, |v| {
+        [d1.to_raw(&v.0), d2.to_raw(&v.1), d3.to_raw(&v.2)]
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>()
+    })
 }
 
 fn out_time_filter<F: Key>(max_time: &Duration) -> Box<dyn Fn(&&F) -> bool + '_> {
@@ -224,16 +238,21 @@ pub enum BakingNotification {
 fn make_resolution_times(resolution: &Duration, max: &Duration) -> ResolutionTimeIter {
     ResolutionTimeIter {
         current: Duration::seconds(0),
-        resolution: resolution.clone(),
-        max: max.clone(),
+        resolution: *resolution,
+        max: *max,
     }
 }
 
 fn get_valid_keys_sorted<'a, K: Key>(iter: Iter<'a, K>, max_time: &'a Duration) -> Vec<&'a K> {
-    iter.filter(out_time_filter(max_time)).collect::<Vec<_>>().tap_mut(|v| v.sort_by_key(|k| k.time()))
+    iter.filter(out_time_filter(max_time))
+        .collect::<Vec<_>>()
+        .tap_mut(|v| v.sort_by_key(|k| k.time()))
 }
 
-fn find_in_out_keys<'a, K: Key>(vals: &'a Vec<K>, time: &Duration) -> (Option<&'a K>, Option<&'a K>) {
+fn find_in_out_keys<'a, K: Key>(
+    vals: &'a Vec<K>,
+    time: &Duration,
+) -> (Option<&'a K>, Option<&'a K>) {
     let mut in_key = None;
     let mut out_key = None;
 
@@ -249,9 +268,12 @@ fn find_in_out_keys<'a, K: Key>(vals: &'a Vec<K>, time: &Duration) -> (Option<&'
     (in_key, out_key)
 }
 
-fn split_in_key<K: Key>(key: Option<&K>, vals: &Vec<K>, default_value: K::Value) -> (Duration, K::Value, EasingType) {
-    key
-        .map(|k| (k.time(), k.value(), k.easing().out_type))
+fn split_in_key<K: Key>(
+    key: Option<&K>,
+    vals: &[K],
+    default_value: K::Value,
+) -> (Duration, K::Value, EasingType) {
+    key.map(|k| (k.time(), k.value(), k.easing().out_type))
         .unwrap_or((
             Duration::seconds(0),
             vals.first().map(|k| k.value()).unwrap_or(default_value),
@@ -259,11 +281,15 @@ fn split_in_key<K: Key>(key: Option<&K>, vals: &Vec<K>, default_value: K::Value)
         ))
 }
 
-fn split_out_key<K: Key>(key: Option<&K>, vals: &Vec<K>, max_time: &Duration, default_value: K::Value) -> (Duration, K::Value, EasingType) {
-    key
-        .map(|k| (k.time(), k.value(), k.easing().in_type))
+fn split_out_key<K: Key>(
+    key: Option<&K>,
+    vals: &[K],
+    max_time: &Duration,
+    default_value: K::Value,
+) -> (Duration, K::Value, EasingType) {
+    key.map(|k| (k.time(), k.value(), k.easing().in_type))
         .unwrap_or((
-            max_time.clone(),
+            *max_time,
             vals.last().map(|k| k.value()).unwrap_or(default_value),
             EasingType::Const,
         ))
@@ -276,18 +302,28 @@ fn get_t(in_t: Duration, out_t: Duration, time: Duration) -> f32 {
     time_point as f32 / range as f32
 }
 
-fn convert_to_cues<K: Key, F: Fn(&K::Value) -> Vec<(FaderAddress, u8)>>(time_steps: &Vec<(Duration, K::Value)>, to_raw_val_fun: F) -> Vec<(FaderAddress, Vec<(Duration, u8)>)> {
+fn convert_to_cues<K: Key, F: Fn(&K::Value) -> Vec<(FaderAddress, u8)>>(
+    time_steps: &Vec<(Duration, K::Value)>,
+    to_raw_val_fun: F,
+) -> Vec<(FaderAddress, Vec<(Duration, u8)>)> {
     if time_steps.is_empty() {
         return vec![];
     }
 
-    let steps = time_steps.iter().map(|(t, v)| (t, to_raw_val_fun(v))).collect::<Vec<_>>();
+    let steps = time_steps
+        .iter()
+        .map(|(t, v)| (t, to_raw_val_fun(v)))
+        .collect::<Vec<_>>();
 
-    let mut faders = steps[0].1.iter().map(|(f, _)| (*f, vec![])).collect::<Vec<_>>();
+    let mut faders = steps[0]
+        .1
+        .iter()
+        .map(|(f, _)| (*f, vec![]))
+        .collect::<Vec<_>>();
 
     for (d, fs) in steps {
         for (i, (_, v)) in fs.iter().enumerate() {
-            faders[i].1.push((d.clone(), *v));
+            faders[i].1.push((*d, *v));
         }
     }
 
@@ -301,14 +337,17 @@ fn build_time_steps<K: Key, F>(
     in_default: K::Value,
     out_default: K::Value,
     value_producer_fn: F,
-) -> Vec<(Duration, K::Value)> where F: Fn(K::Value, K::Value, f32) -> K::Value {
+) -> Vec<(Duration, K::Value)>
+    where
+        F: Fn(K::Value, K::Value, f32) -> K::Value,
+{
     let mut time_steps = Vec::new();
 
     for time in make_resolution_times(resolution, max_time) {
-        let (in_key, out_key) = find_in_out_keys(&vals, &time);
+        let (in_key, out_key) = find_in_out_keys(vals, &time);
 
-        let (in_t, in_v, left_e) = split_in_key(in_key, &vals, in_default.clone());
-        let (out_t, out_v, right_e) = split_out_key(out_key, &vals, max_time, out_default.clone());
+        let (in_t, in_v, left_e) = split_in_key(in_key, vals, in_default.clone());
+        let (out_t, out_v, right_e) = split_out_key(out_key, vals, max_time, out_default.clone());
 
         let t = get_t(in_t, out_t, time);
         let easing = Easing::new(left_e, right_e);
@@ -332,9 +371,9 @@ impl Iterator for ResolutionTimeIter {
     type Item = Duration;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let cur = self.current.clone();
+        let cur = self.current;
 
-        self.current = self.current + self.resolution;
+        self.current += self.resolution;
 
         if cur > self.max {
             None

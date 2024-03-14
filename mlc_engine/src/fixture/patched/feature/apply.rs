@@ -1,6 +1,7 @@
-use mlc_common::patched::feature::{Dimmer, FeatureSetRequest, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation};
-use crate::runtime::{RuntimeData};
-
+use crate::runtime::RuntimeData;
+use mlc_common::patched::feature::{
+    Dimmer, FeatureSetRequest, FeatureTile, FixtureFeature, PanTilt, Rgb, Rotation,
+};
 
 pub trait ApplyFeature {
     async fn apply(&self, req: FeatureSetRequest, runtime_data: &RuntimeData);
@@ -30,7 +31,7 @@ impl ApplyFeature for Vec<FixtureFeature> {
                         &[(rgb.red, red), (rgb.blue, blue), (rgb.green, green)],
                         runtime_data,
                     )
-                        .await;
+                    .await;
                 }
             }
             FeatureSetRequest::Rotation { value } => {

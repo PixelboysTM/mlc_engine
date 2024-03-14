@@ -1,14 +1,10 @@
-use std::collections::HashMap;
 use std::num::ParseIntError;
 use std::ops::Deref;
 
 use rocket::request::FromParam;
 use schemars::JsonSchema;
-use mlc_common::config::{FixtureChannel, FixtureMode, ValueResolution};
 
-use mlc_common::patched::{UniverseAddress, UniverseId};
-use mlc_common::universe::{FixtureUniverse, UNIVERSE_SIZE};
-
+use mlc_common::patched::UniverseId;
 
 #[derive(JsonSchema)]
 pub struct Wrapper(UniverseId);

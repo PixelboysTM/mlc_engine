@@ -1,19 +1,18 @@
-use chrono::{DateTime, Local};
 use rocket::{
     fairing::{Fairing, Kind},
-    get, post, Route,
-    routes,
+    get, post,
     serde::json::Json,
-    State, tokio::{fs, sync::broadcast::Sender},
+    tokio::{fs, sync::broadcast::Sender},
+    Route, State,
 };
+use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_okapi::{openapi, openapi_get_routes_spec};
-use rocket_okapi::okapi::merge::merge_specs;
 
 use mlc_common::{Info, ProjectDefinition, Settings};
 
 use crate::{
-    data_serving::{ProjectGuard},
+    data_serving::ProjectGuard,
     module::Module,
     project::{self, Project},
     runtime::{effects::EffectPlayerAction, RuntimeData},
@@ -86,7 +85,9 @@ async fn load_project(
         .await;
     if result.is_err() {
         eprintln!("{:?}", result.unwrap_err());
-        return result.map_err(|e| e.to_string()).map(|_| Json("".to_string()));
+        return result
+            .map_err(|e| e.to_string())
+            .map(|_| Json("".to_string()));
     }
     let mut p = project_selection.0.lock().await;
     *p = Some(name.to_string());
@@ -110,17 +111,19 @@ fn get_routes() -> (Vec<Route>, OpenApi) {
 pub struct SettingsModule;
 
 impl Module for SettingsModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
-        let (routes, s) = openapi_get_routes_spec![get_available_projects, load_project, get_current_project];
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
+        let (routes, s) =
+            openapi_get_routes_spec![get_available_projects, load_project, get_current_project];
         merge_specs(spec, &"/projects".to_string(), &s).expect("Merging OpenApi failed");
         let (routes2, s2) = get_routes();
         merge_specs(spec, &"/settings".to_string(), &s2).expect("Merging OpenApi failed");
         app.mount("/settings", routes2)
             .attach(ShutdownSaver)
-            .mount(
-                "/projects",
-                routes,
-            )
+            .mount("/projects", routes)
     }
 }
 

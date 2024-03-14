@@ -1,30 +1,30 @@
 use std::collections::HashMap;
 
 use chrono::Duration;
-use rocket::{get, routes, Shutdown, State};
+use mlc_common::fixture::FaderAddress;
+use mlc_common::Info;
 use rocket::fairing::AdHoc;
-use rocket::futures::{SinkExt, StreamExt};
 use rocket::futures::lock::MutexGuard;
+use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::Json;
 use rocket::time::Instant;
 use rocket::tokio::select;
 use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
-use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_routes, openapi_get_routes_spec, openapi_get_spec};
+use rocket::{get, routes, Shutdown, State};
 use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_spec};
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
-use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
-use mlc_common::fixture::FaderAddress;
-use mlc_common::Info;
+use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
-use crate::{module::Module, send};
-use crate::data_serving::{ProjectGuard};
+use crate::data_serving::ProjectGuard;
 use crate::project::{Project, ProjectI};
 use crate::runtime::effects::baking::{BakedEffect, BakedFixtureData, BakingNotification};
 use crate::runtime::effects::feature_track::FeatureTrack;
 use crate::runtime::effects::track_key::FaderKey;
+use crate::{module::Module, send};
 
 use super::{decode_msg, RuntimeData};
 
@@ -35,7 +35,11 @@ mod track_key;
 pub struct EffectModule;
 
 impl Module for EffectModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
         let (baking_tx, baking_rx) = broadcast::channel::<BakingNotification>(512);
 
         let tx = startup_effect_player(
@@ -44,8 +48,12 @@ impl Module for EffectModule {
             baking_tx.clone(),
         );
 
-        let (routes) = routes![get_effect_handler, get_effect_list, get_baking_notifications];
-        let s = openapi_get_spec![get_effect_list];
+        let routes = routes![
+            get_effect_handler,
+            get_effect_list,
+            get_baking_notifications
+        ];
+        let s = openapi_get_spec![get_effect_list, get_baking_notifications];
         merge_specs(spec, &"/effects".to_string(), &s).expect("Merging OpenApi failed");
 
         app.manage(tx)
@@ -59,10 +67,7 @@ impl Module for EffectModule {
                         .send(EffectPlayerAction::Stop);
                 })
             }))
-            .mount(
-                "/effects",
-                routes,
-            )
+            .mount("/effects", routes)
     }
 }
 
@@ -76,7 +81,7 @@ async fn get_effect_list(
     Json(
         p.effects
             .iter()
-            .map(|e| (e.name.to_string(), e.id.clone()))
+            .map(|e| (e.name.to_string(), e.id))
             .collect(),
     )
 }
@@ -105,6 +110,7 @@ pub struct FaderTrack {
 }
 
 #[derive(Debug, serde::Serialize)]
+#[allow(dead_code)]
 pub enum EffectHandlerResponse {
     EffectCreated { name: String, id: uuid::Uuid },
     EffectUpdated { id: uuid::Uuid },
@@ -173,13 +179,13 @@ async fn get_effect_handler<'a>(
     })
 }
 
-// #[openapi]
+#[openapi]
 #[get("/baking")]
-async fn get_baking_notifications<'a>(
+async fn get_baking_notifications(
     ws: WebSocket,
     mut shutdown: Shutdown,
-    tx: &'a State<Sender<BakingNotification>>,
-) -> rocket_ws::Channel<'a> {
+    tx: &State<Sender<BakingNotification>>,
+) -> rocket_ws::Channel {
     let mut rx = tx.subscribe();
 
     ws.channel(move |mut stream| {
@@ -260,7 +266,7 @@ async fn handle_msg(
             let effects = p
                 .effects
                 .iter()
-                .map(|e| (e.name.clone(), e.id.clone()))
+                .map(|e| (e.name.clone(), e.id))
                 .collect();
             let _ = stream
                 .send(make_msg(&EffectHandlerResponse::EffectList { effects }))
@@ -270,9 +276,9 @@ async fn handle_msg(
 }
 
 fn validate_effect_name(name: String) -> String {
-    let parts = name.split("/");
+    let parts = name.split('/');
     parts.map(|p| p.trim()).fold("".to_string(), |a, p| {
-        if a.len() == 0 {
+        if a.is_empty() {
             a + p
         } else {
             a + "/" + p
@@ -369,16 +375,16 @@ impl EffectPlayerI {
 
         let mut value_map = HashMap::new();
 
-        for (_, e) in &mut self.effects {
+        for e in self.effects.values_mut() {
             if !e.running || e.max_time < Duration::milliseconds(2) {
                 continue;
             }
 
-            e.current_time = e.current_time + elapsed;
+            e.current_time += elapsed;
             if e.current_time > e.max_time {
                 if e.looping {
                     while e.current_time > e.max_time {
-                        e.current_time = e.current_time - e.max_time;
+                        e.current_time -= e.max_time;
                     }
                 } else {
                     e.running = false;
@@ -387,7 +393,7 @@ impl EffectPlayerI {
 
             for f in &e.faders {
                 let mut value = 0;
-                for (i, (d, v)) in f.1.iter().enumerate() {
+                for (d, v) in f.1.iter() {
                     if &e.current_time > d {
                         value = *v;
                     }
@@ -476,9 +482,8 @@ fn get_patched_fixtures_clone(p: &MutexGuard<ProjectI>) -> BakedFixtureData {
     use get_size::GetSize;
     let patched_fixtures: Vec<_> = p
         .universes
-        .iter()
-        .map(|(id, u)| u.get_fixtures().clone())
-        .flatten()
+        .values()
+        .flat_map(|u| u.get_fixtures().clone())
         .collect();
     println!(
         "Debug: Patched fixture clone size for baking {} bytes",

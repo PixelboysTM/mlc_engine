@@ -1,11 +1,11 @@
+use crate::configure_panel::Fader;
+use crate::utils::Overlay;
+use crate::{icons, utils};
 use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeatureType};
 use mlc_common::patched::PatchedFixture;
-use crate::configure_panel::Fader;
-use crate::{icons, utils};
-use crate::utils::Overlay;
 
 #[derive(Props)]
 pub struct FTProps<'a> {
@@ -15,18 +15,24 @@ pub struct FTProps<'a> {
 
 #[component]
 pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
-    let features = cx.props.info.features.iter().map(|f| f.name()).collect::<Vec<_>>();
+    let features = cx
+        .props
+        .info
+        .features
+        .iter()
+        .map(|f| f.name())
+        .collect::<Vec<_>>();
 
     let create_eval = use_eval(cx);
     let updater = use_coroutine(cx, |mut rx: UnboundedReceiver<FeatureSetRequest>| {
         let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
-        let fix_id = cx.props.info.id.clone();
+        let fix_id = cx.props.info.id;
         async move {
             let ws = utils::ws(&format!(
                 "ws://{}/runtime/feature/{}",
                 eval.recv()
                     .await
-                    .map_err(|e| log::error!("Error"))
+                    .map_err(|e| log::error!("Error: {e:?}"))
                     .unwrap()
                     .as_str()
                     .unwrap(),
@@ -35,7 +41,9 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
 
             if let Ok(mut ws) = ws {
                 while let Some(msg) = rx.next().await {
-                    let s = ws.send(Message::Text(serde_json::to_string(&msg).unwrap())).await;
+                    let s = ws
+                        .send(Message::Text(serde_json::to_string(&msg).unwrap()))
+                        .await;
                     if s.is_err() {
                         log::error!("Error sending FeatureSetRequest: {}", s.err().unwrap());
                         break;

@@ -1,39 +1,38 @@
 use std::str::FromStr;
 
 use rocket::{
-    Data,
+    Data
+    ,
     data::ToByteUnit,
-    fairing::{Fairing, Kind},
     futures::SinkExt,
     get,
     http::Status,
     post,
-    request::{self, FromRequest},
+    request::{self, FromRequest}
+    ,
     Request,
     Responder,
-    response::status::{BadRequest, Custom},
-    Route, routes, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
+    response::status::{BadRequest, Custom}, Route, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
 };
-use rocket::http::hyper::body::HttpBody;
-use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
 use rocket_okapi::{JsonSchema, openapi, openapi_get_routes_spec, OpenApiFromRequest};
 use rocket_okapi::gen::OpenApiGenerator;
 use rocket_okapi::okapi::merge::merge_specs;
+use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
 use rocket_okapi::response::OpenApiResponderInner;
 use rocket_okapi::util::add_default_response_schema;
 use rocket_ws::WebSocket;
 use uuid::Uuid;
-use mlc_common::{FixtureInfo, Info};
 
+use mlc_common::{FixtureInfo, Info};
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
 
-use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::{
     fixture::{self},
     module::Module,
     project::Project,
 };
+use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::fixture::Wrapper;
 
 #[openapi(tag = "Data Serving")]
@@ -99,11 +98,14 @@ async fn add_fixture_ofl(
     name: &str,
     _g: ProjectGuard,
 ) -> Result<(), BadRequest<String>> {
-    let data = reqwest::get(format!("https://open-fixture-library.org/{}/{}.aglight", manufacturer, name)).await.map_err(|e| BadRequest(e.to_string()))?;
+    let data = reqwest::get(format!(
+        "https://open-fixture-library.org/{}/{}.aglight",
+        manufacturer, name
+    ))
+        .await
+        .map_err(|e| BadRequest(e.to_string()))?;
     let json = data.text().await.map_err(|e| BadRequest(e.to_string()))?;
-    let fix = fixture::parse_fixture(&json).map_err(|e| {
-        BadRequest(e.to_string())
-    })?;
+    let fix = fixture::parse_fixture(&json).map_err(|e| BadRequest(e.to_string()))?;
     for fixture in fix {
         project.insert_fixture(fixture, info).await;
     }
@@ -257,7 +259,11 @@ fn get_routes() -> (Vec<Route>, OpenApi) {
 pub struct DataServingModule;
 
 impl Module for DataServingModule {
-    fn setup(&self, app: rocket::Rocket<rocket::Build>, spec: &mut OpenApi) -> rocket::Rocket<rocket::Build> {
+    fn setup(
+        &self,
+        app: rocket::Rocket<rocket::Build>,
+        spec: &mut OpenApi,
+    ) -> rocket::Rocket<rocket::Build> {
         let (routes, s) = get_routes();
         merge_specs(spec, &"/data".to_string(), &s).expect("Merging OpenAPi failed");
         app.mount("/data", routes)

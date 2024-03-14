@@ -6,11 +6,11 @@ use rocket::{
     tokio::sync::broadcast::Sender,
 };
 
-use mlc_common::{Info, ProjectDefinition, Settings};
 use mlc_common::config::FixtureType;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{Info, ProjectDefinition, Settings};
 
 use crate::{
     runtime::{
@@ -103,7 +103,7 @@ impl Project {
         }
 
         runtime.adapt(self, true).await;
-        effect_handler.send(EffectPlayerAction::Rebake);
+        send!(effect_handler, EffectPlayerAction::Rebake);
         send!(info, Info::ProjectLoaded);
 
         Ok(())
@@ -262,7 +262,6 @@ impl Default for Project {
         }
     }
 }
-
 
 fn get_project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("de", "pixelboystm", "mlc_engine")
