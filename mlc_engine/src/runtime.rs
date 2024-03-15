@@ -44,8 +44,8 @@ pub mod endpoints;
 #[derive(Debug)]
 struct RuntimeI {
     universe_values: HashMap<UniverseId, [u8; UNIVERSE_SIZE]>,
-    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>,
     //TODO: Only one Sender needed
+    end_points: HashMap<UniverseId, Vec<Sender<EndpointData>>>,
     sender: Sender<RuntimeUpdate>,
 }
 
@@ -284,6 +284,12 @@ impl Module for RuntimeModule {
     }
 }
 
+/// # Fader values 'get'
+/// Upgrades to a WebSocket which receives updates about changing Dmx Fader Values in universes
+///
+/// Send a UniverseId to get an exclusive update of that specified Universe.
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Runtime")]
 #[get("/fader-values/get")]
 async fn get_value_updates(
@@ -342,6 +348,10 @@ fn decode_msg<'a, T: serde::Deserialize<'a>>(msg: &'a Message) -> Option<T> {
     None
 }
 
+/// # Fader values 'set'
+/// Send [`mlc_common::FaderUpdateRequest`] to set one or multiple Dmx Channels directly
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Runtime")]
 #[get("/fader-values/set")]
 async fn set_value(
@@ -375,6 +385,10 @@ async fn set_value(
     })
 }
 
+/// # Endpoints get
+/// Returns the current [EndpointConfig][`mlc_common::endpoints::EndPointConfig`] of the project
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Runtime")]
 #[get("/endpoints/get")]
 async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json<EndPointConfig> {
@@ -382,6 +396,10 @@ async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json
     Json(config)
 }
 
+/// # Endpoints set
+/// Updates the current endpoint config and reloads all associated services
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Runtime")]
 #[post("/endpoints/set", data = "<data>")]
 async fn set_endpoint_config(

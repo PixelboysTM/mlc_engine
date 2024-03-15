@@ -19,6 +19,10 @@ use crate::{
     ui_serving::ProjectSelection,
 };
 
+/// # Get Settings
+/// Returns the current project settings
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Settings")]
 #[get("/get")]
 async fn get_settings(
@@ -29,6 +33,10 @@ async fn get_settings(
     Ok(Json(settings))
 }
 
+/// # Update Settings
+/// Updates the current Project settings with settings Json provided in the body
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Settings")]
 #[post("/update", data = "<settings>")]
 async fn update_settings(
@@ -43,6 +51,10 @@ async fn update_settings(
         .map_err(|e| e.to_string())
 }
 
+/// # List Projects
+/// Returns a [`mlc_common::ProjectDefinition`] List of all available Projects.
+///
+/// Updates available Projects fresh from files on disk each time
 #[openapi(tag = "Projects")]
 #[get("/projects-list")]
 async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
@@ -66,6 +78,12 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
     Json(projects)
 }
 
+/// # Load Project
+/// When no project is currently loaded the project with the specified name is loaded.
+///
+/// Else an error String is returned.
+///
+/// TODO: Make into async EventStream for loading progress
 #[openapi(tag = "Projects")]
 #[get("/load/<name>")]
 async fn load_project(
@@ -95,6 +113,12 @@ async fn load_project(
     Ok(Json("Loaded succsessful".to_string()))
 }
 
+/// # Get current Project
+/// Returns the [`mlc_common::ProjectDefinition`] of the current loaded project.
+///
+/// Note: Definition is derived from Project and not read from disk.
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(ignore = "_g", tag = "Projects")]
 #[get("/current")]
 async fn get_current_project(

@@ -71,6 +71,10 @@ impl Module for EffectModule {
     }
 }
 
+/// # Get Effects
+/// Returns a List of Tuples ([`String`], [`uuid::Uuid`]) containing the projects Effects names and ids.
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Effects")]
 #[get("/get")]
 async fn get_effect_list(
@@ -141,7 +145,7 @@ pub enum EffectHandlerRequest {
     List,
 }
 
-#[openapi]
+// #[openapi]
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
