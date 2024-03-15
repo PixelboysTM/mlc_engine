@@ -35,15 +35,17 @@ use crate::{
 use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
 use crate::fixture::Wrapper;
 
+/// # Info
+/// Upgrades to a WebSocket on which general Information can be received.
+/// For more information and a List on messages that can be received see [`mlc_common::Info`]
 #[openapi(tag = "Data Serving")]
 #[get("/info")]
-async fn gen_info(
+pub async fn gen_info(
     ws: WebSocket,
     tx: &State<Sender<Info>>,
     mut shutdown: rocket::Shutdown,
-) -> rocket_ws::Channel<'_> {
+) -> rocket_ws::Channel {
     let mut rx = tx.subscribe();
-
     ws.channel(move |mut stream| {
         Box::pin(async move {
             loop {
@@ -71,6 +73,9 @@ async fn gen_info(
     })
 }
 
+/// # Get Fixture Types
+/// Returns a list of all FixtureTypes in the current project.
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/get/fixture-types")]
 async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<FixtureInfo>> {
@@ -89,6 +94,16 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
     )
 }
 
+/// # Add Fixture Ofl
+/// Add a new Fixture Type by querying an 'AG Light' Json from http://open-fixture-library.org/
+///
+/// On Success: Nothing is returned
+///
+/// On Failure: A Bad Request is returned with an error String.
+///
+/// Note: The MLC host must be connected to the internet
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/add/fixture-ofl/<manufacturer>/<name>")]
 async fn add_fixture_ofl(
@@ -112,6 +127,14 @@ async fn add_fixture_ofl(
     Ok(())
 }
 
+/// # Add Fixture
+/// Add a new Fixture Type using raw AG Light Json
+///
+/// On Success: Nothing is returned
+///
+/// On Failure: BadRequest is returned with an error String
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[post("/add/fixture", data = "<data>")]
 async fn add_fixture(
@@ -137,6 +160,10 @@ async fn add_fixture(
     Ok(())
 }
 
+/// # Get universes
+/// Returns a List of Universe Ids. Normally this will be a List of ascending Integers starting at 1
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/universes")]
 async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<UniverseId>> {
@@ -145,6 +172,12 @@ async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<U
     Json(data)
 }
 
+/// # Get Universe
+/// Returns the [`mlc_common::FixtureUniverse`] of the requested UniverseId.
+///
+/// Returns an empty Json when the UniverseId is not valid in the current Project
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/universes/<id>")]
 async fn get_universe(
@@ -160,6 +193,10 @@ async fn get_universe(
     }
 }
 
+/// # Save
+/// Saves the current project
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/save")]
 async fn save_project(
@@ -185,7 +222,7 @@ enum PatchResult {
     Failed(String),
 
     #[response(status = 200)]
-    Succsess(String),
+    Success(String),
 }
 
 impl OpenApiResponderInner for PatchResult {
@@ -196,6 +233,10 @@ impl OpenApiResponderInner for PatchResult {
     }
 }
 
+/// # Patch Fixture
+/// Will be extended and Documented when done so
+///
+/// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/patch/<id>/<mode>?<create>")]
 fn patch_fixture(
@@ -236,7 +277,7 @@ fn patch_fixture(
             .try_patch(&fixture, mode, create, info, runtime)
             .await;
         if r.is_some() {
-            return PatchResult::Succsess("Patching successful".to_string());
+            return PatchResult::Success("Patching successful".to_string());
         }
 
         PatchResult::Failed("Patching failed".to_owned())
@@ -270,6 +311,12 @@ impl Module for DataServingModule {
     }
 }
 
+/// # Project Guard
+/// When used in a request as a Parameter checks whether a valid Project is loaded. If **not** so the Request is cancelled with an error.
+///
+/// Use this to ensure a valid project is loaded before project data is changed or queried.
+///
+/// Note: This does not Provide you with the Project itself, for that you need to Request a separate State `&State<Project>`. This Guard only guarantees you that you can safely use the Project provided.
 #[derive(JsonSchema, OpenApiFromRequest)]
 pub struct ProjectGuard;
 
@@ -285,29 +332,3 @@ impl<'r> FromRequest<'r> for ProjectGuard {
         }
     }
 }
-
-// #[rocket::async_trait]
-// impl Fairing for ProjectGuard {
-//     fn info(&self) -> rocket::fairing::Info {
-//         rocket::fairing::Info {
-//             name: "Project Guard",
-//             kind: Kind::Request,
-//         }
-//     }
-
-//     async fn on_request<'life0, 'life1, 'life2, 'life3, 'life4>(
-//         &'life0 self,
-//         req: &'life1 mut rocket::Request<'life2>,
-//         _data: &'life3 mut Data<'life4>,
-//     ) where
-//         'life0: 'async_trait,
-//         'life1: 'async_trait,
-//         'life2: 'async_trait,
-//         'life3: 'async_trait,
-//         'life4: 'async_trait,
-//     {
-//         if let Some(r) = &req.route() {
-//             r.
-//         }
-//     }
-// }

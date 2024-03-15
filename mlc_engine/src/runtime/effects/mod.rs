@@ -141,7 +141,7 @@ pub enum EffectHandlerRequest {
     List,
 }
 
-// #[openapi]
+#[openapi]
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
@@ -179,7 +179,11 @@ async fn get_effect_handler<'a>(
     })
 }
 
-#[openapi]
+/// # Baking notifications
+/// Upgrades to a WebSocket connection on which updates about baking processes
+///
+/// [Guarded][`ProjectGuard`]
+#[openapi(tag = "Effects")]
 #[get("/baking")]
 async fn get_baking_notifications(
     ws: WebSocket,

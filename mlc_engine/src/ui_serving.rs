@@ -34,6 +34,10 @@ impl OpenApiResponderInner for UiResponse {
     }
 }
 
+/// # File serving
+/// Route that serves all Misc files needed for the ui to work such as js, WebAssembly, CSS, etc.
+///
+/// Note: File extension can be omitted for html files. (GET /some-random-html.html -> GET /some-random-html)
 #[openapi(tag = "UI Serving")]
 #[get("/<file..>")]
 async fn files(file: PathBuf) -> Option<NamedFile> {
@@ -46,6 +50,9 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
     }
 }
 
+/// # Index
+/// Checks whether a valid Project is loaded and if so continues to serve the normal MLC UI.
+/// If no valid Project is loaded a redirect to the Project Browser is returned.
 #[openapi(tag = "UI Serving")]
 #[get("/")]
 async fn index(project_selection: &State<ProjectSelection>) -> UiResponse {
@@ -63,6 +70,9 @@ async fn index(project_selection: &State<ProjectSelection>) -> UiResponse {
     }
 }
 
+/// # Project Browser
+/// Checks whether a valid Project is loaded and when **not** so displays the Project Browser UI.
+/// If a valid Project is loaded a redirect to the Index is returned.
 #[openapi(tag = "UI Serving")]
 #[get("/projects")]
 async fn projects(project_selection: &State<ProjectSelection>) -> UiResponse {
@@ -80,6 +90,9 @@ async fn projects(project_selection: &State<ProjectSelection>) -> UiResponse {
     }
 }
 
+/// # 3D Viewer
+/// Checks whether a valid project is loaded and if so displays the 3D Viewer in a seperate window.
+/// Otherwise, returns an Error page.
 #[openapi(tag = "UI Serving")]
 #[get("/viewer3d")]
 async fn viewer3d(project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
