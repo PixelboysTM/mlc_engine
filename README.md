@@ -1,7 +1,13 @@
-Threlte https://threlte.xyz/docs/learn/getting-started/introduction
+# Marvin Light Control
 
-Melt UI https://melt-ui.com/
+## Links for later
 
 sACNView https://sacnview.org/
 
-New Icons? https://lucide.dev/icons/?search=gear
+Icons https://lucide.dev/icons/?search=gear
+
+## Todo
+
+- [] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name`
+- [] Write a real Redme
+- [] Add a License
