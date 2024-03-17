@@ -33,10 +33,16 @@ pub fn Headbar(cx: Scope) -> Element {
 
         div {
             class: "headbar",
-            img {
-                class: "iconMarvin",
-                src: "./images/icon.png",
-                alt: "MLC",
+            div {
+                class: "left",
+                img {
+                    class: "iconMarvin",
+                    src: "./images/icon.png",
+                    alt: "MLC",
+                },
+                h1 {
+                    "MLC"
+                }
             }
             div {
                 class: "tabs",

@@ -282,6 +282,25 @@ button:hover {
         place-content: end;
     }
 
+    .left {
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+        width: fit-content;
+
+        h1 {
+            margin: auto 0;
+            padding: 0 0 0 0.25rem;
+            font-size: 2rem;
+            text-align: center;
+            /*background-image: linear-gradient(90deg, rgba(255, 0, 0, 1) 0%, rgba(0, 255, 0, 1) 33%, rgba(0, 0, 255, 1) 66%, rgba(255, 0, 0, 1) 100%);;*/
+            background-image: linear-gradient(90deg, #007f46 0%, var(--color-accent) 100%);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            user-select: none;
+        }
+    }
+
     .sel.configure {
         color: var(--color-accent);
     }
@@ -294,6 +313,7 @@ button:hover {
         color: var(--color-tertiary);
     }
 }
+
 
 .rgb-widget {
     width: 100%;
