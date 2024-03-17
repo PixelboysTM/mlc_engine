@@ -19,6 +19,10 @@ We do **not** recommend using MLC in any situations that go beyond playing aroun
 
 > [SACNView](https://sacnview.org/) is a great tool for debugging and viewing raw sACN output.
 
+> For debugging purposes Swagger and Rapidoc is supported under (/api /rapi)
+
+> MLC works towards supporting all fixtures from [OFL](https://open-fixture-library.org/) out of the box.
+
 ## Usage
 
 While the Project is in early development no prebuilt executables are provided.
