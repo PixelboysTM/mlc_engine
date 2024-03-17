@@ -1,5 +1,7 @@
 # Marvin Light Control
 
+![MLC](/images/mlc_configure_page.png)
+
 Marvin Light Control (MLC for short) is a DmxShow Creation and Playback tool.
 It utilizes a Timeline based approach to time and playback Light and Stage effects.
 The Dmx protocol with its wide use cases and Network adaptions makes it highly compatible with most common stage
