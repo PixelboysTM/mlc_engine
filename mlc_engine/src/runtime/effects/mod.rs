@@ -48,11 +48,12 @@ impl Module for EffectModule {
             baking_tx.clone(),
         );
 
-        let (routes, s) = openapi_get_routes_spec![
+        let routes = routes![
             get_effect_handler,
             get_effect_list,
             get_baking_notifications
         ];
+        let s = openapi_get_spec![get_effect_list, get_baking_notifications];
         merge_specs(spec, &"/effects".to_string(), &s).expect("Merging OpenApi failed");
 
         app.manage(tx)
@@ -144,13 +145,7 @@ pub enum EffectHandlerRequest {
     List,
 }
 
-/// # Effect Handler
-/// Opens a WebSocket connection to control effect creation and playback.
-///
-/// See [EffectHandlerRequest]
-///
-/// [Guarded][ProjectGuard]
-#[openapi(tag = "Effects")]
+// #[openapi]
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
