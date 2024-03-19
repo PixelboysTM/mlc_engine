@@ -23,5 +23,6 @@ tap = "*"
 get-size = { version = "0.1.4", features = ["derive"] }
 mlc_common = { path = "../mlc_common" }
 reqwest = "0.11.24"
-rocket_okapi = { version = "0.8.0", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] }
+#rocket_okapi = { version = "0.8.0", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] }
+rocket_okapi = { path = "../../okapi/rocket-okapi", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] } #TODO: Only until pull request is merged and release is made
 schemars = { version = "0.8.16", features = ["derive", "uuid1", "chrono"] }

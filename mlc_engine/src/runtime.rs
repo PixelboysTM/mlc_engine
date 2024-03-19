@@ -8,7 +8,7 @@ use std::{
 
 use rocket::{
     futures::{SinkExt, StreamExt},
-    get, post, routes,
+    get, post,
     serde::json::Json,
     tokio::{
         select,
@@ -22,7 +22,7 @@ use rocket::{
 };
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_spec};
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_ws::{Message, WebSocket};
 
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
@@ -260,19 +260,12 @@ impl Module for RuntimeModule {
     ) -> rocket::Rocket<rocket::Build> {
         let (tx, rx) = broadcast::channel::<RuntimeUpdate>(512);
 
-        let routes = routes![
+        let (routes, s) = openapi_get_routes_spec![
             get_value_updates,
             set_value,
             get_endpoint_config,
             set_endpoint_config,
             set_feature
-        ];
-
-        let s = openapi_get_spec![
-            get_value_updates,
-            set_value,
-            get_endpoint_config,
-            set_endpoint_config,
         ];
         merge_specs(spec, &"/runtime".to_string(), &s).expect("Failed merging OpenApi");
 
@@ -414,7 +407,13 @@ async fn set_endpoint_config(
     send!(tx, Info::EndpointConfigChanged);
 }
 
-// #[openapi]
+/// # Set Feature
+/// Opens a WebSocket to a specific patched fixture. To manually control its features.
+///
+/// See [FeatureSetRequest][`mlc_common::patched::feature::FeatureSetRequest`]
+///
+/// [Guarded][`ProjectGuard`]
+#[openapi(tag = "Runtime")]
 #[get("/feature/<fix_id>")]
 async fn set_feature<'a>(
     ws: WebSocket,
