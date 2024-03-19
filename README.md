@@ -45,7 +45,8 @@ To run MLC on your local machine the following steps will help you:
 
 ## Todo
 
-- [ ] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name`
+- [X] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name` (Requires local
+  copy of my fork untill merged)
 - [X] Write a real Readme
 - [ ] Add a License
 - [ ] Reorganize mlc_common code and cleanup empty modules in mlc_engine

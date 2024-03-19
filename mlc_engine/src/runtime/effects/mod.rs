@@ -13,7 +13,7 @@ use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
 use rocket::{get, routes, Shutdown, State};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_spec};
+use rocket_okapi::{openapi, openapi_get_routes_spec, openapi_get_spec};
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
 use serde_with::serde_as;
@@ -48,12 +48,11 @@ impl Module for EffectModule {
             baking_tx.clone(),
         );
 
-        let routes = routes![
+        let (routes, s) = openapi_get_routes_spec![
             get_effect_handler,
             get_effect_list,
             get_baking_notifications
         ];
-        let s = openapi_get_spec![get_effect_list, get_baking_notifications];
         merge_specs(spec, &"/effects".to_string(), &s).expect("Merging OpenApi failed");
 
         app.manage(tx)
@@ -145,7 +144,13 @@ pub enum EffectHandlerRequest {
     List,
 }
 
-// #[openapi]
+/// # Effect Handler
+/// Opens a WebSocket connection to control effect creation and playback.
+///
+/// See [EffectHandlerRequest]
+///
+/// [Guarded][ProjectGuard]
+#[openapi(tag = "Effects")]
 #[get("/effectHandler")]
 async fn get_effect_handler<'a>(
     ws: WebSocket,
