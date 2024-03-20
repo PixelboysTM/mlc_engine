@@ -5,11 +5,13 @@ use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
+use crate::runtime::endpoints::enttec_usb::EnttecUsb;
 
 use self::{artnet::ArtNetEndpoint, sacn::SacnEndpoint};
 
 mod artnet;
 mod sacn;
+mod enttec_usb;
 
 macro_rules! register_default {
     ($type:ty, $rx:expr) => {
@@ -35,12 +37,14 @@ impl CreateEndpoints for EndPointConfig {
                     EPConfigItem::ArtNet => {
                         register_default!(ArtNetEndpoint, rx);
                     }
+                    EPConfigItem::EnttecUsb => {
+                        register_default!(EnttecUsb, rx);
+                    }
                     EPConfigItem::Sacn { universe, speed } => SacnEndpoint {
                         universe: *universe,
                         speed: speed.clone(),
                         ..Default::default()
-                    }
-                    .register(rx),
+                    }.register(rx),
                 }
                 point.push(tx);
             }

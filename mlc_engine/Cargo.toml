@@ -18,6 +18,7 @@ pollster = { version = "*" }
 chrono = { version = "*", features = ["serde"] }
 artnet_protocol = "0.4.2"
 sacn = "0.4.4"
+enttecopendmx = "0.1.1"
 regex = { version = "*" }
 tap = "*"
 get-size = { version = "0.1.4", features = ["derive"] }

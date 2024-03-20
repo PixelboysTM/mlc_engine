@@ -13,6 +13,7 @@ pub enum EPConfigItem {
     Logger,
     ArtNet,
     Sacn { universe: u16, speed: Speed },
+    EnttecUsb,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]
