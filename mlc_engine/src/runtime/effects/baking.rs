@@ -2,16 +2,19 @@ use std::collections::HashMap;
 use std::slice::Iter;
 
 use chrono::Duration;
+use tap::Tap;
+
+use feature_tile_to_raw as to_raw;
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeature;
 use mlc_common::patched::PatchedFixture;
-use tap::{Tap};
 
+use crate::fixture::feature::feature_tile_to_raw;
+use crate::runtime::effects::{Effect, FaderTrack, Track};
 use crate::runtime::effects::feature_track::{
     D3PercentTrack, FeatureTrack, FeatureTrackDetail, PercentTrack, RotationTrack,
 };
 use crate::runtime::effects::track_key::{D3PercentageKey, Key, PercentageKey, RotationKey};
-use crate::runtime::effects::{Effect, FaderTrack, Track};
 use crate::utils::easing::{Easing, EasingType};
 
 pub type BakedEffectCue = Vec<(Duration, u8)>;
@@ -145,7 +148,7 @@ async fn bake_feature_track_single_percent(
         in_v + (out_v - in_v) * val
     });
 
-    convert_to_cues::<PercentageKey, _>(&time_steps, |v| feature_tile.to_raw(v))
+    convert_to_cues::<PercentageKey, _>(&time_steps, |v| to_raw(feature_tile, v))
 }
 
 async fn bake_feature_track_single_rotation(
@@ -173,9 +176,9 @@ async fn bake_feature_track_single_rotation(
 
     convert_to_cues::<RotationKey, _>(&time_steps, |v| {
         if v >= &0.0 {
-            feature_tile_cw.to_raw(&(*v / 1.0))
+            to_raw(feature_tile_cw, &(*v / 1.0))
         } else {
-            feature_tile_ccw.to_raw(&(v.abs() / 1.0))
+            to_raw(feature_tile_ccw, &(v.abs() / 1.0))
         }
     })
 }
@@ -215,7 +218,7 @@ async fn bake_feature_track_three_percent(
     );
 
     convert_to_cues::<D3PercentageKey, _>(&time_steps, |v| {
-        [d1.to_raw(&v.0), d2.to_raw(&v.1), d3.to_raw(&v.2)]
+        [to_raw(d1, &v.0), to_raw(d2, &v.1), to_raw(d3, &v.2)]
             .iter()
             .flatten()
             .copied()
@@ -303,7 +306,7 @@ fn get_t(in_t: Duration, out_t: Duration, time: Duration) -> f32 {
 }
 
 fn convert_to_cues<K: Key, F: Fn(&K::Value) -> Vec<(FaderAddress, u8)>>(
-    time_steps: &Vec<(Duration, K::Value)>,
+    time_steps: &[(Duration, K::Value)],
     to_raw_val_fun: F,
 ) -> Vec<(FaderAddress, Vec<(Duration, u8)>)> {
     if time_steps.is_empty() {

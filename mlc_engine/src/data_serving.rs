@@ -33,7 +33,7 @@ use crate::{
     project::Project,
 };
 use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
-use crate::fixture::Wrapper;
+use crate::fixture::UniverseIdParam;
 
 /// # Info
 /// Upgrades to a WebSocket on which general Information can be received.
@@ -65,7 +65,6 @@ pub async fn gen_info(
                         break;
                     },
                 }
-                ;
             }
 
             Ok(())
@@ -86,8 +85,8 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
             .await
             .iter()
             .map(|f| FixtureInfo {
-                id: *f.get_id(),
-                name: f.get_name().to_string(),
+                id: f.id,
+                name: f.name.clone(),
                 modes: f.get_modes().to_vec(),
             })
             .collect::<Vec<FixtureInfo>>(),
@@ -181,7 +180,7 @@ async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<U
 #[openapi(tag = "Data Serving")]
 #[get("/universes/<id>")]
 async fn get_universe(
-    id: Wrapper,
+    id: UniverseIdParam,
     project: &State<Project>,
     _g: ProjectGuard,
 ) -> Json<Option<FixtureUniverse>> {
@@ -260,9 +259,8 @@ fn patch_fixture(
             .get_fixtures()
             .await
             .iter()
-            .find(|f| f.get_id() == &f_id)
+            .find(|f| f.id == f_id)
             .cloned();
-        // .ok_or("Id is not a valid FixtureType".to_string())?;
         if fixture.is_none() {
             return PatchResult::IdInvalid("Id is not a valid FixtureType".to_string());
         }

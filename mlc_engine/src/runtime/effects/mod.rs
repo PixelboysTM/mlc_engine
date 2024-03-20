@@ -1,30 +1,31 @@
 use std::collections::HashMap;
 
 use chrono::Duration;
-use mlc_common::fixture::FaderAddress;
-use mlc_common::Info;
+use rocket::{get, Shutdown, State};
 use rocket::fairing::AdHoc;
-use rocket::futures::lock::MutexGuard;
 use rocket::futures::{SinkExt, StreamExt};
+use rocket::futures::lock::MutexGuard;
 use rocket::serde::json::Json;
 use rocket::time::Instant;
 use rocket::tokio::select;
 use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
-use rocket::{get, Shutdown, State};
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
+use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
-use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
+use mlc_common::fixture::FaderAddress;
+use mlc_common::Info;
+
+use crate::{module::Module, send};
 use crate::data_serving::ProjectGuard;
 use crate::project::{Project, ProjectI};
 use crate::runtime::effects::baking::{BakedEffect, BakedFixtureData, BakingNotification};
 use crate::runtime::effects::feature_track::FeatureTrack;
 use crate::runtime::effects::track_key::FaderKey;
-use crate::{module::Module, send};
 
 use super::{decode_msg, RuntimeData};
 
@@ -496,7 +497,7 @@ fn get_patched_fixtures_clone(p: &MutexGuard<ProjectI>) -> BakedFixtureData {
     let patched_fixtures: Vec<_> = p
         .universes
         .values()
-        .flat_map(|u| u.get_fixtures().clone())
+        .flat_map(|u| u.fixtures.clone())
         .collect();
     println!(
         "Debug: Patched fixture clone size for baking {} bytes",

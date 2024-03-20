@@ -1,4 +1,3 @@
-use mlc_common::endpoints::EndPointConfig;
 use std::{
     collections::{hash_map::Entry, HashMap},
     str::FromStr,
@@ -10,7 +9,8 @@ use rocket::{
     futures::{SinkExt, StreamExt},
     get, post,
     serde::json::Json,
-    tokio::{
+    Shutdown,
+    State, tokio::{
         select,
         sync::{
             broadcast::{self, Receiver, Sender},
@@ -18,23 +18,25 @@ use rocket::{
         },
         time::sleep,
     },
-    Shutdown, State,
 };
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_ws::{Message, WebSocket};
 
-use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
-use mlc_common::patched::{UniverseAddress, UniverseId};
-use mlc_common::universe::UNIVERSE_SIZE;
 use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
+use mlc_common::config::DmxRange;
+use mlc_common::endpoints::EndPointConfig;
+use mlc_common::patched::{UniverseAddress, UniverseId};
+use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
+use mlc_common::universe::UNIVERSE_SIZE;
 
-use crate::runtime::endpoints::CreateEndpoints;
 use crate::{
-    data_serving::ProjectGuard, fixture::feature::apply::ApplyFeature, module::Module,
+    data_serving::ProjectGuard, module::Module,
     project::Project, send,
 };
+use crate::fixture::feature::ApplyFeature;
+use crate::runtime::endpoints::CreateEndpoints;
 
 use self::{effects::EffectModule, endpoints::EndpointData};
 
@@ -319,7 +321,6 @@ async fn get_value_updates(
                         break;
                     }
                 }
-                ;
             }
 
             Ok(())
@@ -370,7 +371,6 @@ async fn set_value(
                         break;
                     },
                 }
-                ;
             }
 
             Ok(())
@@ -429,7 +429,7 @@ async fn set_feature<'a>(
         let universes = project.get_universes().await;
         for universe in universes {
             let u = project.get_universe(&universe).await.expect("Queried");
-            let fs = u.get_fixtures();
+            let fs = &u.fixtures;
             for f in fs {
                 if f.id == id {
                     return Some(f.features.clone());
@@ -470,7 +470,6 @@ async fn set_feature<'a>(
                                 break;
                             }
                         }
-                        ;
                     }
                 }
             }
@@ -478,3 +477,37 @@ async fn set_feature<'a>(
         })
     })
 }
+
+
+pub trait ToFaderValue {
+    fn to_fader_value(&self) -> u8;
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8;
+    fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8);
+    fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8);
+}
+
+impl ToFaderValue for f32 {
+    fn to_fader_value(&self) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (255.0 * v) as u8
+    }
+
+    fn to_fader_value_range(&self, range: &DmxRange) -> u8 {
+        let v = self.min(1.0).max(0.0);
+        (range.range(0, 255) as f32 * v) as u8 + range.start.to_value(0, 255) as u8
+    }
+
+    fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8) {
+        let v = self.min(1.0).max(0.0);
+        let val = (range.range(0, 65535) as f32 * v) as u16 + range.start.to_value(0, 65535) as u16;
+        ((val >> 8) as u8, val as u8)
+    }
+
+    fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
+        let v = self.min(1.0).max(0.0);
+        let val =
+            (range.range(0, 16777215) as f32 * v) as u32 + range.start.to_value(0, 16777215);
+        ((val >> 16) as u8, (val >> 8) as u8, val as u8)
+    }
+}
+

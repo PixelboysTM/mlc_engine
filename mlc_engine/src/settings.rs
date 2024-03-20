@@ -1,15 +1,15 @@
 use rocket::{
     fairing::{Fairing, Kind},
     get, post,
+    Route,
     serde::json::Json,
-    tokio::{fs, sync::broadcast::Sender},
-    Route, State,
+    State, tokio::{fs, sync::broadcast::Sender},
 };
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 
-use mlc_common::{Info, ProjectDefinition, Settings};
+use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 
 use crate::{
     data_serving::ProjectGuard,
@@ -28,7 +28,7 @@ use crate::{
 async fn get_settings(
     project: &State<Project>,
     _g: ProjectGuard,
-) -> Result<Json<Settings>, String> {
+) -> Result<Json<ProjectSettings>, String> {
     let settings = project.get_settings().await;
     Ok(Json(settings))
 }
@@ -41,7 +41,7 @@ async fn get_settings(
 #[post("/update", data = "<settings>")]
 async fn update_settings(
     project: &State<Project>,
-    settings: Json<Settings>,
+    settings: Json<ProjectSettings>,
     _g: ProjectGuard,
 ) -> Result<Json<String>, String> {
     project
@@ -175,7 +175,7 @@ impl Fairing for ShutdownSaver {
         Box::pin(async {
             let project: Option<&Project> = rocket.state();
             if let Some(p) = project {
-                if p.get_settings().await.save_on_quit() {
+                if p.get_settings().await.save_on_quit {
                     p.save(rocket.state().unwrap()).await.unwrap();
                 }
             }

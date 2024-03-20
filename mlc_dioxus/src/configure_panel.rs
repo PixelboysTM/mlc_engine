@@ -3,21 +3,20 @@ use std::time::Duration;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::future::{select, Either};
 use futures::{SinkExt, StreamExt};
+use futures::future::{Either, select};
 use gloo_net::websocket::Message;
 
+use fixture_tester::FixtureTester;
+use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, ProjectSettings, RuntimeUpdate};
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
-use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, RuntimeUpdate, Settings};
 
-use crate::utils::Loading;
 use crate::{icons, utils};
+use crate::utils::Loading;
 
 mod fixture_tester;
-
-use fixture_tester::FixtureTester;
 
 #[component]
 pub fn ConfigurePanel(cx: Scope) -> Element {
@@ -84,7 +83,7 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
 
 #[component]
 fn ProjectSettings(cx: Scope) -> Element {
-    let settings = use_future(cx, (), |_| utils::fetch::<Settings>("/settings/get"));
+    let settings = use_future(cx, (), |_| utils::fetch::<ProjectSettings>("/settings/get"));
     let endpoint_mapping = use_state(cx, || false);
     let changed_settings = use_state(cx, || None);
     cx.render(rsx! {
@@ -132,11 +131,11 @@ fn ProjectSettings(cx: Scope) -> Element {
                                         onchange: move |v| {
                                             log::info!("{}", v.value);
                                             if let Some(_ss) = changed_settings.get() {
-                                                changed_settings.set(Some(Settings{
+                                                changed_settings.set(Some(ProjectSettings{
                                                 save_on_quit: v.value == "true",
                                                 }))
                                             } else {
-                                                changed_settings.set(Some(Settings{
+                                                changed_settings.set(Some(ProjectSettings{
                                                     save_on_quit: v.value == "true",
                                                 }))
                                             }

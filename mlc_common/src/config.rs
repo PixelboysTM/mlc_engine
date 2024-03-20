@@ -1,11 +1,12 @@
+use std::collections::HashMap;
+
 use get_size::GetSize;
 use schemars::JsonSchema;
-use serde::de::Visitor;
 use serde::{Deserialize, Serialize};
+use serde::de::Visitor;
 use serde_with::formats::PreferMany;
-use serde_with::serde_as;
 use serde_with::OneOrMany;
-use std::collections::HashMap;
+use serde_with::serde_as;
 
 pub type Value = u32;
 
@@ -14,10 +15,10 @@ Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize
 )]
 #[serde(rename_all = "camelCase")]
 pub struct FixtureType {
-    name: String,
-    categories: Vec<String>,
-    fixture_key: String,
-    manufacturer: Manufacturer,
+    pub name: String,
+    pub categories: Vec<String>,
+    pub fixture_key: String,
+    pub manufacturer: Manufacturer,
     modes: Vec<FixtureMode>,
     available_channels: HashMap<String, FixtureChannel>,
     #[serde(default)]
@@ -25,34 +26,13 @@ pub struct FixtureType {
     pub id: uuid::Uuid,
 }
 
-#[allow(unused)]
 impl FixtureType {
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn get_categories(&self) -> &[String] {
-        &self.categories
-    }
-
-    pub fn get_fixture_key(&self) -> &str {
-        &self.fixture_key
-    }
-
-    pub fn get_manufacturer(&self) -> &Manufacturer {
-        &self.manufacturer
-    }
-
     pub fn get_modes(&self) -> &[FixtureMode] {
         &self.modes
     }
 
     pub fn get_available_channels(&self) -> &HashMap<String, FixtureChannel> {
         &self.available_channels
-    }
-
-    pub fn get_id(&self) -> &uuid::Uuid {
-        &self.id
     }
 }
 
@@ -92,6 +72,7 @@ JsonSchema,
 pub enum ValueResolution {
     #[default]
     Implied,
+    //TODO: Can weg wenn imported decoupled
     #[serde(alias = "8bit")]
     U8,
     #[serde(alias = "16bit")]

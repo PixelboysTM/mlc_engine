@@ -49,7 +49,7 @@ To run MLC on your local machine the following steps will help you:
   copy of my fork untill merged)
 - [X] Write a real Readme
 - [ ] Add a License
-- [ ] Reorganize mlc_common code and cleanup empty modules in mlc_engine
+- [X] Reorganize mlc_common code and cleanup empty modules in mlc_engine
 - [ ] Decouple FixtureType Data Structure from AGLight and built separate importer
     - [ ] Add a new binary more kompakt file format for projects
 - [ ] Ui

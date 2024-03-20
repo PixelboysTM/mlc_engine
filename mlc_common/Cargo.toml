@@ -12,3 +12,4 @@ serde_with = "3.6.1"
 get-size = { version = "0.1.4", features = ["derive"] }
 uuid = { version = "1.7.0", features = ["serde", "v4", "js"] }
 schemars = { version = "0.8.16", features = ["chrono", "uuid1", "derive"] }
+macro_rules_attribute = "0.2.0"

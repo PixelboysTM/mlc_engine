@@ -6,11 +6,11 @@ use rocket::{
     tokio::sync::broadcast::Sender,
 };
 
+use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 use mlc_common::config::FixtureType;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
-use mlc_common::{Info, ProjectDefinition, Settings};
 
 use crate::{
     runtime::{
@@ -19,6 +19,7 @@ use crate::{
     },
     send,
 };
+use crate::fixture::universe as u;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct ProjectI {
@@ -35,7 +36,7 @@ pub(crate) struct ProjectI {
     //Effects
     pub(crate) effects: Vec<Effect>,
 
-    pub(crate) settings: Settings,
+    pub(crate) settings: ProjectSettings,
 
     #[serde(default)]
     pub(crate) endpoints: EndPointConfig,
@@ -197,8 +198,8 @@ impl Project {
     ) -> Option<()> {
         let mut data = self.project.lock().await;
         let universe = data.universes.get_mut(&universe_id)?;
-        if universe.can_patch(&fixture, mode_index) {
-            universe.patch(&fixture, mode_index).unwrap();
+        if u::can_patch(universe, &fixture, mode_index) {
+            u::patch(universe, &fixture, mode_index).unwrap();
             send!(info, Info::UniversePatchChanged(universe_id));
             Some(())
         } else {
@@ -206,12 +207,12 @@ impl Project {
         }
     }
 
-    pub async fn get_settings(&self) -> Settings {
+    pub async fn get_settings(&self) -> ProjectSettings {
         let data = self.project.lock().await;
         data.settings.clone()
     }
 
-    pub async fn update_settings(&self, settings: Settings) -> Result<(), &'static str> {
+    pub async fn update_settings(&self, settings: ProjectSettings) -> Result<(), &'static str> {
         let mut data = self.project.lock().await;
         data.settings = settings;
 
@@ -253,7 +254,7 @@ impl Default for Project {
                 last_edited: DateTime::default(),
                 fixtures: Vec::new(),
                 universes: s,
-                settings: Settings {
+                settings: ProjectSettings {
                     save_on_quit: false,
                 },
                 endpoints: EndPointConfig::default(),

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use mlc_common::endpoints::{EPConfigItem, EndPointConfig};
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
+use mlc_common::endpoints::{EndPointConfig, EPConfigItem};
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
 
