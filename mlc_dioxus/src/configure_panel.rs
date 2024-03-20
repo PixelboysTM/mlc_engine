@@ -373,10 +373,19 @@ struct FaderProps<'a> {
 
 #[component]
 fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
-    let val = use_state(cx, || cx.props.value);
-    let _ = use_memo(cx, &(cx.props.value, ), |(v, )| val.set(v));
+    let val = use_state(cx, || (cx.props.value, true));
+    let _ = use_memo(cx, &(cx.props.value, ), |(v, )| val.set((v, true)));
 
-    let size = use_state(cx, || 0.0);
+    use_effect(cx, (val, ), |(v, )| {
+        let (vl, ext) = v.get();
+        if !ext {
+            cx.props.onchange.call(*vl);
+        }
+        async {}
+    });
+
+    // let size = use_state(cx, || 0.0);
+    let size_e = use_state(cx, || None);
     cx.render(rsx! {
         div {
             class: "fader-container",
@@ -387,34 +396,41 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
 
             div{
                 class: "range",
-                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(*val.get() as f32 / 255.0) * 100.0}%, transparent {(*val.get() as f32 / 255.0) * 100.0}%, transparent 100%)",
+                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val.get().0 as f32 / 255.0) * 100.0}%, transparent {(val.get().0 as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
-                    log::info!("Val: {:?}", val.get());
-                    to_owned![size];
-                    async move {
-                        async_std::task::sleep(Duration::from_millis(250)).await;
-                        let s = e.get_client_rect().await;
-                        size.with_mut(|v| *v = s.unwrap().size.height);
-                    }
+                    // log::info!("Val: {:?}", val.get());
+                    // to_owned![size];
+                    // async move {
+                    //     async_std::task::sleep(Duration::from_millis(250)).await;
+                    //     let s = e.get_client_rect().await;
+                    //     size.with_mut(|v| *v = s.unwrap().size.height);
+                    // }
+                    size_e.set(Some(e.data));
 
                 },
 
                 onmousemove: move |e| {
-                    if e.data.held_buttons() == MouseButton::Primary {
-                        let p = e.data.element_coordinates();
-                        let x = (1.0 - p.y / size.get()).min(1.0).max(0.0);
-                        let v = (x * 255.0) as u8;
-                        val.set(v);
-                        cx.props.onchange.call(v);
+                    to_owned![size_e, val];
+                    async move {
+                        if e.data.held_buttons() == MouseButton::Primary {
+                            let size = size_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
+                            let p = e.data.element_coordinates();
+                            let x = (1.0 - p.y / size).min(1.0).max(0.0);
+                            let v = (x * 255.0) as u8;
+                            val.set((v, false));
+                        }
                     }
                 },
                 onmousedown: move |e| {
-                    if e.data.trigger_button() == Some(MouseButton::Primary) {
-                        let p = e.data.element_coordinates();
-                        let x = (1.0 - p.y / size.get()).min(1.0).max(0.0);
-                        let v = (x * 255.0) as u8;
-                        val.set(v);
-                        cx.props.onchange.call(v);
+                    to_owned![size_e, val];
+                    async move {
+                        if e.data.held_buttons() == MouseButton::Primary {
+                            let size = size_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
+                            let p = e.data.element_coordinates();
+                            let x = (1.0 - p.y / size).min(1.0).max(0.0);
+                            let v = (x * 255.0) as u8;
+                            val.set((v, false));
+                        }
                     }
                 }
 
@@ -422,7 +438,7 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
 
             div{
                 class: "value",
-                {make_three_digit(*val.get() as u16)}
+                {make_three_digit(val.get().0 as u16)}
             }
         }
     })
