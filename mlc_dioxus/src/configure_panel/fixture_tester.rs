@@ -1,11 +1,13 @@
-use crate::configure_panel::Fader;
-use crate::utils::Overlay;
-use crate::{icons, utils};
 use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
+
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeatureType};
 use mlc_common::patched::PatchedFixture;
+
+use crate::{icons, utils};
+use crate::configure_panel::Fader;
+use crate::utils::Overlay;
 
 #[derive(Props)]
 pub struct FTProps<'a> {
@@ -55,6 +57,7 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
         }
     });
 
+
     cx.render(rsx! {
         Overlay{
             title: "Fixture Tester".to_owned(),
@@ -63,6 +66,21 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
                 cx.props.onclose.call(());
             },
             icon: cx.render(rsx!(icons::Lamp {})),
+
+            p {
+                class: "info",
+                "Name: ",
+                span {
+                    class: "name",
+                    {cx.props.info.name.clone()}
+                },
+                " Id: ",
+                span {
+                    class: "id",
+                    {cx.props.info.id.to_string()}
+                }
+
+            }
 
             div {
                 class: "features",

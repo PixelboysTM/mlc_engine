@@ -189,7 +189,7 @@
 
         .tabs {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 0.25rem;
             border-bottom: var(--color-accent) 1px solid;
 
@@ -210,6 +210,7 @@
                 }
             }
         }
+
 
         .channels {
             display: grid;
@@ -417,9 +418,25 @@
     height: 90vh;
 }
 
-.fixture-tester {
+.overlay-content.fixture-tester {
     width: 70vw;
     height: 90vh;
+
+    .overlay-body {
+        padding-top: 0.25rem;
+    }
+
+    .info {
+        margin: 0 0 0.25rem;
+
+        .name {
+            color: var(--color-accent);
+        }
+
+        .id {
+            color: var(--color-disabled);
+        }
+    }
 
     .features {
         display: flex;

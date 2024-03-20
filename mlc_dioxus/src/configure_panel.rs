@@ -569,6 +569,9 @@ fn UniverseExplorer(cx: Scope) -> Element {
                         for id in d {
                             div {
                                 class: "tab {sel(selected.get() == id)}",
+                                onclick: move |_| {
+                                    selected.set(*id);
+                                },
                                 {id.0.to_string()}
                             }
                         }
@@ -582,7 +585,7 @@ fn UniverseExplorer(cx: Scope) -> Element {
                                         if let Some(c) = channel {
                                             rsx!{
                                                 div {
-                                                    class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize,i)}",
+                                                    class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize, c.channel_index)}",
                                                     onclick: move |_| {
                                                         detail_fixture.set(Some(data.fixtures[c.fixture_index].clone()));
                                                     },
