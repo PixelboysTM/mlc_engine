@@ -350,6 +350,12 @@ button:hover {
             width: 0.5rem;
             height: 0.5rem;
         }
+
+        &:focus {
+            .knob {
+                border: 1px solid var(--color-accent);
+            }
+        }
     }
 
     .hue {
@@ -366,6 +372,12 @@ button:hover {
             width: 100%;
             height: 0.5rem;
         }
+
+        &:focus {
+            .knob {
+                border: 1px solid var(--color-accent);
+            }
+        }
     }
 
     .val {
@@ -375,6 +387,12 @@ button:hover {
             top: 0;
             height: 100%;
             width: 0.5rem;
+        }
+
+        &:focus {
+            .knob {
+                border: 1px solid var(--color-accent);
+            }
         }
     }
 
@@ -426,44 +444,29 @@ button:hover {
         grid-column: 1 / 1;
         width: 100%;
         aspect-ratio: 1/1;
+
+        --line-color: var(--color-panel);
         background: linear-gradient(0deg, var(--color-background) 0%, var(--color-background) 100%),
         linear-gradient(90deg,
                 transparent 0%,
                 transparent calc(var(--line-x) - 1%),
-                var(--color-panel) var(--line-x),
+                var(--line-color) var(--line-x),
                 transparent calc(var(--line-x) + 1%),
                 transparent 100%),
         linear-gradient(0deg,
                 transparent 0%,
                 transparent calc(var(--line-y) - 1%),
-                var(--color-panel) var(--line-y),
+                var(--line-color) var(--line-y),
                 transparent calc(var(--line-y) + 1%),
                 transparent 100%);
-        background-blend-mode: multiply;
+        background-blend-mode: overlay;
         border-radius: var(--number-radius);
         cursor: pointer;
 
-        /*.line-x {*/
-        /*    position: relative;*/
-        /*    top: 0;*/
-        /*    bottom: 0;*/
-        /*    !*height: 100%;*!*/
-        /*    width: 0.25rem;*/
-        /*    background: var(--color-panel),*/
-        /*    linear-gradient(90deg, transparent 0%, var(--color-panel) 50%, transparent 100%);*/
+        &:focus {
+            --line-color: var(--color-accent);
+        }
 
-        /*    background-blend-mode: multiply;*/
-        /*    cursor: pointer;*/
-        /*}*/
-
-        /*.line-y {*/
-        /*    position: relative;*/
-        /*    left: 0;*/
-        /*    height: 0.25rem;*/
-        /*    width: 100%;*/
-        /*    background-color: var(--color-panel);*/
-        /*    cursor: pointer;*/
-        /*}*/
     }
 
     .val-pan {
@@ -487,6 +490,12 @@ button:hover {
             height: 0.5rem;
             width: 100%;
             transform: translateY(-50%);
+        }
+
+        &:focus {
+            .knob {
+                border: 1px solid var(--color-accent);
+            }
         }
     }
 
@@ -512,6 +521,12 @@ button:hover {
             height: 100%;
             width: 0.5rem;
             transform: translateX(-50%);
+        }
+
+        &:focus {
+            .knob {
+                border: 1px solid var(--color-accent);
+            }
         }
     }
 

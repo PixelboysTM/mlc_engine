@@ -162,6 +162,7 @@ pub fn RgbWidget<'a>(
             div {
                 class: "sat",
                 style: "--rgb-hue: {hue_col.to_string()}",
+                tabindex: 0,
                 onmounted: move |e| {
                     sat_e.set(Some(e.data));
                 },
@@ -186,6 +187,32 @@ pub fn RgbWidget<'a>(
                         color.set(color_art::Color::from_hsv(old.hsv_hue(), s.clamp(0.0,1.0), v.clamp(0.0,1.0)).expect("We have a problem!"));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let mut changed = false;
+                    let vl = *color.get();
+                    let (mut s, mut v) = (vl.hsv_saturation(), vl.hsv_value());
+                    if e.key() == Key::ArrowUp {
+                        v = (v + amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowDown {
+                        v = (v - amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowLeft {
+                        s = (s + amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowRight {
+                        s = (s - amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+
+                    if changed {
+                        color.set(color_art::Color::from_hsv(vl.hsv_hue(), s, v).expect("Is clamped"));
+                    }
+                },
                 div {
                     class: "knob",
                     style: "left: min({(1.0 - hsv.1) * 100.0}%, calc(100% - 0.5rem)); top: min({(1.0 - hsv.2) * 100.0}%, calc(100% - 0.5rem)); pointer-events: none;",
@@ -193,6 +220,7 @@ pub fn RgbWidget<'a>(
             },
             div {
                 class: "hue",
+                tabindex: 0,
                 onmounted: move |e| {
                     hue_e.set(Some(e.data));
                 },
@@ -215,6 +243,18 @@ pub fn RgbWidget<'a>(
                         color.set(color_art::Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.1} else {1.0};
+                    let old = *color.get();
+                    if e.key() == Key::ArrowUp {
+                        let h = (old.hsv_hue() - amount).clamp(0.0, 359.99);
+                        color.set(color_art::Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                    }
+                    if e.key() == Key::ArrowDown {
+                        let h = (old.hsv_hue() + amount).clamp(0.0, 359.99);
+                        color.set(color_art::Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                    }
+                },
                 div {
                     class: "knob",
                     style: "top: min({hsv.0 / 360.0 * 100.0}%, calc(100% - 0.5rem)); pointer-events: none;",
@@ -222,6 +262,7 @@ pub fn RgbWidget<'a>(
             },
             div {
                 class: "val-r val",
+                tabindex: 0,
                 onmounted: move |e| {
                     red_e.set(Some(e.data));
                 },
@@ -244,6 +285,18 @@ pub fn RgbWidget<'a>(
                         color.set(color_art::Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!"));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let old = *color.get();
+                    if e.key() == Key::ArrowLeft {
+                        let r = ((old.red() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!"));
+                    }
+                    if e.key() == Key::ArrowRight {
+                        let r = ((old.red() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!"));
+                    }
+                },
                 div {
                     class: "knob",
                     style: "left: min({rgb.0 as f32 / 255.0 * 100.0}%, calc(100% - 0.5rem)); pointer-events: none;",
@@ -251,6 +304,7 @@ pub fn RgbWidget<'a>(
             },
             div {
                 class: "val-g val",
+                tabindex: 0,
                 onmounted: move |e| {
                     green_e.set(Some(e.data));
                 },
@@ -273,6 +327,18 @@ pub fn RgbWidget<'a>(
                         color.set(color_art::Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!"));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let old = *color.get();
+                    if e.key() == Key::ArrowLeft {
+                        let g = ((old.green() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!"));
+                    }
+                    if e.key() == Key::ArrowRight {
+                        let g = ((old.green() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!"));
+                    }
+                },
                 div {
                     class: "knob",
                     style: "left: min({rgb.1 as f32 / 255.0 * 100.0}%, calc(100% - 0.5rem)); pointer-events: none;",
@@ -280,6 +346,7 @@ pub fn RgbWidget<'a>(
             },
             div {
                 class: "val-b val",
+                tabindex: 0,
                 onmounted: move |e| {
                     blue_e.set(Some(e.data));
                 },
@@ -300,6 +367,18 @@ pub fn RgbWidget<'a>(
                         let b = e.element_coordinates().x / blue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = *color.get();
                         color.set(color_art::Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!"));
+                    }
+                },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let old = *color.get();
+                    if e.key() == Key::ArrowLeft {
+                        let b = ((old.blue() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!"));
+                    }
+                    if e.key() == Key::ArrowRight {
+                        let b = ((old.blue() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
+                        color.set(color_art::Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!"));
                     }
                 },
                 div {
@@ -339,6 +418,7 @@ pub fn PanTiltWidget<'a>(
             div {
                 class: "d2-zone",
                 style: "--line-x: min({*tilt * 100.0}%, 100%); --line-y: min({(1.0 - *pan) * 100.0}%, 100%);",
+                tabindex: 0,
                 onmounted: move |e| {
                     zone_e.set(Some(e.data));
                 },
@@ -361,9 +441,35 @@ pub fn PanTiltWidget<'a>(
                         pt.set((p.clamp(0.0,1.0) as f32, t.clamp(0.0,1.0) as f32));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let mut changed = false;
+                    let mut v = *pt.get();
+                    if e.key() == Key::ArrowUp {
+                        v.0 = (v.0 - amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowDown {
+                        v.0 = (v.0 + amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowLeft {
+                        v.1 = (v.1 - amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+                    if e.key() == Key::ArrowRight {
+                        v.1 = (v.1 + amount).clamp(0.0,1.0);
+                        changed = true;
+                    }
+
+                    if changed {
+                        pt.set(v);
+                    }
+                },
             },
             div {
                 class: "val-pan",
+                tabindex: 0,
                 onmounted: move |e| {
                     pan_e.set(Some(e.data));
                 },
@@ -386,6 +492,16 @@ pub fn PanTiltWidget<'a>(
                         pt.set((p.clamp(0.0,1.0) as f32, old.1));
                     }
                 },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let old = *pt.get();
+                    if e.key() == Key::ArrowUp {
+                        pt.set(((old.0 - amount).clamp(0.0,1.0), old.1));
+                    }
+                    if e.key() == Key::ArrowDown {
+                        pt.set(((old.0 + amount).clamp(0.0,1.0), old.1));
+                    }
+                },
                 div {
                     class: "knob",
                     style: "top: min({*pan * 100.0}%, calc(100% - 0.5rem)); pointer-events: none;",
@@ -394,6 +510,7 @@ pub fn PanTiltWidget<'a>(
 
             div {
                 class: "val-tilt",
+                tabindex: 0,
                 onmounted: move |e| {
                     tilt_e.set(Some(e.data));
                 },
@@ -414,6 +531,16 @@ pub fn PanTiltWidget<'a>(
                         let t = e.element_coordinates().x / tilt_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.width;
                         let old = *pt.get();
                         pt.set((old.0, t.clamp(0.0,1.0) as f32));
+                    }
+                },
+                onkeydown: move |e| {
+                    let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                    let old = *pt.get();
+                    if e.key() == Key::ArrowLeft {
+                        pt.set((old.0, (old.1 - amount).clamp(0.0,1.0)));
+                    }
+                    if e.key() == Key::ArrowRight {
+                        pt.set((old.0, (old.1 + amount).clamp(0.0,1.0)));
                     }
                 },
                 div {
@@ -457,7 +584,7 @@ pub fn Slider<'a>(cx: Scope<'a>, initial: f32, onchange: EventHandler<'a, f32>) 
                 async move {
                     if e.held_buttons() == MouseButton::Primary{
                         let h = e.element_coordinates().y / size_e.get().as_ref().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
-                        val.set(h.min(1.0).max(0.0) as f32);
+                        val.set(h.clamp(0.0,1.0) as f32);
                     }
                 }
             },
@@ -466,18 +593,17 @@ pub fn Slider<'a>(cx: Scope<'a>, initial: f32, onchange: EventHandler<'a, f32>) 
                 async move {
                     if e.held_buttons() == MouseButton::Primary{
                         let h = e.element_coordinates().y / size_e.get().as_ref().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
-                        val.set(h.min(1.0).max(0.0) as f32);
+                        val.set(h.clamp(0.0,1.0) as f32);
                     }
                 }
             },
             onkeydown: move |e| {
-                log::info!("Kex pressed: {e:?}");
                 let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
                 if e.key() == Key::ArrowUp {
-                    val.set((*val.get() - amount).min(1.0).max(0.0))
+                    val.set((*val.get() - amount).clamp(0.0,1.0))
                 }
                 if e.key() == Key::ArrowDown {
-                    val.set((*val.get() + amount).min(1.0).max(0.0))
+                    val.set((*val.get() + amount).clamp(0.0,1.0))
                 }
             },
             div {
