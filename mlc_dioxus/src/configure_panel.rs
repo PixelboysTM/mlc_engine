@@ -384,7 +384,6 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
         async {}
     });
 
-    // let size = use_state(cx, || 0.0);
     let size_e = use_state(cx, || None);
     cx.render(rsx! {
         div {
@@ -398,15 +397,7 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
                 class: "range",
                 background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val.get().0 as f32 / 255.0) * 100.0}%, transparent {(val.get().0 as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
-                    // log::info!("Val: {:?}", val.get());
-                    // to_owned![size];
-                    // async move {
-                    //     async_std::task::sleep(Duration::from_millis(250)).await;
-                    //     let s = e.get_client_rect().await;
-                    //     size.with_mut(|v| *v = s.unwrap().size.height);
-                    // }
                     size_e.set(Some(e.data));
-
                 },
 
                 onmousemove: move |e| {

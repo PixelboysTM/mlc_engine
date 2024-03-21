@@ -1,10 +1,13 @@
-use crate::icons;
+use std::time::Duration;
+
+use dioxus::html::input_data::keyboard_types::{Key, Modifiers};
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use gloo_net::websocket::futures::WebSocket;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::time::Duration;
+
+use crate::icons;
 
 pub async fn fetch<T>(url: &str) -> Result<T, gloo_net::Error>
     where
@@ -193,7 +196,7 @@ pub fn RgbWidget<'a>(
                 onmounted: move |e| {
                     hue_e.set(Some(e.data));
                 },
-                onclick: move |e| {
+                onmousedown: move |e| {
                     to_owned![hue_e, color];
                     async move {
                         let h = e.element_coordinates().y / hue_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height * 360.0;
@@ -425,6 +428,60 @@ pub fn PanTiltWidget<'a>(
                     width: "100%",
                     height: "100%",
                 }
+            }
+        }
+    })
+}
+
+#[component]
+pub fn Slider<'a>(cx: Scope<'a>, initial: f32, onchange: EventHandler<'a, f32>) -> Element<'a> {
+    let val = use_state(cx, || 1.0 - *initial);
+
+    use_effect(cx, (val, ), |(v, )| {
+        onchange.call(1.0 - *v.get());
+        async {}
+    });
+
+    let size_e = use_state(cx, || None);
+
+    cx.render(rsx! {
+        div {
+            class: "slider-widget",
+            style: "--line-x: {*val.get() * 100.0}%",
+            tabindex: 0,
+            onmounted: move |e| {
+                size_e.set(Some(e.data));
+            },
+            onmousedown: move |e| {
+                to_owned![size_e, val];
+                async move {
+                    if e.held_buttons() == MouseButton::Primary{
+                        let h = e.element_coordinates().y / size_e.get().as_ref().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
+                        val.set(h.min(1.0).max(0.0) as f32);
+                    }
+                }
+            },
+            onmousemove: move |e| {
+                to_owned![size_e, val];
+                async move {
+                    if e.held_buttons() == MouseButton::Primary{
+                        let h = e.element_coordinates().y / size_e.get().as_ref().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
+                        val.set(h.min(1.0).max(0.0) as f32);
+                    }
+                }
+            },
+            onkeydown: move |e| {
+                log::info!("Kex pressed: {e:?}");
+                let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
+                if e.key() == Key::ArrowUp {
+                    val.set((*val.get() - amount).min(1.0).max(0.0))
+                }
+                if e.key() == Key::ArrowDown {
+                    val.set((*val.get() + amount).min(1.0).max(0.0))
+                }
+            },
+            div {
+                class: "knob",
             }
         }
     })

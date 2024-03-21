@@ -117,12 +117,11 @@ fn DimmerTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) ->
             h3 {
                 "Dimmer"
             }
-            Fader {
-                value: 0,
-                id: "uwu",
+            utils::Slider{
+                initial: 0.0,
                 onchange: move |v| {
                     updater.send(FeatureSetRequest::Dimmer {
-                        value: v as f32 / 255.0
+                        value: v,
                     });
                 }
             }
@@ -138,12 +137,11 @@ fn WhiteTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> 
             h3 {
                 "White"
             }
-            Fader {
-                value: 0,
-                id: "uwu",
+            utils::Slider{
+                initial: 0.0,
                 onchange: move |v| {
                     updater.send(FeatureSetRequest::White {
-                        value: v as f32 / 255.0
+                        value: v,
                     });
                 }
             }
@@ -159,13 +157,12 @@ fn AmberTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> 
             h3 {
                 "Amber"
             }
-            Fader {
-                value: 0,
-                id: "uwu",
+            utils::Slider{
+                initial: 0.0,
                 onchange: move |v| {
-                    updater.send(FeatureSetRequest::Amber {
-                        value: v as f32 / 255.0
-                    })
+                    updater.send(FeatureSetRequest::White {
+                        value: v,
+                    });
                 }
             }
         }
