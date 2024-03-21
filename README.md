@@ -59,7 +59,7 @@ To run MLC on your local machine the following steps will help you:
     - [ ] Widgets
         - [X] Color
         - [X] 2D Vec
-        - [ ] Slider
+      - [X] Slider
         - [ ] Knob
     - [ ] Project Panel Layout
     - [ ] Effect Browser
