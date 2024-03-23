@@ -612,3 +612,69 @@ pub fn Slider<'a>(cx: Scope<'a>, initial: f32, onchange: EventHandler<'a, f32>) 
         }
     })
 }
+
+
+#[derive(Default, Debug, Copy, Clone)]
+pub enum CheckboxState {
+    #[default]
+    Unchecked,
+    Partly,
+    Checked,
+}
+
+impl CheckboxState {
+    pub fn toggle(&self) -> Self {
+        match self {
+            CheckboxState::Unchecked => Self::Checked,
+            CheckboxState::Partly => Self::Checked,
+            CheckboxState::Checked => Self::Unchecked,
+        }
+    }
+}
+
+impl From<bool> for CheckboxState {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::Checked,
+            false => Self::Unchecked,
+        }
+    }
+}
+
+impl From<CheckboxState> for bool {
+    fn from(value: CheckboxState) -> Self {
+        match value {
+            CheckboxState::Unchecked => false,
+            CheckboxState::Partly => false,
+            CheckboxState::Checked => true,
+        }
+    }
+}
+
+#[component]
+pub fn Checkbox<'a>(cx: Scope<'a>, init: CheckboxState, onchange: EventHandler<'a, CheckboxState>) -> Element<'a> {
+    let state = use_state(cx, || *init);
+    cx.render(rsx! {
+        div {
+            class: "checkbox-comp",
+            onclick: move |e| {
+                if e.trigger_button() == Some(MouseButton::Primary) {
+                    let new_state = state.get().toggle();
+                    state.set(new_state);
+                    onchange.call(new_state);
+                }
+            },
+            match state.get() {
+                CheckboxState::Unchecked => {render!("")}
+                CheckboxState::Partly => {render!(icons::Minus{
+                    width: "1em",
+                    height: "1em"
+                })}
+                CheckboxState::Checked => {render!(icons::Check{
+                    width: "1em",
+                    height: "1em"
+                })}
+            }
+        }
+    })
+}

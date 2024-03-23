@@ -151,7 +151,7 @@ button:hover {
         background-color: var(--color-panel);
         padding: 0;
         display: grid;
-        grid-template-rows: 3rem 1fr;
+        grid-template-rows: 2.5rem 1fr;
         flex-direction: column;
         border-radius: var(--number-border-radius);
         gap: 0.5rem;
@@ -583,5 +583,22 @@ button:hover {
         .knob {
             border: 1px solid var(--color-accent);
         }
+    }
+}
+
+.checkbox-comp {
+    width: 1em;
+    height: 1em;
+    background-color: var(--color-background);
+    border-radius: var(--number-border-radius);
+    border: 1px solid var(--color-disabled);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+
+    color: var(--color-accent);
+
+    svg {
+        pointer-events: none;
     }
 }

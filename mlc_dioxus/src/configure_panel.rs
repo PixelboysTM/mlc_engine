@@ -6,15 +6,17 @@ use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use futures::future::{Either, select};
 use gloo_net::websocket::Message;
+use wasm_logger::init;
 
 use fixture_tester::FixtureTester;
 use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, ProjectSettings, RuntimeUpdate};
+use mlc_common::config::FixtureType;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
 
 use crate::{icons, utils};
-use crate::utils::Loading;
+use crate::utils::{CheckboxState, Loading};
 
 mod fixture_tester;
 
@@ -462,9 +464,14 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
     let detail_fixture = use_state::<Option<FixtureInfo>>(cx, || None);
 
     cx.render(rsx! {
-        if let Some(_f) = detail_fixture.get() {
+        if let Some(f) = detail_fixture.get() {
             rsx!{
-                ""
+                DetailFixtureType {
+                    t: f,
+                    onclose: move |_| {
+                        detail_fixture.set(None);
+                    }
+                }
             }
         }
 
@@ -498,7 +505,7 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                                     for mode in &info.modes {
                                         li {
                                             class: "mode",
-                                            {mode.get_name()}
+                                            {mode.name.clone()}
                                         }
                                     }
                                 }
@@ -507,6 +514,107 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                     })
                 }
                 None => {utils::Loading(cx)}
+            }
+        }
+    })
+}
+
+#[derive(serde::Deserialize)]
+enum PatchResult {
+    IdInvalid(String),
+    ModeInvalid(String),
+    Failed(String),
+    Success(String),
+}
+
+#[component]
+fn DetailFixtureType<'a>(cx: Scope<'a>, t: &'a FixtureInfo, onclose: EventHandler<'a, ()>) -> Element<'a> {
+    let create_new_universe = use_state(cx, || true);
+    let sel_mode = use_state(cx, || t.modes.first().map(|m| m.short_name.clone()).unwrap_or("No modes".to_string()));
+
+    let sel_mode_o = use_memo(cx, (sel_mode, ), |(m, )| {
+        t.modes.iter().filter(|mo| &mo.short_name == m.get()).next().map(|m| m.clone())
+    });
+
+    cx.render(rsx! {
+        utils::Overlay {
+            title: t.name.clone(),
+            class: "fixture-type-detail",
+            icon: cx.render(rsx!(icons::Blocks{})),
+            onclose: move |_| {
+                onclose.call(());
+            },
+            div {
+                class: "settings",
+                span {
+                    "Create Additional Universes",
+                },
+                utils::Checkbox {
+                    init: (*create_new_universe.get()).into(),
+                    onchange: move |s: CheckboxState| {
+                        create_new_universe.set(s.into());
+                    }
+                }
+            },
+            div {
+                class: "modes",
+                for mode in &t.modes {
+                    div {
+                        class: "mode {sel(&mode.short_name == sel_mode.get())}",
+                        onclick: move |e| {
+                            if e.trigger_button() == Some(MouseButton::Primary) && &mode.short_name != sel_mode.get() {
+                                sel_mode.set(mode.short_name.clone());
+                            }
+                        },
+                        mode.short_name.clone()
+                    }
+                }
+            },
+            div {
+                class: "detail",
+                if let Some(mode) = sel_mode_o {
+                    cx.render(rsx!{
+                        h3 {
+                            class: "mode-name",
+                            {format!("{} ({})", mode.name, mode.short_name)}
+                        },
+                        for (i, channel) in mode.channels.iter().enumerate() {
+                            p {
+                                class: "channel",
+                                {format!("{}: {}", i, channel)}
+                            }
+                        },
+                        div {
+                            class: "buttons",
+                            button {
+                                onclick: move |_| {
+                                    to_owned![create_new_universe];
+                                    let id = t.id;
+                                    let i = t.modes.iter().enumerate().filter(|(_, m)| m.short_name == mode.short_name).map(|(i, _)| i).next().unwrap_or(0);
+                                    onclose.call(());
+                                    async move {
+                                        let _ = utils::fetch::<PatchResult>(&format!("/data/patch/{}/{}?create={}",
+                                            id,
+                                            i,
+                                            *create_new_universe.get()
+                                        )).await;
+                                    }
+                                },
+                                "Patch"
+                            },
+                            button {
+                                onclick: move |_| {
+                                    onclose.call(());
+                                },
+                                "Close"
+                            }
+                        }
+                    })
+                }
+            },
+            div {
+                class: "fix-id",
+                t.id.to_string()
             }
         }
     })

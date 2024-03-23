@@ -344,3 +344,67 @@ pub fn LampDesk<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
         }
     })
 }
+
+#[component]
+pub fn Blocks<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: width,
+        height: height,
+        stroke_linejoin: "round",
+        stroke: "currentColor",
+        view_box: "0 0 24 24",
+        fill: "none",
+        stroke_width: "2",
+        stroke_linecap: "round",
+        class: "lucide lucide-blocks",
+        rect { rx: "1", width: "7", height: "7", x: "14", y: "3" }
+        path { d: "M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3" }
+    }
+
+    })
+}
+
+#[component]
+pub fn Minus<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        fill: "none",
+        width: width,
+        height: height,
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke: "currentColor",
+        stroke_width: "2",
+        stroke_linejoin: "round",
+        stroke_linecap: "round",
+        view_box: "0 0 24 24",
+        class: "lucide lucide-minus",
+        path { d: "M5 12h14" }
+    }
+
+
+    })
+}
+
+#[component]
+pub fn Check<'a>(cx: Scope<'a, IconProps<'a>>) -> Element<'a> {
+    let width = cx.props.width.unwrap_or("1.25rem");
+    let height = cx.props.height.unwrap_or("1.25rem");
+    cx.render(rsx! { svg {
+        width: width,
+        height: height,
+        view_box: "0 0 24 24",
+        stroke_width: "2",
+        stroke_linecap: "round",
+        fill: "none",
+        stroke: "currentColor",
+        xmlns: "http://www.w3.org/2000/svg",
+        stroke_linejoin: "round",
+        class: "lucide lucide-check",
+        path { d: "M20 6 9 17l-5-5" }
+    }
+    })
+}

@@ -12,6 +12,9 @@ dioxus:
 dioxus-release:
     cd ./mlc_dioxus && dx build --release
 
+make-icon ICON:
+    cd ./mlc_dioxus/public/icons && dx translate --file {{ICON}}.svg
+
 build: dioxus
     cargo build
 
