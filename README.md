@@ -46,21 +46,21 @@ To run MLC on your local machine the following steps will help you:
 ## Todo
 
 - [X] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name` (Requires local
-  copy of my fork untill merged)
+  copy of my fork until merged)
 - [X] Write a real Readme
 - [ ] Add a License
 - [X] Reorganize mlc_common code and cleanup empty modules in mlc_engine
 - [ ] Decouple FixtureType Data Structure from AGLight and built separate importer
     - [ ] Add a new binary more kompakt file format for projects
 - [ ] Ui
-    - [ ] Fixture Details/Patch Modal
+    - [X] Fixture Details/Patch Modal
     - [ ] Endpoint Mapping Modal
     - [ ] New Project Modal
     - [ ] Widgets
         - [X] Color
         - [X] 2D Vec
-      - [X] Slider
-        - [ ] Knob
+        - [X] Slider
+            - [ ] Knob
     - [ ] Project Panel Layout
     - [ ] Effect Browser
     - [ ] Effect Settings
