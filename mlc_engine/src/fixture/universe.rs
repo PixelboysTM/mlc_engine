@@ -14,7 +14,7 @@ use crate::fixture::feature::finder::find_features;
 pub fn can_patch(universe: &FixtureUniverse, fixture: &FixtureType, mode_index: usize) -> bool {
     let mode = &fixture.get_modes()[mode_index];
 
-    let len = mode.get_channels().len();
+    let len = mode.channels.len();
 
     let mut i = 0;
     for channel in &universe.channels {
@@ -43,7 +43,7 @@ pub fn patch(
 
     let mode = &fixture.get_modes()[mode_index];
 
-    let len = mode.get_channels().len();
+    let len = mode.channels.len();
 
     let mut i = 0;
     let mut start_index = 0;
@@ -89,7 +89,7 @@ fn create_patched_fixture(
     let mut resolution: ValueResolution = ValueResolution::U8;
     let mut cs = (0..len).map(|i| -> Result<_, &'static str> {
         let c = fixture.get_available_channels().find(
-            &fixture.get_modes()[mode_index].get_channels()[i],
+            &fixture.get_modes()[mode_index].channels[i],
             &mut resolution,
         )?;
 
@@ -112,7 +112,7 @@ fn create_patched_fixture(
         name: format!(
             "{} / {}",
             fixture.name,
-            fixture.get_modes()[mode_index].get_name()
+            fixture.get_modes()[mode_index].name
         ),
         mode: mode_index,
         features: find_features(fixture, mode, universe.id, start_index.into()),

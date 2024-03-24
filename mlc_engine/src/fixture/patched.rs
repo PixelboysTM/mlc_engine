@@ -205,7 +205,7 @@ pub mod feature {
 
             let mut features = vec![];
 
-            let channels = mode.get_channels();
+            let channels = &mode.channels;
 
             for finder in finders {
                 if let Some(feature) = finder(fixture, channels, universe, start_index) {
