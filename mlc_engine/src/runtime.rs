@@ -25,7 +25,7 @@ use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_ws::{Message, WebSocket};
 
 use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
-use mlc_common::config::DmxRange;
+use mlc_common::config::{DmxRange, Percentage, Value, ValueResolution};
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
@@ -494,20 +494,24 @@ impl ToFaderValue for f32 {
 
     fn to_fader_value_range(&self, range: &DmxRange) -> u8 {
         let v = self.min(1.0).max(0.0);
-        (range.range(0, 255) as f32 * v) as u8 + range.start.to_value(0, 255) as u8
+        let val = lerp(range.start, range.end, Percentage::new(v));
+        (val.raw() * ValueResolution::U8.max() as f32) as u8
     }
 
     fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val = (range.range(0, 65535) as f32 * v) as u16 + range.start.to_value(0, 65535) as u16;
+        let val = (lerp(range.start, range.end, Percentage::new(v)).raw() * ValueResolution::U16.max() as f32) as u32;
         ((val >> 8) as u8, val as u8)
     }
 
     fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val =
-            (range.range(0, 16777215) as f32 * v) as u32 + range.start.to_value(0, 16777215);
+        let val = (lerp(range.start, range.end, Percentage::new(v)).raw() * ValueResolution::U24.max() as f32) as u32;
         ((val >> 16) as u8, (val >> 8) as u8, val as u8)
     }
+}
+
+fn lerp(v0: Value, v1: Value, t: Percentage) -> Value {
+    Value::new(v0.raw() + t.raw() * (v1.raw() - v0.raw()))
 }
 

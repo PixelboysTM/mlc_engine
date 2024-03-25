@@ -94,7 +94,7 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
 }
 
 /// # Add Fixture Ofl
-/// Add a new Fixture Type by querying an 'AG Light' Json from http://open-fixture-library.org/
+/// Add a new Fixture Type by querying Json from http://open-fixture-library.org/
 ///
 /// On Success: Nothing is returned
 ///
@@ -113,7 +113,7 @@ async fn add_fixture_ofl(
     _g: ProjectGuard,
 ) -> Result<(), BadRequest<String>> {
     let data = reqwest::get(format!(
-        "https://open-fixture-library.org/{}/{}.aglight",
+        "https://open-fixture-library.org/{}/{}.json",
         manufacturer, name
     ))
         .await
