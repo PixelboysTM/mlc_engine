@@ -18,6 +18,7 @@ use crate::{
     runtime::{effects::EffectPlayerAction, RuntimeData},
     ui_serving::ProjectSelection,
 };
+use crate::project::Provider;
 
 /// # Get Settings
 /// Returns the current project settings
@@ -58,7 +59,17 @@ async fn update_settings(
 #[openapi(tag = "Projects")]
 #[get("/projects-list")]
 async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
-    let path = project::make_path("test")
+    fn is_valid(f: &str) -> Option<Provider> {
+        for (extension, p) in Provider::valid_extensions() {
+            if f.ends_with(extension) {
+                return Some(p);
+            }
+        }
+
+        None
+    }
+
+    let path = project::make_path("test", "mlc")
         .unwrap()
         .parent()
         .unwrap()
@@ -67,11 +78,17 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
     let mut projects = vec![];
     let iter = std::fs::read_dir(path).unwrap();
     for f in iter.flatten() {
-        if f.file_type().unwrap().is_file() && f.file_name().to_string_lossy().ends_with(".mlc") {
-            let data = fs::read_to_string(f.path()).await.unwrap();
-            let mut defintition: ProjectDefinition = serde_json::from_str(&data).unwrap();
-            defintition.file_name = f.file_name().to_string_lossy().replace(".mlc", "");
-            projects.push(defintition);
+        let ext = is_valid(f.file_name().to_string_lossy().as_ref());
+        if f.file_type().unwrap().is_file() && ext.is_some() {
+            let ext = ext.expect("Tested before");
+            let data = fs::read(f.path()).await.unwrap();
+            let mut definition: ProjectDefinition = ext.definition(&data).unwrap();
+            definition.file_name = f.file_name().to_string_lossy().replace(&format!(".{}", ext.extension()), "");
+
+            // let data = fs::read_to_string(f.path()).await.unwrap();
+            // let mut defintition: ProjectDefinition = serde_json::from_str(&data).unwrap();
+            // defintition.file_name = f.file_name().to_string_lossy().replace(".mlc", "");
+            projects.push(definition);
         }
     }
 

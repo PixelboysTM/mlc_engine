@@ -51,7 +51,7 @@ To run MLC on your local machine the following steps will help you:
 - [ ] Add a License
 - [X] Reorganize mlc_common code and cleanup empty modules in mlc_engine
 - [X] Decouple FixtureType Data Structure from AGLight and built separate importer
-- [ ] Add a new binary more kompakt file format for projects
+- [X] Add a new binary more kompakt file format for projects
 - [ ] Ui
     - [X] Fixture Details/Patch Modal
     - [ ] Endpoint Mapping Modal

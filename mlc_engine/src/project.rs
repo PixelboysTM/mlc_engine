@@ -20,6 +20,7 @@ use crate::{
     send,
 };
 use crate::fixture::universe as u;
+pub use crate::project::byte_provider::{Provider};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct ProjectI {
@@ -65,11 +66,13 @@ impl Project {
 
         data.last_edited = Local::now();
 
-        // let toml_data = toml::to_string(data).map_err(|_| "Failed serializing data")?;
-        let json_data =
-            serde_json::to_string_pretty(data).map_err(|_| "Failed serializing data")?;
-        if let Some(path) = make_path(name.unwrap_or(&data.file_name)) {
-            std::fs::write(path, json_data).map_err(|_| "Failed writing to file")?;
+        let provider: Provider = if cfg!(debug_assertions) { Provider::Json } else { Provider::Ciborium };
+        //
+        // let json_data =
+        //     serde_json::to_string_pretty(data).map_err(|_| "Failed serializing data")?;
+        let raw_data = provider.to(data);
+        if let Some(path) = make_path(name.unwrap_or(&data.file_name), provider.extension()) {
+            std::fs::write(path, raw_data).map_err(|_| "Failed writing to file")?;
         } else {
             Err("Failed creating path")?;
         }
@@ -85,23 +88,46 @@ impl Project {
         runtime: &RuntimeData,
         effect_handler: &Sender<EffectPlayerAction>,
     ) -> Result<(), &str> {
-        if let Some(path) = make_path(name) {
-            if let Ok(json_data) = std::fs::read_to_string(path) {
-                let new_data: ProjectI =
-                    // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
-                    serde_json::from_str(&json_data).map_err(|e| {
-                        eprintln!("{:#?}", e);
-                        "Failed deserializing data"
-                    })?;
+        let possible_loaders: Vec<Provider> = vec![Provider::Json, Provider::Ciborium];
+
+        let mut success = false;
+        for possible_loader in possible_loaders {
+            let path = make_path(name, possible_loader.extension()).ok_or("Path creation failed")?;
+            if let Ok(raw_data) = std::fs::read(path) {
+                let new_data: ProjectI = possible_loader.from(&raw_data).map_err(|e| {
+                    eprintln!("{e}");
+                    "Failed deserializing data"
+                })?;
                 let mut data = self.project.lock().await;
                 *data = new_data;
                 data.file_name = name.to_string();
-            } else {
-                Err("Failed reading file")?;
+
+                success = true;
+                break;
             }
-        } else {
-            Err("Failed creating path")?;
         }
+
+        if !success {
+            Err("Failed loading data")?;
+        }
+
+        // if let Some(path) = make_path(name) {
+        //     if let Ok(json_data) = std::fs::read_to_string(path) {
+        //         let new_data: ProjectI =
+        //             // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
+        //             serde_json::from_str(&json_data).map_err(|e| {
+        //                 eprintln!("{:#?}", e);
+        //                 "Failed deserializing data"
+        //             })?;
+        //         let mut data = self.project.lock().await;
+        //         *data = new_data;
+        //         data.file_name = name.to_string();
+        //     } else {
+        //         Err("Failed reading file")?;
+        //     }
+        // } else {
+        //     Err("Failed creating path")?;
+        // }
 
         runtime.adapt(self, true).await;
         send!(effect_handler, EffectPlayerAction::Rebake);
@@ -268,10 +294,69 @@ fn get_project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("de", "pixelboystm", "mlc_engine")
 }
 
-pub fn make_path(name: &str) -> Option<PathBuf> {
+pub fn make_path(name: &str, extension: &str) -> Option<PathBuf> {
     get_project_dirs().map(|d| {
         let dir = d.data_dir();
         std::fs::create_dir_all(dir).unwrap();
-        dir.join(format!("{}.mlc", name))
+        dir.join(format!("{}.{}", name, extension))
     })
+}
+
+mod byte_provider {
+    use rocket::http::hyper::body::Buf;
+    use mlc_common::ProjectDefinition;
+    use crate::project::ProjectI;
+
+    pub enum Provider {
+        Json,
+        Ciborium,
+    }
+
+    impl Provider {
+        pub fn valid_extensions() -> Vec<(&'static str, Provider)> {
+            vec![("mlc", Provider::Json), ("mlcb", Provider::Ciborium)]
+        }
+
+        pub fn extension(&self) -> &'static str {
+            match self {
+                Provider::Json => "mlc",
+                Provider::Ciborium => "mlcb",
+            }
+        }
+
+        pub fn from(&self, b: &Vec<u8>) -> Result<ProjectI, String> {
+            match self {
+                Provider::Json => {
+                    serde_json::from_slice(b).map_err(|e| format!("{e:?}"))
+                }
+                Provider::Ciborium => {
+                    ciborium::from_reader(b.reader()).map_err(|e| format!("{e:?}"))
+                }
+            }
+        }
+
+        pub fn definition(&self, b: &Vec<u8>) -> Result<ProjectDefinition, String> {
+            match self {
+                Provider::Json => {
+                    serde_json::from_slice(b).map_err(|e| format!("{e:?}"))
+                }
+                Provider::Ciborium => {
+                    ciborium::from_reader(b.reader()).map_err(|e| format!("{e:?}"))
+                }
+            }
+        }
+
+        pub fn to(&self, p: &ProjectI) -> Vec<u8> {
+            match self {
+                Provider::Json => {
+                    serde_json::to_vec_pretty(p).expect("Why?")
+                }
+                Provider::Ciborium => {
+                    let mut b = Vec::<u8>::new();
+                    ciborium::into_writer(p, &mut b).expect("Why");
+                    b
+                }
+            }
+        }
+    }
 }
