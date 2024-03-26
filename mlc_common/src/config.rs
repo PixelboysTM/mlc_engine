@@ -2,11 +2,6 @@ use std::collections::HashMap;
 
 use get_size::GetSize;
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use serde::de::Visitor;
-use serde_with::formats::PreferMany;
-use serde_with::OneOrMany;
-use serde_with::serde_as;
 
 pub type Value = Percentage;
 
@@ -105,7 +100,18 @@ pub struct Maintenance {}
 #[derive(
 Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
-pub struct Intensity {}
+pub struct Intensity {
+    pub brightness_start: Brightness,
+    pub brightness_end: Brightness,
+}
+
+#[derive(
+Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+)]
+pub enum Brightness {
+    Percentage(Percentage),
+    Lumen(f32),
+}
 
 #[derive(
 Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
@@ -148,8 +154,16 @@ pub enum RotationSpeed {
 Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct PanTilt {
-    angle_start: u32,
-    angle_end: u32,
+    pub angle_start: PanTiltRotation,
+    pub angle_end: PanTiltRotation,
+}
+
+#[derive(
+Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+)]
+pub enum PanTiltRotation {
+    Percentage(Percentage),
+    Angle(u32),
 }
 
 #[derive(
@@ -212,12 +226,6 @@ JsonSchema,
 pub struct DmxRange {
     pub start: Value,
     pub end: Value,
-}
-
-impl DmxRange {
-    pub fn range(&self, range_min: Value, range_max: Value) -> Value {
-        Value::new(self.end.0 - self.start.0)
-    }
 }
 
 #[derive(

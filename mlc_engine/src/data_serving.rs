@@ -127,7 +127,7 @@ async fn add_fixture_ofl(
 }
 
 /// # Add Fixture
-/// Add a new Fixture Type using raw AG Light Json
+/// Add a new Fixture Type using raw OFL Json
 ///
 /// On Success: Nothing is returned
 ///

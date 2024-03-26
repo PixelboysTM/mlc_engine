@@ -6,7 +6,6 @@ use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeatureType};
 use mlc_common::patched::PatchedFixture;
 
 use crate::{icons, utils};
-use crate::configure_panel::Fader;
 use crate::utils::Overlay;
 
 #[derive(Props)]

@@ -1,16 +1,13 @@
 use std::ops::Deref;
-use std::time::Duration;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use futures::future::{Either, select};
 use gloo_net::websocket::Message;
-use wasm_logger::init;
 
 use fixture_tester::FixtureTester;
 use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, ProjectSettings, RuntimeUpdate};
-use mlc_common::config::FixtureType;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
@@ -533,7 +530,7 @@ fn DetailFixtureType<'a>(cx: Scope<'a>, t: &'a FixtureInfo, onclose: EventHandle
     let sel_mode = use_state(cx, || t.modes.first().map(|m| m.short_name.clone()).unwrap_or("No modes".to_string()));
 
     let sel_mode_o = use_memo(cx, (sel_mode, ), |(m, )| {
-        t.modes.iter().filter(|mo| &mo.short_name == m.get()).next().map(|m| m.clone())
+        t.modes.iter().find(|mo| &mo.short_name == m.get()).cloned()
     });
 
     cx.render(rsx! {
@@ -823,7 +820,7 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                         onclick: move |_| {
                             source.set(FixtureSource::Json);
                         },
-                        "Json"
+                        "RAW"
                     }
                 },
 
@@ -856,13 +853,6 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                                                         class: "name",
                                                         {available.name.clone()}
                                                     },
-                                                    //  input {
-                                                    //     r#type: "button",
-                                                    //     value: "Import",
-                                                    //     onclick: move |e| {
-                                                    //         log::info!("Import fixture");
-                                                    //     }
-                                                    // }
 
                                                     button {
                                                         class: "icon",
@@ -897,28 +887,6 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                 }
         }
     })
-
-    // cx.render(rsx! {
-    //     div {
-    //         class: "overlay",
-    //         onclick: move |e| {
-    //             cx.props.on_close.call(());
-    //         },
-    //
-    //         div {
-    //             class: "overlay-content upload-fixture",
-    //             onclick: move |e| {
-    //                 e.stop_propagation();
-    //             },
-    //
-    //             h3 {
-    //                 "Import Fixture",
-    //             },
-    //
-    //
-    //         }
-    //     }
-    // })
 }
 
 fn fits_search(f: &AvailableFixture, search: &str) -> bool {
