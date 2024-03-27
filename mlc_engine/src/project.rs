@@ -88,11 +88,11 @@ impl Project {
         runtime: &RuntimeData,
         effect_handler: &Sender<EffectPlayerAction>,
     ) -> Result<(), &str> {
-        let possible_loaders: Vec<Provider> = vec![Provider::Json, Provider::Ciborium];
+        let possible_loaders: Vec<(&str, Provider)> = Provider::valid_extensions();
 
         let mut success = false;
-        for possible_loader in possible_loaders {
-            let path = make_path(name, possible_loader.extension()).ok_or("Path creation failed")?;
+        for (ext, possible_loader) in possible_loaders {
+            let path = make_path(name, ext).ok_or("Path creation failed")?;
             if let Ok(raw_data) = std::fs::read(path) {
                 let new_data: ProjectI = possible_loader.from(&raw_data).map_err(|e| {
                     eprintln!("{e}");
