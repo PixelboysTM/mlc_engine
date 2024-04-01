@@ -1,18 +1,17 @@
 use crate::{icons, utils};
-use dioxus::core::Scope;
 use dioxus::prelude::*;
 use mlc_common::ProjectDefinition;
 
 #[component]
-pub fn ProjectSelection(cx: Scope) -> Element {
-    let projects = use_future(cx, (), |_| async move {
+pub fn ProjectSelection() -> Element {
+    let projects: Resource<Option<Vec<ProjectDefinition>>> = use_resource(|| async move {
         utils::fetch::<Vec<ProjectDefinition>>("/projects/projects-list")
             .await
             .map_err(|e| log::error!("Error Loading Project list: {e}"))
             .ok()
     });
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "headbar project-bar",
             img {
@@ -59,9 +58,9 @@ pub fn ProjectSelection(cx: Scope) -> Element {
 
         div {
             class: "project-list",
-            match projects.value() {
+            match projects.value().read().clone() {
                 Some(Some(ps)) => {
-                    cx.render(rsx!{
+                    rsx!{
                         for p in ps {
                             div {
                                 class: "project",
@@ -87,9 +86,7 @@ pub fn ProjectSelection(cx: Scope) -> Element {
                                     onclick: move |_| {
                                         log::info!("Open project");
                                         let n = p.file_name.clone();
-                                        let eval = use_eval(cx);
 
-                                        to_owned![eval];
                                         async move {
                                             let u = utils::fetch::<String>(&format!("/projects/load/{}", n)).await;
                                             if u.is_ok() {
@@ -105,11 +102,11 @@ pub fn ProjectSelection(cx: Scope) -> Element {
 
                             }
                         }
-                    })
+                    }
                 }
-                Some(None) => {cx.render(rsx!("Error loading project list!"))}
-                None => {cx.render(rsx!{utils::Loading {}})}
+                Some(None) => {rsx!("Error loading project list!")}
+                None => {rsx!{utils::Loading {}}}
             }
         }
-    })
+    }
 }

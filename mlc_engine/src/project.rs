@@ -225,7 +225,7 @@ impl Project {
         let mut data = self.project.lock().await;
         let universe = data.universes.get_mut(&universe_id)?;
         if u::can_patch(universe, &fixture, mode_index) {
-            u::patch(universe, &fixture, mode_index).unwrap();
+            u::patch(universe, &fixture, mode_index).expect("Why error when can patch returns true?");
             send!(info, Info::UniversePatchChanged(universe_id));
             Some(())
         } else {

@@ -25,7 +25,7 @@ pub enum Info {
     None,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, JsonSchema)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, JsonSchema, Clone)]
 pub struct ProjectDefinition {
     pub name: String,
     #[serde(default)]
@@ -68,7 +68,7 @@ pub struct FaderUpdateRequest {
     pub value: u8,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, JsonSchema)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, JsonSchema, PartialEq)]
 pub struct FixtureInfo {
     pub name: String,
     pub id: uuid::Uuid,

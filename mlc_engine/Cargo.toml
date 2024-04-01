@@ -6,24 +6,29 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# HTTP
 rocket = { version = "0.5.0", features = ["json"] }
+rocket_ws = { version = "0.1.0" }
+reqwest = "0.12.2"
+# Serde
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
-directories = "5.0.1"
 serde_with = { version = "3.4.0", features = ["chrono_0_4"] }
-rocket_ws = { version = "0.1.0" }
-crossbeam = "0.8.2"
+ciborium = { version = "0.2.2", features = ["std"] }
+# Misc
+directories = "5.0.1"
 uuid = { version = "1.6.1", features = ["v4", "serde"] }
-pollster = { version = "*" }
 chrono = { version = "*", features = ["serde"] }
-artnet_protocol = "0.4.2"
-sacn = "0.4.4"
-regex = { version = "*" }
+regex = { version = "1.10.4" }
 tap = "*"
-get-size = { version = "0.1.4", features = ["derive"] }
 mlc_common = { path = "../mlc_common" }
-reqwest = "0.11.24"
-#rocket_okapi = { version = "0.8.0", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] }
+# Async
+pollster = { version = "*" }
+crossbeam = "0.8.4"
+# Endpoints
+sacn = "0.4.4"
+artnet_protocol = "0.4.2"
+# Doku
 rocket_okapi = { path = "../../okapi/rocket-okapi", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] } #TODO: Only until pull request is merged and release is made
 schemars = { version = "0.8.16", features = ["derive", "uuid1", "chrono"] }
-ciborium = { version = "0.2.2", features = ["std"] }
+get-size = { version = "0.1.4", features = ["derive"] }

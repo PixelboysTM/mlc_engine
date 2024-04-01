@@ -1,3 +1,7 @@
 [workspace]
-members = ["mlc_common", "mlc_dioxus", "mlc_engine"]
+members = [
+    "mlc_common",
+    "mlc_dioxus",
+    "mlc_engine"
+]
 resolver = "2"

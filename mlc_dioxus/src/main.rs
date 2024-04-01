@@ -1,8 +1,6 @@
-use std::ops::Deref;
 use std::time::Duration;
 
 use dioxus::prelude::*;
-use dioxus_router::prelude::{Routable, Router};
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use gloo_storage::Storage;
@@ -21,11 +19,11 @@ mod utils;
 
 fn main() {
     wasm_logger::init(Config::default());
-    dioxus_web::launch(start);
+    launch(start);
 }
 
-fn start(cx: Scope) -> Element {
-    render! {
+fn start() -> Element {
+    rsx! {
         Router::<Route> {}
     }
 }
@@ -38,39 +36,30 @@ enum Route {
     Projects {},
 }
 
+
 #[allow(non_snake_case)]
-fn Index(cx: Scope) -> Element {
-    app(cx)
+fn Projects() -> Element {
+    project_selection::ProjectSelection()
 }
 
 #[allow(non_snake_case)]
-fn Projects(cx: Scope) -> Element {
-    project_selection::ProjectSelection(cx)
-}
+fn Index() -> Element {
+    let pane = use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
 
-fn app(cx: Scope) -> Element {
-    use_shared_state_provider(cx, || {
-        gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program)
-    });
-    let pane = use_shared_state::<Pane>(cx).unwrap();
 
-    use_effect(cx, (pane, ), |(p, )| {
-        let pa = *p.read();
-        async move {
-            gloo_storage::LocalStorage::set("lastTab", pa).expect("Writing failed");
-        }
+    use_effect(move || {
+        gloo_storage::LocalStorage::set("lastTab", pane()).expect("Writing failed");
     });
 
-    let info = use_state(cx, || Info::None);
+    let mut info = use_signal(|| Info::None);
 
-    let started = use_state(cx, || false);
-    let create_eval = use_eval(cx);
-    let _info_watcher = use_future(cx, (), |_| {
-        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
+    let mut started = use_signal(|| false);
+    // let create_eval =  use_eval(cx);
+    let _info_watcher = use_future(move || {
+        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
 
-        to_owned![info, started];
         async move {
-            if *started.get() {
+            if started() {
                 return;
             }
             started.set(true);
@@ -106,52 +95,48 @@ fn app(cx: Scope) -> Element {
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         DisconnectHelper {
-            info: *info.get()
+            info
         },
-        Headbar{},
+        Headbar{
+            pane,
+        },
         div {
             width: "100vw",
             height: "calc(100vh - 3rem)",
-            match pane.read().deref() {
+            match pane() {
                 Pane::Configure => {
-                    ConfigurePanel(cx)
+                    ConfigurePanel()
                 }
                 Pane::Program => {
-                    cx.render(rsx!{
+                    rsx!{
                         "Program"
-                    })
+                    }
                 }
                 Pane::Show => {
-                    cx.render(rsx!{
+                    rsx!{
                         "Show"
-                    })
+                    }
                 }
             }
         }
-    })
+    }
 }
 
-#[derive(Props, PartialEq)]
-struct DHProps {
-    info: Info,
-}
 
 #[component]
-fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
-    let active = use_state(cx, || false);
-    let _ = use_memo(cx, &(cx.props.info, ), |(i, )| {
-        if i == Info::SystemShutdown {
+fn DisconnectHelper(info: Signal<Info>) -> Element {
+    let mut active = use_signal(|| false);
+    let _ = use_memo(move || {
+        if info() == Info::SystemShutdown {
             active.set(true);
         }
     });
 
     // active.set(*info.read() == Info::SystemShutdown);
-    let eval = use_eval(cx);
 
-    let _guard = use_future(cx, (), |_| {
-        to_owned![active];
+    let _guard = use_future(move || {
         async move {
             let mut failed = 0;
             while failed <= 5 {
@@ -168,8 +153,8 @@ fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
         }
     });
 
-    if *active.get() {
-        cx.render(rsx! {
+    if active() {
+        rsx! {
             div {
                 class: "disconnect-helper overlay",
                 div {
@@ -186,10 +171,10 @@ fn DisconnectHelper(cx: Scope<DHProps>) -> Element {
                     }
                 }
             }
-        })
+        }
     } else {
-        cx.render(rsx! {
+        rsx! {
             ""
-        })
+        }
     }
 }

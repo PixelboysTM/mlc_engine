@@ -8,26 +8,16 @@ use mlc_common::patched::PatchedFixture;
 use crate::{icons, utils};
 use crate::utils::Overlay;
 
-#[derive(Props)]
-pub struct FTProps<'a> {
-    info: PatchedFixture,
-    onclose: EventHandler<'a, ()>,
-}
-
 #[component]
-pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
-    let features = cx
-        .props
-        .info
+pub fn FixtureTester(info: PatchedFixture, onclose: EventHandler) -> Element {
+    let features = info
         .features
         .iter()
         .map(|f| f.name())
         .collect::<Vec<_>>();
-
-    let create_eval = use_eval(cx);
-    let updater = use_coroutine(cx, |mut rx: UnboundedReceiver<FeatureSetRequest>| {
-        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
-        let fix_id = cx.props.info.id;
+    let updater = use_coroutine(|mut rx: UnboundedReceiver<FeatureSetRequest>| {
+        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
+        let fix_id = info.id;
         async move {
             let ws = utils::ws(&format!(
                 "ws://{}/runtime/feature/{}",
@@ -57,26 +47,26 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
     });
 
 
-    cx.render(rsx! {
+    rsx! {
         Overlay{
             title: "Fixture Tester".to_owned(),
             class: "fixture-tester".to_owned(),
             onclose: move |_| {
-                cx.props.onclose.call(());
+                onclose.call(());
             },
-            icon: cx.render(rsx!(icons::Lamp {})),
+            icon: rsx!(icons::Lamp {}),
 
             p {
                 class: "info",
                 "Name: ",
                 span {
                     class: "name",
-                    {cx.props.info.name.clone()}
+                    {info.name}
                 },
                 " Id: ",
                 span {
                     class: "id",
-                    {cx.props.info.id.to_string()}
+                    {info.id.to_string()}
                 }
 
             }
@@ -85,32 +75,32 @@ pub fn FixtureTester<'a>(cx: Scope<'a, FTProps<'a>>) -> Element<'a> {
                 class: "features",
                 for feature in features {
                     match feature {
-                        FixtureFeatureType::Dimmer => {cx.render(rsx!{DimmerTester {
+                        FixtureFeatureType::Dimmer => {rsx!{DimmerTester {
                             updater: updater,
-                        }})}
-                        FixtureFeatureType::White => {cx.render(rsx!{WhiteTester{
+                        }}}
+                        FixtureFeatureType::White => {rsx!{WhiteTester{
                             updater: updater
-                        }})}
-                        FixtureFeatureType::Rgb => {cx.render(rsx!{RgbTester{
+                        }}}
+                        FixtureFeatureType::Rgb => {rsx!{RgbTester{
                             updater: updater
-                        }})}
-                        FixtureFeatureType::Rotation => {cx.render(rsx!{"Rotation"})}
-                        FixtureFeatureType::PanTilt => {cx.render(rsx!{PanTiltTester{
+                        }}}
+                        FixtureFeatureType::Rotation => {rsx!{"Rotation"}}
+                        FixtureFeatureType::PanTilt => {rsx!{PanTiltTester{
                             updater: updater
-                        }})}
-                        FixtureFeatureType::Amber => {cx.render(rsx!{AmberTester{
+                        }}}
+                        FixtureFeatureType::Amber => {rsx!{AmberTester{
                             updater: updater
-                        }})}
+                        }}}
                     }
                 }
             }
         }
-    })
+    }
 }
 
 #[component]
-fn DimmerTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
-    cx.render(rsx! {
+fn DimmerTester(updater: Coroutine<FeatureSetRequest>) -> Element {
+    rsx! {
         div {
             class: "feature-tester dimmer",
             h3 {
@@ -125,12 +115,12 @@ fn DimmerTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) ->
                 }
             }
         }
-    })
+    }
 }
 
 #[component]
-fn WhiteTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
-    cx.render(rsx! {
+fn WhiteTester(updater: Coroutine<FeatureSetRequest>) -> Element {
+    rsx! {
         div {
             class: "feature-tester dimmer",
             h3 {
@@ -145,12 +135,12 @@ fn WhiteTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> 
                 }
             }
         }
-    })
+    }
 }
 
 #[component]
-fn AmberTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
-    cx.render(rsx! {
+fn AmberTester(updater: Coroutine<FeatureSetRequest>) -> Element {
+    rsx! {
         div {
             class: "feature-tester dimmer",
             h3 {
@@ -165,12 +155,12 @@ fn AmberTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> 
                 }
             }
         }
-    })
+    }
 }
 
 #[component]
-fn RgbTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
-    cx.render(rsx! {
+fn RgbTester(updater: Coroutine<FeatureSetRequest>) -> Element {
+    rsx! {
         div {
            class: "feature-tester rgb",
             h3 {
@@ -188,12 +178,12 @@ fn RgbTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> El
                 }
             }
         },
-    })
+    }
 }
 
 #[component]
-fn PanTiltTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -> Element<'a> {
-    cx.render(rsx! {
+fn PanTiltTester(updater: Coroutine<FeatureSetRequest>) -> Element {
+    rsx! {
         div {
            class: "feature-tester pan-tilt",
             h3 {
@@ -210,5 +200,5 @@ fn PanTiltTester<'a>(cx: Scope<'a>, updater: &'a Coroutine<FeatureSetRequest>) -
                 }
             }
         },
-    })
+    }
 }

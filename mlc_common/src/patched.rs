@@ -11,7 +11,7 @@ pub mod feature;
 
 pub type FixtureId = uuid::Uuid;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
 pub struct PatchedFixture {
     pub config: FixtureType,
     pub num_channels: u8,
@@ -24,7 +24,7 @@ pub struct PatchedFixture {
     pub id: FixtureId,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
 pub struct PatchedChannel {
     pub config: FixtureChannel,
     pub channel_address: UniverseAddress,
@@ -32,16 +32,16 @@ pub struct PatchedChannel {
 }
 
 #[derive(
-    Debug,
-    Clone,
-    Copy,
-    serde::Serialize,
-    serde::Deserialize,
-    PartialEq,
-    Eq,
-    Hash,
-    get_size::GetSize,
-    JsonSchema,
+Debug,
+Clone,
+Copy,
+serde::Serialize,
+serde::Deserialize,
+PartialEq,
+Eq,
+Hash,
+get_size::GetSize,
+JsonSchema,
 )]
 pub struct UniverseId(pub u16);
 
@@ -72,8 +72,8 @@ impl UniverseAddress {
 
 impl Serialize for UniverseAddress {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
+        where
+            S: serde::Serializer,
     {
         serializer.serialize_u16((*self).into())
     }
@@ -81,8 +81,8 @@ impl Serialize for UniverseAddress {
 
 impl<'de> Deserialize<'de> for UniverseAddress {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+        where
+            D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_u128(UAVisitor)
     }
@@ -98,8 +98,8 @@ impl<'de> Visitor<'de> for UAVisitor {
     }
 
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
+        where
+            E: serde::de::Error,
     {
         UniverseAddress::create(v).map_err(|e| {
             eprintln!("{:#?}", e);
@@ -108,8 +108,8 @@ impl<'de> Visitor<'de> for UAVisitor {
     }
 
     fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where
+            E: Error,
     {
         Ok(UniverseAddress::from(v as usize))
     }

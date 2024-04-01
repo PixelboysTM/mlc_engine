@@ -18,12 +18,12 @@ use crate::utils::{CheckboxState, Loading};
 mod fixture_tester;
 
 #[component]
-pub fn ConfigurePanel(cx: Scope) -> Element {
-    let project_info = use_future(cx, (), |_| {
+pub fn ConfigurePanel() -> Element {
+    let project_info = use_resource(|| {
         utils::fetch::<ProjectDefinition>("/projects/current")
     });
 
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "configure-panel",
             div {
@@ -32,8 +32,8 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
                     class: "header",
                     "Project Info",
                 },
-                match project_info.value() {
-                    Some(Ok(d)) => {cx.render(rsx!{
+                match &*project_info.read_unchecked() {
+                    Some(Ok(d)) => {rsx!{
                         p {
                             span {
                                 class: "pis",
@@ -55,9 +55,9 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
                             },
                             {d.last_edited.format("%d.%m.%Y %H:%M:%S").to_string()}
                         }
-                    })},
-                    Some(Err(_e)) => {cx.render(rsx!{"Error Loading Project Info"})},
-                    None => {Loading(cx)}
+                    }},
+                    Some(Err(_e)) => {rsx!{"Error Loading Project Info"}},
+                    None => {Loading()}
                 }
             },
             div {
@@ -77,25 +77,23 @@ pub fn ConfigurePanel(cx: Scope) -> Element {
                 FaderPanel {}
             },
         }
-    })
+    }
 }
 
 #[component]
-fn ProjectSettings(cx: Scope) -> Element {
-    let settings = use_future(cx, (), |_| utils::fetch::<ProjectSettings>("/settings/get"));
-    let endpoint_mapping = use_state(cx, || false);
-    let changed_settings = use_state(cx, || None);
-    cx.render(rsx! {
-        if *endpoint_mapping.get() {
-            rsx!{
+fn ProjectSettings() -> Element {
+    let settings = use_resource(|| utils::fetch::<ProjectSettings>("/settings/get"));
+    let mut endpoint_mapping = use_signal(|| false);
+    let mut changed_settings = use_signal(|| None);
+    rsx! {
+        if endpoint_mapping() {
                 EndPointMapping {
                     onclose: move |_| {
                         endpoint_mapping.set(false);
                     }
                 }
-            }
-        }
 
+        },
         div {
             class: "project-settings-panel",
             h3 {
@@ -104,20 +102,18 @@ fn ProjectSettings(cx: Scope) -> Element {
             },
             div {
                 class: "settings",
-                if changed_settings.get().is_some() {
-                    cx.render(rsx!{
+                if changed_settings().is_some() {
                         div {
                             class: "unsaved",
                             p {
                                 "Unsaved changes press Update to Confirm."
                             }
                         }
-                    })
-                }
 
-                match settings.value() {
+                },
+
+                match &*settings.read_unchecked() {
                     Some(Ok(s)) => {
-                        cx.render(
                             rsx!{
                                 div {
                                     class: "setting",
@@ -128,24 +124,24 @@ fn ProjectSettings(cx: Scope) -> Element {
                                         r#type: "checkbox",
                                         checked: s.save_on_quit,
                                         onchange: move |v| {
-                                            log::info!("{}", v.value);
-                                            if let Some(_ss) = changed_settings.get() {
+                                            log::info!("{}", v.data.value());
+                                            if let Some(_ss) = changed_settings() {
                                                 changed_settings.set(Some(ProjectSettings{
-                                                save_on_quit: v.value == "true",
+                                                save_on_quit: v.data.value() == "true",
                                                 }))
                                             } else {
                                                 changed_settings.set(Some(ProjectSettings{
-                                                    save_on_quit: v.value == "true",
+                                                    save_on_quit: v.data.value() == "true",
                                                 }))
                                             }
                                         }
                                     }
                                 }
                             }
-                        )
+
                     }
-                    Some(Err(_s)) => {cx.render(rsx!("Error Fetching settings"))}
-                    None => {utils::Loading(cx)}
+                    Some(Err(_s)) => {rsx!("Error Fetching settings")}
+                    None => {utils::Loading()}
                 }
             },
             div {
@@ -162,10 +158,9 @@ fn ProjectSettings(cx: Scope) -> Element {
                 },
                 button {
                     onclick: move |_| {
-                        to_owned![changed_settings];
                         async move {
-                            if let Some(s) = changed_settings.get() {
-                                let s = utils::fetch_post::<String, _>("/settings/update", s.clone()).await;
+                            if let Some(s) = changed_settings() {
+                                let s = utils::fetch_post::<String, _>("/settings/update", s).await;
                                 if s.is_ok() {
                                     changed_settings.set(None);
 
@@ -180,13 +175,13 @@ fn ProjectSettings(cx: Scope) -> Element {
 
             }
         }
-    })
+    }
 }
 
 #[component]
-fn FaderPanel(cx: Scope) -> Element {
-    let current_universe = use_ref(cx, || 1);
-    let universes = use_future(cx, (), |()| {
+fn FaderPanel() -> Element {
+    let mut current_universe = use_signal(|| 1);
+    let universes = use_resource(|| {
         async move {
             if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
                 d
@@ -195,16 +190,13 @@ fn FaderPanel(cx: Scope) -> Element {
             }
         }
     });
-    let current_values = use_ref(cx, || [0_u8; 512]);
+    let mut current_values = use_signal(|| [0_u8; 512]);
 
-    let create_eval = use_eval(cx);
-
-    let started = use_ref(cx, || false);
-    let get = use_coroutine(cx, |mut rx: UnboundedReceiver<u16>| {
-        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
-        to_owned![current_values, current_universe, started];
+    let mut started = use_signal(|| false);
+    let get = use_coroutine(|mut rx: UnboundedReceiver<u16>| {
+        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
         async move {
-            if started.read().deref() == &true {
+            if started() {
                 return;
             }
             started.set(true);
@@ -263,7 +255,7 @@ fn FaderPanel(cx: Scope) -> Element {
                                     RuntimeUpdate::Universe {
                                         universe, values, ..
                                     } => {
-                                        if current_universe.read().deref() == &universe.0 {
+                                        if current_universe() == universe.0 {
                                             current_values.set(values);
                                         }
                                     }
@@ -279,15 +271,14 @@ fn FaderPanel(cx: Scope) -> Element {
                             log::error!("Error {b:?}");
                         }
                     };
-                    async {}.await;
                 }
             } else {
                 log::error!("Error creating {:?}", ws_o.err().unwrap());
             }
         }
     });
-    let set = use_coroutine(cx, |mut rx: UnboundedReceiver<FaderUpdateRequest>| {
-        let eval = create_eval(r#"dioxus.send(window.location.host)"#).unwrap();
+    let set = use_coroutine(|mut rx: UnboundedReceiver<FaderUpdateRequest>| {
+        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
 
         async move {
             let ws = utils::ws(&format!(
@@ -314,35 +305,34 @@ fn FaderPanel(cx: Scope) -> Element {
             }
         }
     });
-
-    cx.render(rsx! {
+    rsx! {
         div {
             class: "slider-panel",
             div {
                 class: "universe-list",
-                match universes.value() {
+                match universes.read_unchecked().as_ref().cloned() {
                     Some(us) => {
-                        cx.render(rsx!{
+                        rsx!{
                             for u in us {
-                    div {
-                        class: "tab {sel(current_universe.read().deref() == u)}",
-                        onclick: move |_| {
-                            current_universe.set(*u);
-                                        get.send(*u);
-                        },
-                        {u.to_string()}
+                                div {
+                                    class: "tab {sel(current_universe() == u)}",
+                                    onclick: move |_| {
+                                        current_universe.set(u);
+                                        get.send(u);
+                                    },
+                                    {u.to_string()}
+                                }
+                            }
+                        }
                     }
-                }
-                        })
-                    }
-                    None => {Loading(cx)}
+                    None => {rsx!(Loading{})}
                 },
 
 
             },
             div {
                 class: "faders",
-                (0..512).map(|i| {
+                {(0..512).map(|i| {
                     rsx!{
                         Fader{
                         value: current_values.read()[i],
@@ -356,54 +346,45 @@ fn FaderPanel(cx: Scope) -> Element {
                         },
                     }
                     }
-                })
+                })}
             }
         }
-    })
-}
-
-#[derive(Props)]
-struct FaderProps<'a> {
-    value: u8,
-    #[props(into)]
-    id: String,
-    onchange: EventHandler<'a, u8>,
+    }
 }
 
 #[component]
-fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
-    let val = use_state(cx, || (cx.props.value, true));
-    let _ = use_memo(cx, &(cx.props.value, ), |(v, )| val.set((v, true)));
+fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
+    let mut val = use_signal(|| (value, true));
+    // let _ = use_memo(move || val.set((value, true)));
+    use_effect(use_reactive((&value, ), move |(v, )| val.set((v, true))));
 
-    use_effect(cx, (val, ), |(v, )| {
-        let (vl, ext) = v.get();
+    use_effect(move || {
+        let (vl, ext) = val();
         if !ext {
-            cx.props.onchange.call(*vl);
+            onchange.call(vl);
         }
-        async {}
     });
 
-    let size_e = use_state(cx, || None);
-    cx.render(rsx! {
+    let mut size_e = use_signal(|| None);
+    rsx! {
         div {
             class: "fader-container",
             div {
                class: "name",
-                {cx.props.id.clone()}
+                {id}
             },
 
             div{
                 class: "range",
-                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val.get().0 as f32 / 255.0) * 100.0}%, transparent {(val.get().0 as f32 / 255.0) * 100.0}%, transparent 100%)",
+                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val().0 as f32 / 255.0) * 100.0}%, transparent {(val().0 as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
                     size_e.set(Some(e.data));
                 },
 
                 onmousemove: move |e| {
-                    to_owned![size_e, val];
                     async move {
                         if e.data.held_buttons() == MouseButton::Primary {
-                            let size = size_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
+                            let size = size_e().unwrap().get_client_rect().await.unwrap().size.height;
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
@@ -412,10 +393,9 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
                     }
                 },
                 onmousedown: move |e| {
-                    to_owned![size_e, val];
                     async move {
                         if e.data.held_buttons() == MouseButton::Primary {
-                            let size = size_e.get().as_ref().unwrap().get_client_rect().await.unwrap().size.height;
+                            let size = size_e().unwrap().get_client_rect().await.unwrap().size.height;
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
@@ -428,10 +408,10 @@ fn Fader<'a>(cx: Scope<'a, FaderProps<'a>>) -> Element {
 
             div{
                 class: "value",
-                {make_three_digit(val.get().0 as u16)}
+                {make_three_digit(val().0 as u16)}
             }
         }
-    })
+    }
 }
 
 fn make_three_digit(u: u16) -> String {
@@ -447,8 +427,8 @@ fn sel(b: bool) -> &'static str {
 }
 
 #[component]
-fn FixtureTypeExplorer(cx: Scope) -> Element {
-    let fixture_query = use_future(cx, (), |_| async move {
+fn FixtureTypeExplorer() -> Element {
+    let fixture_query = use_resource(|| async move {
         let r = utils::fetch::<Vec<FixtureInfo>>("/data/get/fixture-types").await;
         if let Ok(infos) = r {
             infos
@@ -458,19 +438,18 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
         }
     });
 
-    let detail_fixture = use_state::<Option<FixtureInfo>>(cx, || None);
+    let mut detail_fixture = use_signal::<Option<FixtureInfo>>(|| None);
 
-    cx.render(rsx! {
-        if let Some(f) = detail_fixture.get() {
-            rsx!{
+    rsx! {
+        if let Some(f) = detail_fixture() {
                 DetailFixtureType {
                     t: f,
                     onclose: move |_| {
                         detail_fixture.set(None);
                     }
                 }
-            }
-        }
+
+        },
 
         div {
             class: "fixture-type-explorer",
@@ -479,9 +458,9 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                 "Fixture Types",
             },
 
-            match fixture_query.value() {
+            match fixture_query.read_unchecked().as_ref().cloned() {
                 Some(infos) => {
-                        cx.render(rsx!{
+                        rsx!{
                     for info in infos {
                             div {
                                 class: "fixture-type",
@@ -508,12 +487,12 @@ fn FixtureTypeExplorer(cx: Scope) -> Element {
                                 }
                             }
                         }
-                    })
+                    }
                 }
-                None => {utils::Loading(cx)}
+                None => {utils::Loading()}
             }
         }
-    })
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -525,19 +504,21 @@ enum PatchResult {
 }
 
 #[component]
-fn DetailFixtureType<'a>(cx: Scope<'a>, t: &'a FixtureInfo, onclose: EventHandler<'a, ()>) -> Element<'a> {
-    let create_new_universe = use_state(cx, || true);
-    let sel_mode = use_state(cx, || t.modes.first().map(|m| m.short_name.clone()).unwrap_or("No modes".to_string()));
+fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
+    let inf = use_memo(move || t.clone());
 
-    let sel_mode_o = use_memo(cx, (sel_mode, ), |(m, )| {
-        t.modes.iter().find(|mo| &mo.short_name == m.get()).cloned()
+    let mut create_new_universe = use_signal(|| true);
+    let mut sel_mode = use_signal(|| inf().modes.first().map(|m| m.short_name.clone()).unwrap_or("No modes".to_string()));
+
+    let sel_mode_o = use_memo(move || {
+        inf().modes.iter().find(|mo| mo.short_name == sel_mode()).cloned()
     });
 
-    cx.render(rsx! {
+    rsx! {
         utils::Overlay {
-            title: t.name.clone(),
+            title: inf().name.clone(),
             class: "fixture-type-detail",
-            icon: cx.render(rsx!(icons::Blocks{})),
+            icon: rsx!(icons::Blocks{}),
             onclose: move |_| {
                 onclose.call(());
             },
@@ -547,7 +528,7 @@ fn DetailFixtureType<'a>(cx: Scope<'a>, t: &'a FixtureInfo, onclose: EventHandle
                     "Create Additional Universes",
                 },
                 utils::Checkbox {
-                    init: (*create_new_universe.get()).into(),
+                    init: create_new_universe().into(),
                     onchange: move |s: CheckboxState| {
                         create_new_universe.set(s.into());
                     }
@@ -555,71 +536,77 @@ fn DetailFixtureType<'a>(cx: Scope<'a>, t: &'a FixtureInfo, onclose: EventHandle
             },
             div {
                 class: "modes",
-                for mode in &t.modes {
+                for mode in inf().modes {
                     div {
-                        class: "mode {sel(&mode.short_name == sel_mode.get())}",
+                        class: "mode {sel(mode.short_name == sel_mode())}",
                         onclick: move |e| {
-                            if e.trigger_button() == Some(MouseButton::Primary) && &mode.short_name != sel_mode.get() {
+                            if e.trigger_button() == Some(MouseButton::Primary) && mode.short_name != sel_mode() {
                                 sel_mode.set(mode.short_name.clone());
                             }
                         },
-                        mode.short_name.clone()
+                        {mode.short_name.clone()}
                     }
+
                 }
             },
             div {
                 class: "detail",
-                if let Some(mode) = sel_mode_o {
-                    cx.render(rsx!{
-                        h3 {
-                            class: "mode-name",
-                            {format!("{} ({})", mode.name, mode.short_name)}
-                        },
-                        for (i, channel) in mode.channels.iter().enumerate() {
-                            p {
-                                class: "channel",
-                                {format!("{}: {}", i, channel)}
-                            }
-                        },
-                        div {
-                            class: "buttons",
-                            button {
-                                onclick: move |_| {
-                                    to_owned![create_new_universe];
-                                    let id = t.id;
-                                    let i = t.modes.iter().enumerate().filter(|(_, m)| m.short_name == mode.short_name).map(|(i, _)| i).next().unwrap_or(0);
-                                    onclose.call(());
-                                    async move {
-                                        let _ = utils::fetch::<PatchResult>(&format!("/data/patch/{}/{}?create={}",
-                                            id,
-                                            i,
-                                            *create_new_universe.get()
-                                        )).await;
-                                    }
-                                },
-                                "Patch"
+                {
+                    if let Some(mode) = sel_mode_o() {
+                        rsx!{
+                            h3 {
+                                class: "mode-name",
+                                {format!("{} ({})", mode.name, mode.short_name)}
                             },
-                            button {
-                                onclick: move |_| {
-                                    onclose.call(());
+                            for (i, channel) in mode.channels.iter().enumerate() {
+                                p {
+                                    class: "channel",
+                                    {format!("{}: {}", i, channel)}
+                                }
+                            },
+                            div {
+                                class: "buttons",
+                                button {
+                                    onclick: move |_| {
+                                        let mode = mode.clone();
+                                        async move {
+                                            let id = inf().id;
+                                            let i = inf().modes
+                                            .iter()
+                                            .enumerate()
+                                            .find(|(_, m)| m.short_name == mode.short_name)
+                                            .map(|(i, _)| i)
+                                            .unwrap_or(0);
+                                            onclose.call(());
+                                            let _ = utils::fetch::<PatchResult>(&format!("/data/patch/{}/{}?create={}",id,i,create_new_universe())).await;
+                                        }
+                                    },
+                                    "Patch"
                                 },
-                                "Close"
+                                button {
+                                    onclick: move |_| {
+                                        onclose.call(());
+                                    },
+                                    "Close"
+                                }
                             }
                         }
-                    })
+                    } else {
+                        rsx!("")
+                    }
                 }
             },
             div {
                 class: "fix-id",
-                t.id.to_string()
+                {inf().id.to_string()}
             }
         }
-    })
+    }
 }
 
 #[component]
-fn UniverseExplorer(cx: Scope) -> Element {
-    let universes = use_future(cx, (), |_| async move {
+fn UniverseExplorer() -> Element {
+    let universes = use_resource(|| async move {
         utils::fetch::<Vec<UniverseId>>("/data/universes")
             .await
             .map_err(|e| {
@@ -628,9 +615,9 @@ fn UniverseExplorer(cx: Scope) -> Element {
             .unwrap_or(vec![])
     });
 
-    let selected = use_state(cx, || UniverseId(1));
-    let universe = use_future(cx, (selected, ), |(sel, )| async move {
-        utils::fetch::<FixtureUniverse>(&format!("/data/universes/{}", sel.get().0))
+    let mut selected = use_signal(|| UniverseId(1));
+    let universe = use_resource(move || async move {
+        utils::fetch::<FixtureUniverse>(&format!("/data/universes/{}", selected().0))
             .await
             .map_err(|e| {
                 log::error!("Error fetching universes: {:?}", e);
@@ -638,20 +625,27 @@ fn UniverseExplorer(cx: Scope) -> Element {
             .ok()
     });
 
-    let detail_fixture = use_state::<Option<PatchedFixture>>(cx, || None);
+    let mut detail_fixture = use_signal::<Option<PatchedFixture>>(|| None);
+    let mut detail_fixture_id = use_signal(|| None);
+    use_effect(move || {
+        if let Some(id) = detail_fixture_id() {
+            let u = universe.value()().expect("Must be").expect("Must be");
+            let val = u.fixtures.get(id).cloned();
+            detail_fixture.set(val);
+        }
+    });
 
-    match universes.value() {
+    match universes.read_unchecked().as_ref().cloned() {
         Some(d) => {
-            cx.render(rsx! {
-                if let Some(f) = detail_fixture.get() {
-                    rsx!{
+            rsx! {
+                if let Some(f) = detail_fixture() {
                         FixtureTester {
                             info: f.clone(),
                             onclose: move |_| {
                                 detail_fixture.set(None);
                             }
                         }
-                    }
+
                 }
 
                 h3 {
@@ -664,29 +658,31 @@ fn UniverseExplorer(cx: Scope) -> Element {
                         class: "tabs",
                         for id in d {
                             div {
-                                class: "tab {sel(selected.get() == id)}",
+                                class: "tab {sel(selected() == id)}",
                                 onclick: move |_| {
-                                    selected.set(*id);
+                                    selected.set(id);
                                 },
                                 {id.0.to_string()}
                             }
                         }
                     },
-                    match universe.value() {
+                    match universe.value()() {
                         Some(Some(data)) => {
-                            cx.render(rsx!{
+                            rsx!{
                                 div {
                                     class: "channels",
-                                    for (i, channel) in data.channels.iter().enumerate() {
-                                        if let Some(c) = channel {
-                                            rsx!{
-                                                div {
-                                                    class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize, c.channel_index)}",
-                                                    onclick: move |_| {
-                                                        detail_fixture.set(Some(data.fixtures[c.fixture_index].clone()));
-                                                    },
-                                                    if c.channel_index == 0 {
-                                                        rsx! {
+                                    for (i, channel) in data.channels.iter().cloned().enumerate() {
+                                        match channel {
+                                            Some(c) => {
+                                                rsx! {
+                                                    div {
+                                                        class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize, c.channel_index)}",
+                                                        onclick: move |_| {
+                                                            detail_fixture_id.set(Some(c.fixture_index))
+                                                            // let d = &data;
+                                                            // detail_fixture.set(Some(d.fixtures[c.fixture_index].clone()));
+                                                        },
+                                                        if c.channel_index == 0 {
                                                             code {
                                                                 {i.to_string()}
                                                             }
@@ -694,34 +690,35 @@ fn UniverseExplorer(cx: Scope) -> Element {
                                                     }
                                                 }
                                             }
-                                        } else {
-                                            rsx!{
-                                                div {
-                                                    class: "channel",
-                                                    code {
-                                                        {i.to_string()}
+                                            None => {
+                                                rsx! {
+                                                    div {
+                                                        class: "channel",
+                                                        code {
+                                                            {i.to_string()}
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
+                                    },
                                 }
-                            })
+                            }
                         }
                         Some(None) => {
-                            cx.render(rsx!{
+                            rsx!{
                                 p {
                                     "Error loading universe data"
                                 }
-                            })
+                            }
                         }
-                        None => utils::Loading(cx)
+                        None => utils::Loading()
                     }
                 }
 
-            })
+            }
         }
-        None => utils::Loading(cx)
+        None => utils::Loading()
     }
 }
 
@@ -753,70 +750,69 @@ struct SearchBody {
     categoriesQuery: [&'static str; 0],
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 struct AvailableFixture {
     manufacturer: String,
     name: String,
 }
 
-#[derive(Props)]
-pub struct UFPProps<'a> {
-    on_close: EventHandler<'a, ()>,
-}
 
 #[component]
-pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
-    let source = use_state(cx, || FixtureSource::Ofl);
+pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
+    let mut source = use_signal(|| FixtureSource::Ofl);
 
-    let available_fixtures = use_future(cx, (), |_| async move {
-        let r = utils::fetch_post::<Vec<String>, _>(
-            "https://open-fixture-library.org/api/v1/get-search-results",
-            SearchBody {
-                searchQuery: "",
-                categoriesQuery: [],
-                manufacturersQuery: [],
-            },
-        )
-            .await;
+    let available_fixtures =
+        use_resource(move || async move {
+            let r = utils::fetch_post::<Vec<String>, _>(
+                "https://open-fixture-library.org/api/v1/get-search-results",
+                SearchBody {
+                    searchQuery: "",
+                    categoriesQuery: [],
+                    manufacturersQuery: [],
+                },
+            )
+                .await;
 
-        r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
-            .ok()
-            .map(|v| {
-                v.iter()
-                    .map(|e| {
-                        let mut s = e.split('/');
-                        AvailableFixture {
-                            manufacturer: s.next().unwrap().to_string(),
-                            name: s.next().unwrap().to_string(),
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            })
-    });
+            let result = r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
+                .ok()
+                .map(|v| {
+                    v.iter()
+                        .map(|e| {
+                            let mut s = e.split('/');
+                            AvailableFixture {
+                                manufacturer: s.next().unwrap().to_string(),
+                                name: s.next().unwrap().to_string(),
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                });
 
-    let search = use_state(cx, || "".to_string());
+            result.expect("Must be")
+        });
 
-    cx.render(rsx! {
+    let mut search = use_signal(|| "".to_string());
+
+    rsx! {
         utils::Overlay{
             title: "Import Fixture Types",
             class: "upload-fixture",
-            icon: cx.render(rsx!(icons::LampDesk {})),
+            icon: rsx!{icons::LampDesk {}},
             onclose: move |_| {
-              cx.props.on_close.call(());
+              on_close.call(());
             },
 
             div {
                     class: "tabs",
 
                     div {
-                        class: "tab {sel(*source.get() == FixtureSource::Ofl)}",
+                        class: "tab {sel(source() == FixtureSource::Ofl)}",
                         onclick: move |_| {
                             source.set(FixtureSource::Ofl);
                         },
                         "OFL"
                     },
                     div {
-                        class: "tab {sel(*source.get() == FixtureSource::Json)}",
+                        class: "tab {sel(source() == FixtureSource::Json)}",
                         onclick: move |_| {
                             source.set(FixtureSource::Json);
                         },
@@ -826,23 +822,30 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
 
                 div {
                     class: "list-content",
-                    match source.get() {
+                    match source() {
                         FixtureSource::Ofl => {
-                            match available_fixtures.value() {
-                                Some(Some(fs)) => {
-                                    cx.render(rsx!{
+                            rsx! {
+                            match available_fixtures.state()() {
+
+                            UseResourceState::Pending => {
+                                    rsx!(utils::Loading {})
+                                }
+                                UseResourceState::Stopped | UseResourceState::Paused => {
+                                    rsx!{"Failed to query fixtures from ofl. Is your device connected to the internet?"}}
+                                UseResourceState::Ready => {
+                                    rsx! {
                                         div {
                                             class: "searchbar",
                                             input {
                                                 r#type: "text",
                                                 onchange: move |e| {
-                                                    search.set(e.value.clone());
+                                                search.set(e.data.value());
                                                 }
                                             }
                                         },
                                         div {
                                             class: "results",
-                                            for available in filter_search(fs, &search.get()) {
+                                            for available in filter_search(available_fixtures.read().clone().unwrap_or(vec![]), &search()) {
                                                 div {
                                                     class: "result",
                                                     p {
@@ -872,21 +875,18 @@ pub fn UploadFixturePopup<'a>(cx: Scope<'a, UFPProps<'a>>) -> Element<'a> {
                                                 }
                                             }
                                         }
-                                    })
+                                    }
                                 }
-                                Some(None) => {cx.render(rsx!{
-                                    "Failed to query fixtures from ofl. Is your device connected to the internet?"
-                                })}
-                                None => {cx.render (rsx!(utils::Loading {}))}
                             }
                         }
-                        FixtureSource::Json => {cx.render (rsx!{
+                        }
+                        FixtureSource::Json => {rsx!{
                             "Currently not available"
-                        })}
+                        }}
                     }
                 }
         }
-    })
+    }
 }
 
 fn fits_search(f: &AvailableFixture, search: &str) -> bool {
@@ -905,25 +905,20 @@ fn fits_search(f: &AvailableFixture, search: &str) -> bool {
     true
 }
 
-fn filter_search<'a>(fs: &'a Vec<AvailableFixture>, search: &str) -> Vec<&'a AvailableFixture> {
+fn filter_search(fs: Vec<AvailableFixture>, search: &str) -> Vec<AvailableFixture> {
     let mut r = vec![];
     for f in fs {
-        if fits_search(f, search) {
-            r.push(f);
+        if fits_search(&f, search) {
+            r.push(f.clone());
         }
     }
 
     r
 }
 
-#[derive(Props)]
-struct EPMProps<'a> {
-    onclose: EventHandler<'a>,
-}
-
 #[component]
-fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
-    let config = use_future(cx, (), |_| async move {
+fn EndPointMapping(onclose: EventHandler) -> Element {
+    let config = use_resource(|| async move {
         let r = utils::fetch::<EndPointConfig>("/runtime/endpoints/get").await;
         match r {
             Ok(c) => {
@@ -937,16 +932,16 @@ fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
         }
     });
 
-    cx.render(rsx! {
+    rsx! {
         utils::Overlay {
             title: "Endpoint Mapping",
             class: "endpoint-mapping",
-            icon: cx.render(rsx!(icons::Cable {})),
+            icon: rsx!(icons::Cable {}),
             onclose: move |_| {
-              cx.props.onclose.call(());
+              onclose.call(());
             },
 
-            match config.value() {
+            match &*config.read_unchecked() {
                     Some(Some((us, c))) => {
                         rsx!{
                             for u in us {
@@ -974,53 +969,5 @@ fn EndPointMapping<'a>(cx: Scope<'a, EPMProps<'a>>) -> Element<'a> {
                     }
                 }
         }
-    })
-
-    // cx.render(rsx! {
-    //     div {
-    //         class: "overlay",
-    //         onclick: move |_| {
-    //             cx.props.onclose.call(());
-    //         },
-    //
-    //         div {
-    //             class: "overlay-content endpoint-mapping",
-    //             onclick: move |e| {
-    //                 e.stop_propagation();
-    //             },
-    //
-    //             h3 {
-    //                 "Endpoint Mapping"
-    //             },
-    //
-    //             match config.value() {
-    //                 Some(Some((us, c))) => {
-    //                     rsx!{
-    //                         for u in us {
-    //                             div {
-    //                                 class: "universe",
-    //                                 p {
-    //                                     {u.0.to_string()}
-    //                                 },
-    //                                 div {
-    //                                     class: "endpoints",
-    //                                     for e in c.endpoints.get(u).unwrap_or(&vec![]) {
-    //                                         div {
-    //                                             class: "endpoint",
-    //                                             "e"
-    //                                         }
-    //                                     }
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //                 Some(None) => {rsx!{"Error fetching config see console for more information!"}}
-    //                 None => {
-    //                     rsx!{utils::Loading{}}
-    //                 }
-    //             }
-    //         }
-    //     }
-    // })
+    }
 }

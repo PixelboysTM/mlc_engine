@@ -1,6 +1,3 @@
-use std::ops::Deref;
-
-use dioxus::core::{Element, Scope};
 use dioxus::prelude::*;
 
 use crate::icons::{
@@ -16,17 +13,14 @@ pub enum Pane {
 }
 
 #[component]
-pub fn Headbar(cx: Scope) -> Element {
-    let pane = use_shared_state::<Pane>(cx).unwrap();
-    let upload_fixture = use_state(cx, || false);
+pub fn Headbar(pane: Signal<Pane>) -> Element {
+    let mut upload_fixture = use_signal(|| false);
 
-    render! {
-        if *upload_fixture.get() {
-            rsx!{
-                configure_panel::UploadFixturePopup {
-                    on_close: move |_| {
-                        upload_fixture.set(false);
-                    }
+    rsx! {
+        if upload_fixture() {
+            configure_panel::UploadFixturePopup {
+                on_close: move |_| {
+                    upload_fixture.set(false);
                 }
             }
         }
@@ -47,28 +41,31 @@ pub fn Headbar(cx: Scope) -> Element {
             div {
                 class: "tabs",
                 button {
-                    class: "icon configure {sel(pane.read().deref() == &Pane::Configure)}",
+                    class: "icon configure",
+                    class: if pane() == Pane::Configure {"sel"},
                     title: "Configure",
                     onclick: move |_event| {
-                        *pane.write() = Pane::Configure;
+                        pane.set(Pane::Configure);
                         log::info!("Clicked Configure");
                     },
                     Settings {}
                 }
                 button {
-                    class: "icon program {sel(pane.read().deref() == &Pane::Program)}",
+                    class: "icon program",
+                    class: if pane() == Pane::Program {"sel"},
                     title: "Program",
                     onclick: move |_event| {
-                        *pane.write() = Pane::Program;
+                        pane.set(Pane::Program);
                         log::info!("Clicked Program")
                     },
                     Pencil {}
                 }
                 button {
-                    class: "icon show {sel(pane.read().deref() == &Pane::Show)}",
+                    class: "icon show",
+                    class: if pane() == Pane::Show {"sel"},
                     title: "Show",
                     onclick: move |_event| {
-                        *pane.write() = Pane::Show;
+                        pane.set(Pane::Show);
                         log::info!("Clicked Show")
                     },
                     LightBulb {}
@@ -77,8 +74,7 @@ pub fn Headbar(cx: Scope) -> Element {
             div {
                 class: "tabs right",
 
-                if pane.read().deref() == &Pane::Configure {
-                    rsx! {
+                if pane() == Pane::Configure {
                     button {
                         class: "icon",
                         title: "Upload Fixture",
@@ -86,12 +82,10 @@ pub fn Headbar(cx: Scope) -> Element {
                                 upload_fixture.set(true);
                         },
                         UploadCloud {},
-                    },
                     }
                 }
 
-                if pane.read().deref() == &Pane::Program {
-                    rsx! {
+                if pane() == Pane::Program {
                     button {
                         class: "icon",
                         title: "Open 3D Viewer",
@@ -99,12 +93,10 @@ pub fn Headbar(cx: Scope) -> Element {
                             log::info!("Clicked Save")
                         },
                         ExternalLink {},
-                    },
                     }
                 }
 
-                if pane.read().deref() == &Pane::Show {
-                    rsx! {
+                if pane() == Pane::Show {
                     button {
                         class: "icon",
                         title: "Open 3D Viewer",
@@ -112,9 +104,8 @@ pub fn Headbar(cx: Scope) -> Element {
                             log::info!("Clicked Save")
                         },
                         TabletSmartphone {},
-                    },
                     }
-                }
+                },
 
                 button {
                     class: "icon",
@@ -131,13 +122,5 @@ pub fn Headbar(cx: Scope) -> Element {
                 },
             }
         }
-    }
-}
-
-fn sel(b: bool) -> &'static str {
-    if b {
-        "sel"
-    } else {
-        ""
     }
 }
