@@ -602,3 +602,81 @@ button:hover {
         pointer-events: none;
     }
 }
+
+.toaster-provider {
+    position: absolute;
+    bottom: 0.1rem;
+    right: 0.25rem;
+    overflow-y: hidden;
+
+    .toast-wrapper {
+        position: relative;
+        width: 18rem;
+        max-height: 10rem;
+        height: auto;
+        background-color: var(--color-panel);
+        border-radius: var(--number-border-radius);
+        margin: 0.25rem 0.25rem 0.5rem;
+        padding: 0.25rem;
+        box-shadow: var(--color-panel) 0.25rem 0.25rem 0.25rem 0;
+        border-bottom: var(--t-dot-color) 2px solid;
+        animation: toast-fade-in 250ms;
+
+        &.info {
+            --t-dot-color: var(--color-info);
+        }
+
+        &.warning {
+            --t-dot-color: var(--color-warning);
+        }
+
+        &.error {
+            --t-dot-color: var(--color-error);
+        }
+
+        &.log {
+            --t-dot-color: var(--color-disabled);
+        }
+
+        h3 {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-size: 1.0rem;
+
+            .dot {
+                display: inline-block;
+                width: 1rem;
+                height: 1rem;
+                margin: 0 0.25rem 0 0;
+                background-color: var(--t-dot-color);
+                border-radius: 50%;
+            }
+        }
+
+        p {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-size: 0.9rem;
+        }
+
+        .close {
+            padding: 0;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.25rem;
+            display: grid;
+            align-items: center;
+        }
+    }
+}
+
+@keyframes toast-fade-in {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}

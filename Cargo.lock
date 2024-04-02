@@ -2337,6 +2337,7 @@ name = "mlc_dioxus"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "chrono",
  "color-art",
  "dioxus",
  "futures",

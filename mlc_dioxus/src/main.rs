@@ -10,6 +10,7 @@ use wasm_logger::Config;
 use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
 use crate::utils::Loading;
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 pub(crate) mod configure_panel;
 mod headbar;
@@ -23,7 +24,9 @@ fn main() {
 }
 
 fn start() -> Element {
+    utils::toaster::init_toaster();
     rsx! {
+        utils::toaster::ToasterElement {},
         Router::<Route> {}
     }
 }
@@ -46,6 +49,7 @@ fn Projects() -> Element {
 fn Index() -> Element {
     let pane = use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
 
+    let mut toaster = use_context::<Signal<Toaster>>();
 
     use_effect(move || {
         gloo_storage::LocalStorage::set("lastTab", pane()).expect("Writing failed");
@@ -86,7 +90,23 @@ fn Index() -> Element {
                     let i = serde_json::from_str::<Info>(&msg).unwrap();
                     info.set(i);
 
-                    log::info!("Updating");
+                    match i {
+                        Info::ProjectSaved => {
+                            toaster.info("Project Saved", "Project saved to disk successfully!");
+                        }
+                        Info::ProjectLoaded => {
+                            toaster.info("Project Loaded", "Project Loaded successfully!");
+                        }
+                        Info::SystemShutdown => {
+                            toaster.info("Shutting down", "MLC is exiting");
+                        }
+                        Info::FixtureTypesUpdated => {}
+                        Info::UniversePatchChanged(_) => {}
+                        Info::UniversesUpdated => {}
+                        Info::EndpointConfigChanged => {}
+                        Info::EffectListChanged => {}
+                        Info::None => {}
+                    }
                 }
                 log::error!("Error with msg");
             } else {
@@ -111,7 +131,31 @@ fn Index() -> Element {
                 }
                 Pane::Program => {
                     rsx!{
-                        "Program"
+                        "Program",
+                        button {
+                            onclick: move |_| {
+                                 toaster.write().info("Test Info!", "This is a test notification and will be discarded shortly!"); // TODO: Add Trait to shorten this
+                            },
+                            "Toast Info"
+                        },
+                        button {
+                            onclick: move |_| {
+                                 toaster.write().warning("Test Warning!", "This is a warning be carefull!"); // TODO: Add Trait to shorten this
+                            },
+                            "Toast Warning"
+                        },
+                        button {
+                            onclick: move |_| {
+                                 toaster.write().error("An error occured", "This is a error message someting went wrong and it is your job to figure out what here is some context: Lorem ipsum dhuaijkdbasjdbahssdjd you are fucked!!!!!"); // TODO: Add Trait to shorten this
+                            },
+                            "Toast Error"
+                        }
+                        button {
+                            onclick: move |_| {
+                                 toaster.write().log("Log", "This is just a bit of logging"); // TODO: Add Trait to shorten this
+                            },
+                            "Toast Log"
+                        }
                     }
                 }
                 Pane::Show => {

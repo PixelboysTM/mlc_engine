@@ -24,3 +24,4 @@ async-std = "1.12.0"
 futures = "0.3.30"
 # Misc
 color-art = "0.3.8"
+chrono = { version = "0.4.37" }
