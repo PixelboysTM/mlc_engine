@@ -60,8 +60,6 @@ fn Index() -> Element {
     let mut started = use_signal(|| false);
     // let create_eval =  use_eval(cx);
     let _info_watcher = use_future(move || {
-        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
-
         async move {
             if started() {
                 return;
@@ -69,17 +67,7 @@ fn Index() -> Element {
             started.set(true);
             log::info!("Started");
 
-            let ws_url = &format!(
-                "ws://{}/data/info",
-                eval.recv()
-                    .await
-                    .map_err(|e| log::error!("Error: {e:?}"))
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-            );
-
-            let ws = utils::ws(ws_url);
+            let ws = utils::ws("/data/info").await;
             if let Ok(mut ws) = ws {
                 while let Some(Ok(msg)) = ws.next().await {
                     let msg = match msg {

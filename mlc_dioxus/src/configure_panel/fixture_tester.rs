@@ -16,19 +16,9 @@ pub fn FixtureTester(info: PatchedFixture, onclose: EventHandler) -> Element {
         .map(|f| f.name())
         .collect::<Vec<_>>();
     let updater = use_coroutine(|mut rx: UnboundedReceiver<FeatureSetRequest>| {
-        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
         let fix_id = info.id;
         async move {
-            let ws = utils::ws(&format!(
-                "ws://{}/runtime/feature/{}",
-                eval.recv()
-                    .await
-                    .map_err(|e| log::error!("Error: {e:?}"))
-                    .unwrap()
-                    .as_str()
-                    .unwrap(),
-                fix_id
-            ));
+            let ws = utils::ws(&format!("/runtime/feature/{}", fix_id)).await;
 
             if let Ok(mut ws) = ws {
                 while let Some(msg) = rx.next().await {

@@ -194,22 +194,13 @@ fn FaderPanel() -> Element {
 
     let mut started = use_signal(|| false);
     let get = use_coroutine(|mut rx: UnboundedReceiver<u16>| {
-        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
         async move {
             if started() {
                 return;
             }
             started.set(true);
 
-            let ws_o = utils::ws(&format!(
-                "ws://{}/runtime/fader-values/get",
-                eval.recv()
-                    .await
-                    .map_err(|e| log::error!("Error: {e:?}"))
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-            ));
+            let ws_o = utils::ws("/fader-values/get").await;
 
             if let Ok(mut get_ws) = ws_o {
                 loop {
@@ -278,18 +269,8 @@ fn FaderPanel() -> Element {
         }
     });
     let set = use_coroutine(|mut rx: UnboundedReceiver<FaderUpdateRequest>| {
-        let mut eval = eval(r#"dioxus.send(window.location.host)"#);
-
         async move {
-            let ws = utils::ws(&format!(
-                "ws://{}/runtime/fader-values/set",
-                eval.recv()
-                    .await
-                    .map_err(|e| log::error!("Error: {e:?}"))
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-            ));
+            let ws = utils::ws("/runtime/fader-values/set").await;
 
             if let Ok(mut ws) = ws {
                 loop {
