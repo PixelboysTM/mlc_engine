@@ -7,7 +7,7 @@ use futures::future::{Either, select};
 use gloo_net::websocket::Message;
 
 use fixture_tester::FixtureTester;
-use mlc_common::{FaderUpdateRequest, FixtureInfo, ProjectDefinition, ProjectSettings, RuntimeUpdate};
+use mlc_common::{FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate};
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
@@ -181,7 +181,7 @@ fn ProjectSettings() -> Element {
 #[component]
 fn FaderPanel() -> Element {
     let mut current_universe = use_signal(|| 1);
-    let universes = use_resource(|| {
+    let mut universes = use_resource(|| {
         async move {
             if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
                 d
@@ -190,6 +190,16 @@ fn FaderPanel() -> Element {
             }
         }
     });
+    let info = use_context::<Signal<Info>>();
+    use_effect(move || {
+        match info() {
+            Info::UniversesUpdated => {
+                universes.restart();
+            }
+            _ => {}
+        }
+    });
+
     let mut current_values = use_signal(|| [0_u8; 512]);
 
     let mut started = use_signal(|| false);
@@ -409,13 +419,23 @@ fn sel(b: bool) -> &'static str {
 
 #[component]
 fn FixtureTypeExplorer() -> Element {
-    let fixture_query = use_resource(|| async move {
+    let mut fixture_query = use_resource(|| async move {
         let r = utils::fetch::<Vec<FixtureInfo>>("/data/get/fixture-types").await;
         if let Ok(infos) = r {
             infos
         } else {
             log::error!("Couldn't fetch types: {:?}", r.err().unwrap());
             vec![]
+        }
+    });
+
+    let info = use_context::<Signal<Info>>();
+    use_effect(move || {
+        match info() {
+            Info::FixtureTypesUpdated => {
+                fixture_query.restart();
+            }
+            _ => {}
         }
     });
 
@@ -587,7 +607,7 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
 
 #[component]
 fn UniverseExplorer() -> Element {
-    let universes = use_resource(|| async move {
+    let mut universes = use_resource(|| async move {
         utils::fetch::<Vec<UniverseId>>("/data/universes")
             .await
             .map_err(|e| {
@@ -613,6 +633,22 @@ fn UniverseExplorer() -> Element {
             let u = universe.value()().expect("Must be").expect("Must be");
             let val = u.fixtures.get(id).cloned();
             detail_fixture.set(val);
+            detail_fixture_id.set(None);
+        }
+    });
+
+    let info = use_context::<Signal<Info>>();
+    use_effect(move || {
+        match info() {
+            Info::UniversePatchChanged(id) => {
+                if id == *selected.peek() {
+                    selected.set(id);
+                }
+            }
+            Info::UniversesUpdated => {
+                universes.restart();
+            }
+            _ => {}
         }
     });
 

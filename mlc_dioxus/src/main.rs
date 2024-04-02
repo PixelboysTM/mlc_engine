@@ -195,7 +195,9 @@ fn provide_info() {
                         toaster.info("Shutting down", "MLC is exiting");
                     }
                     Info::FixtureTypesUpdated => {}
-                    Info::UniversePatchChanged(_) => {}
+                    Info::UniversePatchChanged(u) => {
+                        toaster.log("Universe Patch changed", format!("Universe {} changed", u.0));
+                    }
                     Info::UniversesUpdated => {}
                     Info::EndpointConfigChanged => {}
                     Info::EffectListChanged => {}
