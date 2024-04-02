@@ -47,6 +47,8 @@ fn Projects() -> Element {
 
 #[allow(non_snake_case)]
 fn Index() -> Element {
+    provide_info();
+
     let pane = use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
 
     let mut toaster = use_context::<Signal<Toaster>>();
@@ -55,57 +57,9 @@ fn Index() -> Element {
         gloo_storage::LocalStorage::set("lastTab", pane()).expect("Writing failed");
     });
 
-    let mut info = use_signal(|| Info::None);
-
-    let mut started = use_signal(|| false);
-    // let create_eval =  use_eval(cx);
-    let _info_watcher = use_future(move || {
-        async move {
-            if started() {
-                return;
-            }
-            started.set(true);
-            log::info!("Started");
-
-            let ws = utils::ws("/data/info").await;
-            if let Ok(mut ws) = ws {
-                while let Some(Ok(msg)) = ws.next().await {
-                    let msg = match msg {
-                        Message::Text(t) => t,
-                        Message::Bytes(b) => String::from_utf8(b).unwrap(),
-                    };
-
-                    let i = serde_json::from_str::<Info>(&msg).unwrap();
-                    info.set(i);
-
-                    match i {
-                        Info::ProjectSaved => {
-                            toaster.info("Project Saved", "Project saved to disk successfully!");
-                        }
-                        Info::ProjectLoaded => {
-                            toaster.info("Project Loaded", "Project Loaded successfully!");
-                        }
-                        Info::SystemShutdown => {
-                            toaster.info("Shutting down", "MLC is exiting");
-                        }
-                        Info::FixtureTypesUpdated => {}
-                        Info::UniversePatchChanged(_) => {}
-                        Info::UniversesUpdated => {}
-                        Info::EndpointConfigChanged => {}
-                        Info::EffectListChanged => {}
-                        Info::None => {}
-                    }
-                }
-                log::error!("Error with msg");
-            } else {
-                log::info!("Error creating ws {:?}", ws.err().unwrap());
-            }
-        }
-    });
 
     rsx! {
         DisconnectHelper {
-            info
         },
         Headbar{
             pane,
@@ -158,7 +112,8 @@ fn Index() -> Element {
 
 
 #[component]
-fn DisconnectHelper(info: Signal<Info>) -> Element {
+fn DisconnectHelper() -> Element {
+    let info = use_context::<Signal<Info>>();
     let mut active = use_signal(|| false);
     let _ = use_memo(move || {
         if info() == Info::SystemShutdown {
@@ -209,4 +164,47 @@ fn DisconnectHelper(info: Signal<Info>) -> Element {
             ""
         }
     }
+}
+
+fn provide_info() {
+    log::info!("Providing Info");
+    let mut info = provide_root_context(Signal::new(Info::None));
+    use_future(move || async move {
+        log::info!("Started");
+        let mut toaster = use_context::<Signal<Toaster>>();
+
+        let ws = utils::ws("/data/info").await;
+        if let Ok(mut ws) = ws {
+            while let Some(Ok(msg)) = ws.next().await {
+                let msg = match msg {
+                    Message::Text(t) => t,
+                    Message::Bytes(b) => String::from_utf8(b).unwrap(),
+                };
+
+                let i = serde_json::from_str::<Info>(&msg).unwrap();
+                info.set(i);
+
+                match i {
+                    Info::ProjectSaved => {
+                        toaster.info("Project Saved", "Project saved to disk successfully!");
+                    }
+                    Info::ProjectLoaded => {
+                        toaster.info("Project Loaded", "Project Loaded successfully!");
+                    }
+                    Info::SystemShutdown => {
+                        toaster.info("Shutting down", "MLC is exiting");
+                    }
+                    Info::FixtureTypesUpdated => {}
+                    Info::UniversePatchChanged(_) => {}
+                    Info::UniversesUpdated => {}
+                    Info::EndpointConfigChanged => {}
+                    Info::EffectListChanged => {}
+                    Info::None => {}
+                }
+            }
+            log::error!("Error with msg");
+        } else {
+            log::info!("Error creating ws {:?}", ws.err().unwrap());
+        }
+    });
 }

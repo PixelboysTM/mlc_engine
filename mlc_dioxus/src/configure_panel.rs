@@ -200,7 +200,7 @@ fn FaderPanel() -> Element {
             }
             started.set(true);
 
-            let ws_o = utils::ws("/fader-values/get").await;
+            let ws_o = utils::ws("/runtime/fader-values/get").await;
 
             if let Ok(mut get_ws) = ws_o {
                 loop {
