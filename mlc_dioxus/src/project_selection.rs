@@ -1,6 +1,7 @@
 use crate::{icons, utils};
 use dioxus::prelude::*;
 use mlc_common::ProjectDefinition;
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 #[component]
 pub fn ProjectSelection() -> Element {
@@ -10,6 +11,8 @@ pub fn ProjectSelection() -> Element {
             .map_err(|e| log::error!("Error Loading Project list: {e}"))
             .ok()
     });
+
+    let mut toaster = use_context::<Signal<Toaster>>();
 
     rsx! {
         div {
@@ -36,7 +39,8 @@ pub fn ProjectSelection() -> Element {
                     class: "icon",
                     title: "Import Project",
                     onclick: move |_event| {
-                        log::info!("Import Project")
+                        log::info!("Import Project");
+                        toaster.info("Unimplemented", "The Upload Project functionality is not yet implemented sorry!");
                     },
                     icons::FileUp {},
                 },
@@ -93,6 +97,7 @@ pub fn ProjectSelection() -> Element {
                                                 let _ = eval("window.location.reload()");
                                             } else {
                                                 log::error!("Error opening project: {:?}", u.err().unwrap());
+                                                toaster.error("Project Loading Error", "An error occurred while loading the project! For more detailed information see the backend log or browser console.");
                                             }
                                         }
                                     },
