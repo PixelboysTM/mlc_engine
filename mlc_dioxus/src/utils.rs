@@ -37,8 +37,7 @@ pub async fn fetch_post<T, B>(url: &str, body: B) -> Result<T, gloo_net::Error>
 }
 
 pub async fn ws(url: &str) -> Result<WebSocket, String> {
-    let mut host_provider = eval(r#"dioxus.send(window.location.host)"#);
-    let host = host_provider.recv().await.map_err(|e| format!("{e:?}"))?.as_str().expect("Ehy not a str?").to_string();
+    let host = gloo_utils::window().location().host().map_err(|e| format!("{e:?}"))?;
     WebSocket::open(&format!("ws://{}{}", host, url)).map_err(|e| format!("{e:?}"))
 }
 
