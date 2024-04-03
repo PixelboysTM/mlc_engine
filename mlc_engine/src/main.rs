@@ -39,7 +39,6 @@ async fn rocket() -> _ {
         .launch()
 }
 
-struct MainModule;
 
 /// # Heartbeat
 /// Is used to detect whether the backend is still running
@@ -50,6 +49,8 @@ struct MainModule;
 async fn heart_beat() -> Json<&'static str> {
     Json("alive")
 }
+
+struct MainModule;
 
 impl Module for MainModule {
     fn setup(
@@ -71,6 +72,7 @@ impl Module for MainModule {
         merge_specs(spec, &"/util".to_string(), &s).expect("Merging OpenApi spec failed");
 
         app.manage(Project::default())
+            // .attach(utils::BrowserGuard)
             .manage(tx)
             .manage(rx)
             .register("/", catchers![catch_404])
