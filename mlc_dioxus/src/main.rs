@@ -51,7 +51,6 @@ fn Index() -> Element {
 
     let pane = use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
 
-    let mut toaster = use_context::<Signal<Toaster>>();
 
     use_effect(move || {
         gloo_storage::LocalStorage::set("lastTab", pane()).expect("Writing failed");
@@ -59,11 +58,21 @@ fn Index() -> Element {
 
 
     rsx! {
-        DisconnectHelper {
-        },
+        DisconnectHelper {},
         Headbar{
             pane,
         },
+        IndexContent {
+            pane,
+        }
+
+    }
+}
+
+#[component]
+fn IndexContent(pane: Signal<Pane>) -> Element {
+    let mut toaster = use_context::<Signal<Toaster>>();
+    rsx! {
         div {
             width: "100vw",
             height: "calc(100vh - 3rem)",
@@ -75,26 +84,26 @@ fn Index() -> Element {
                     rsx!{
                         "Program",
                         button {
-                            onclick: move |_| {
-                                 toaster.write().info("Test Info!", "This is a test notification and will be discarded shortly!"); // TODO: Add Trait to shorten this
-                            },
-                            "Toast Info"
+                        onclick: move |_| {
+                            toaster.write().info("Test Info!", "This is a test notification and will be discarded shortly!"); // TODO: Add Trait to shorten this
+                        },
+                        "Toast Info"
                         },
                         button {
                             onclick: move |_| {
-                                 toaster.write().warning("Test Warning!", "This is a warning be carefull!"); // TODO: Add Trait to shorten this
+                                toaster.write().warning("Test Warning!", "This is a warning be carefull!"); // TODO: Add Trait to shorten this
                             },
                             "Toast Warning"
                         },
                         button {
                             onclick: move |_| {
-                                 toaster.write().error("An error occured", "This is a error message someting went wrong and it is your job to figure out what here is some context: Lorem ipsum dhuaijkdbasjdbahssdjd you are fucked!!!!!"); // TODO: Add Trait to shorten this
+                                toaster.write().error("An error occured", "This is a error message someting went wrong and it is your job to figure out what here is some context: Lorem ipsum dhuaijkdbasjdbahssdjd you are fucked!!!!!"); // TODO: Add Trait to shorten this
                             },
                             "Toast Error"
                         }
                         button {
                             onclick: move |_| {
-                                 toaster.write().log("Log", "This is just a bit of logging"); // TODO: Add Trait to shorten this
+                                toaster.write().log("Log", "This is just a bit of logging"); // TODO: Add Trait to shorten this
                             },
                             "Toast Log"
                         }
@@ -115,13 +124,11 @@ fn Index() -> Element {
 fn DisconnectHelper() -> Element {
     let info = use_context::<Signal<Info>>();
     let mut active = use_signal(|| false);
-    let _ = use_memo(move || {
+    use_effect(move || {
         if info() == Info::SystemShutdown {
             active.set(true);
         }
     });
-
-    // active.set(*info.read() == Info::SystemShutdown);
 
     let _guard = use_future(move || {
         async move {

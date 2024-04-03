@@ -78,9 +78,10 @@ pub fn init_toaster() {
                 let mut toaster = r.write();
                 let n = chrono::Local::now().timestamp();
                 let ts = toaster.toasts();
-                for t in ts {
+                'l: for t in ts {
                     if t.timeout <= n {
                         toaster.remove(t.id);
+                        break 'l;
                     }
                 }
             }
