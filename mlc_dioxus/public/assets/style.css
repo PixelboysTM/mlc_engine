@@ -680,3 +680,42 @@ button:hover {
         opacity: 1;
     }
 }
+
+
+.context-menu-wrapper {
+    position: relative;
+    --cm-p-x: 50%;
+    --cm-p-y: 50%;
+    --cm-cc: 2rem;
+    --cm-mi-h: 1.25rem;
+
+    .context-menu {
+        position: fixed;
+        background-color: var(--color-panel);
+        border-radius: var(--number-border-radius);
+        border: 1px solid var(--color-disabled);
+        top: var(--cm-p-y);
+        left: var(--cm-p-x);
+        margin: 0.25rem;
+        z-index: 50;
+        /*bottom: calc(-0.25rem - (var(--cm-cc) * var(--cm-mi-h)));*/
+
+        .menu-item {
+            height: var(--cm-mi-h);
+            padding: 0.25rem 0.25rem 0.25rem 0.1rem;
+
+            p {
+                margin: 0;
+                padding: 0;
+                font-size: calc(var(--cm-mi-h) * 0.8);
+                text-align: left;
+                user-select: none;
+            }
+
+            &:hover {
+                background-color: var(--color-accent);
+            }
+        }
+
+    }
+}

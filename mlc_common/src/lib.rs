@@ -22,6 +22,7 @@ pub enum Info {
     UniversesUpdated,
     EndpointConfigChanged,
     EffectListChanged,
+    RequireReload,
     None,
 }
 

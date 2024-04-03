@@ -1,5 +1,5 @@
 .project-list {
-    min-height: calc(100vh - 3.25rem);
+    /*min-height: calc(100vh - 3.25rem);*/
     padding: 0.25rem 0.25rem 0;
     display: flex;
     flex-wrap: wrap;

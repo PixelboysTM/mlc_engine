@@ -11,13 +11,7 @@ use rocket_okapi::okapi::openapi3::OpenApi;
 
 use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 
-use crate::{
-    data_serving::ProjectGuard,
-    module::Module,
-    project::{self, Project},
-    runtime::{effects::EffectPlayerAction, RuntimeData},
-    ui_serving::ProjectSelection,
-};
+use crate::{data_serving::ProjectGuard, module::Module, project::{self, Project}, runtime::{effects::EffectPlayerAction, RuntimeData}, send, ui_serving::ProjectSelection};
 use crate::project::Provider;
 
 /// # Get Settings
@@ -145,6 +139,27 @@ async fn get_current_project(
     Json(project.get_definition().await)
 }
 
+/// # Close Project
+/// Closes the current project to return to project selection.
+///
+/// Saves the project if "Save on close" is turned on.
+///
+/// [Guarded][`ProjectGuard`]
+#[openapi(ignore = "_g", tag = "Projects")]
+#[get("/close")]
+async fn close_project(project: &State<Project>, info: &State<Sender<Info>>, project_selection: &State<ProjectSelection>, _g: ProjectGuard) -> Result<(), String> {
+    if project.get_settings().await.save_on_quit {
+        project.save(info).await.map_err(|e| e.to_string())?;
+    }
+
+    project.close().await;
+    let mut l = project_selection.0.lock().await;
+    *l = None;
+    send!(info, Info::RequireReload);
+
+    Ok(())
+}
+
 fn get_routes() -> (Vec<Route>, OpenApi) {
     openapi_get_routes_spec![get_settings, update_settings]
 }
@@ -158,7 +173,7 @@ impl Module for SettingsModule {
         spec: &mut OpenApi,
     ) -> rocket::Rocket<rocket::Build> {
         let (routes, s) =
-            openapi_get_routes_spec![get_available_projects, load_project, get_current_project];
+            openapi_get_routes_spec![get_available_projects, load_project, get_current_project, close_project];
         merge_specs(spec, &"/projects".to_string(), &s).expect("Merging OpenApi failed");
         let (routes2, s2) = get_routes();
         merge_specs(spec, &"/settings".to_string(), &s2).expect("Merging OpenApi failed");

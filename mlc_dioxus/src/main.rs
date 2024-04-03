@@ -9,6 +9,7 @@ use wasm_logger::Config;
 
 use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
+use crate::utils::context_menu::ContextMenu;
 use crate::utils::Loading;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
@@ -72,6 +73,8 @@ fn Index() -> Element {
 #[component]
 fn IndexContent(pane: Signal<Pane>) -> Element {
     let mut toaster = use_context::<Signal<Toaster>>();
+
+    let mut c_menu = use_signal(|| None);
     rsx! {
         div {
             width: "100vw",
@@ -111,7 +114,23 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
                 }
                 Pane::Show => {
                     rsx!{
-                        "Show"
+                        "Show",
+                        button {
+                            onclick: move |e| {
+                                let p = e.data().page_coordinates();
+                                c_menu.set(Some(ContextMenu::new(p.x, p.y).add("Item 1 mit Action", |_| {log::info!("Item 1 Clicked"); true}).add("Item 2", |_| {log::info!("Item 2 Clicked"); true})));
+                            },
+                            "Context",
+                            if let Some(m) = c_menu() {
+                                ContextMenu {
+                                    menu: m,
+                                    onclose: move |_| {
+                                        log::info!("Context Menu closing");
+                                        c_menu.set(None);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -200,6 +219,12 @@ fn provide_info() {
                     }
                     Info::SystemShutdown => {
                         toaster.info("Shutting down", "MLC is exiting");
+                    }
+                    Info::RequireReload => {
+                        let _ = gloo_utils::window().location().reload().map_err(|e| {
+                            log::error!("{e:?}");
+                            toaster.error("Reload Error", "Failed to reload the window please do so manually! For more information see the console output.");
+                        });
                     }
                     Info::FixtureTypesUpdated => {}
                     Info::UniversePatchChanged(u) => {

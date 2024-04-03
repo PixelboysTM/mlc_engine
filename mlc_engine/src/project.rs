@@ -111,24 +111,6 @@ impl Project {
             Err("Failed loading data")?;
         }
 
-        // if let Some(path) = make_path(name) {
-        //     if let Ok(json_data) = std::fs::read_to_string(path) {
-        //         let new_data: ProjectI =
-        //             // toml::from_str(&toml_data).map_err(|_| "Failed deserializing data")?;
-        //             serde_json::from_str(&json_data).map_err(|e| {
-        //                 eprintln!("{:#?}", e);
-        //                 "Failed deserializing data"
-        //             })?;
-        //         let mut data = self.project.lock().await;
-        //         *data = new_data;
-        //         data.file_name = name.to_string();
-        //     } else {
-        //         Err("Failed reading file")?;
-        //     }
-        // } else {
-        //     Err("Failed creating path")?;
-        // }
-
         runtime.adapt(self, true).await;
         send!(effect_handler, EffectPlayerAction::Rebake);
         send!(info, Info::ProjectLoaded);
@@ -263,6 +245,11 @@ impl Project {
         data.endpoints = config;
     }
 
+    pub async fn close(&self) {
+        let mut l = self.lock().await;
+        *l = ProjectI::default();
+    }
+
     pub async fn lock(&self) -> MutexGuard<'_, ProjectI> {
         self.project.lock().await
     }
@@ -270,22 +257,27 @@ impl Project {
 
 impl Default for Project {
     fn default() -> Self {
+        Self {
+            project: Arc::new(Mutex::new(ProjectI::default())),
+        }
+    }
+}
+
+impl Default for ProjectI {
+    fn default() -> Self {
         let mut s = HashMap::new();
         s.insert(UniverseId(1), FixtureUniverse::empty(UniverseId(1)));
-
-        Self {
-            project: Arc::new(Mutex::new(ProjectI {
-                name: "unnamed".to_string(),
-                file_name: "unnamed".to_string(),
-                last_edited: DateTime::default(),
-                fixtures: Vec::new(),
-                universes: s,
-                settings: ProjectSettings {
-                    save_on_quit: false,
-                },
-                endpoints: EndPointConfig::default(),
-                effects: Vec::new(),
-            })),
+        ProjectI {
+            name: "unnamed".to_string(),
+            file_name: "unnamed".to_string(),
+            last_edited: DateTime::default(),
+            fixtures: Vec::new(),
+            universes: s,
+            settings: ProjectSettings {
+                save_on_quit: false,
+            },
+            endpoints: EndPointConfig::default(),
+            effects: Vec::new(),
         }
     }
 }

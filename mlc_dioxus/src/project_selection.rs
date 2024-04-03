@@ -25,7 +25,7 @@ pub fn ProjectSelection() -> Element {
 
                 h2 {
                     style: "margin: 0; padding: 0;margin-left: auto; margin-right: auto",
-                    "Projects"
+                    "Project Selection"
                 }
             }
 

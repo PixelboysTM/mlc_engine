@@ -4,6 +4,8 @@ use crate::icons::{
     ExternalLink, LightBulb, Pencil, Save, Settings, TabletSmartphone, UploadCloud,
 };
 use crate::{configure_panel, utils};
+use crate::utils::context_menu::ContextMenu;
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 #[derive(Copy, Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Pane {
@@ -16,6 +18,9 @@ pub enum Pane {
 pub fn Headbar(pane: Signal<Pane>) -> Element {
     let mut upload_fixture = use_signal(|| false);
 
+    let mut context = use_signal(|| None);
+    let mut toaster = use_context::<Signal<Toaster>>();
+
     rsx! {
         if upload_fixture() {
             configure_panel::UploadFixturePopup {
@@ -25,10 +30,32 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
             }
         }
 
+        if let Some(m) = context() {
+            ContextMenu {
+                menu: m,
+                onclose: move |_| {
+                    context.set(None);
+                }
+            }
+        }
+
         div {
             class: "headbar",
             div {
                 class: "left",
+                onclick: move |e| {
+                    let p = e.data().page_coordinates();
+                    context.set(Some(
+                        ContextMenu::new(p.x, p.y)
+                            .add("Marvin Light Control", |_| {true})
+                            .add("Settings", move |_| {toaster.info("Unimplemented", "The User settings are not implemented yet."); false})
+                            .add("Close project", move |_| {
+                            let _ = spawn(
+                                 async {let _ = utils::fetch::<String>("/projects/close").await;}).poll_now();
+
+                            true})
+                    ));
+                },
                 img {
                     class: "iconMarvin",
                     src: "./images/icon.png",

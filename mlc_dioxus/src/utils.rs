@@ -10,6 +10,7 @@ use serde::Serialize;
 use crate::icons;
 
 pub mod toaster;
+pub mod context_menu;
 
 pub async fn fetch<T>(url: &str) -> Result<T, gloo_net::Error>
     where
