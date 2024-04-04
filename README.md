@@ -57,7 +57,7 @@ To run MLC on your local machine the following steps will help you:
 - [X] Save extension in file name to make naming and loading unique
 - [ ] Ui
     - [X] Fixture Details/Patch Modal
-    - [ ] Endpoint Mapping Modal
+    - [X] Endpoint Mapping Modal
     - [X] New Project Modal
     - [ ] Widgets
         - [X] Color

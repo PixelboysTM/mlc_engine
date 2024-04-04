@@ -85,6 +85,44 @@ input[type=text]:focus-visible {
     outline: none;
 }
 
+input[type=number] {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.3em 0.6em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    min-width: 2rem;
+    transition: border-color 0.25s;
+}
+
+input[type=number]:hover {
+    border-color: var(--color-accent);
+}
+
+input[type=number]:focus-visible {
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+select {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.3em 0.6em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    min-width: 2rem;
+    transition: border-color 0.25s;
+}
+
+select:hover {
+    border-color: var(--color-accent);
+}
 
 .icon {
     width: auto;

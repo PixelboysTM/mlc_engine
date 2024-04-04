@@ -4,14 +4,15 @@ use dioxus::prelude::*;
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use gloo_storage::Storage;
-use mlc_common::Info;
 use wasm_logger::Config;
+
+use mlc_common::Info;
 
 use crate::configure_panel::ConfigurePanel;
 use crate::headbar::{Headbar, Pane};
 use crate::utils::context_menu::ContextMenu;
-use crate::utils::Loading;
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::utils::Loading;
 
 pub(crate) mod configure_panel;
 mod headbar;
@@ -40,7 +41,6 @@ enum Route {
     Projects {},
 }
 
-
 #[allow(non_snake_case)]
 fn Projects() -> Element {
     provide_info();
@@ -53,13 +53,12 @@ fn Projects() -> Element {
 fn Index() -> Element {
     provide_info();
 
-    let pane = use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
-
+    let pane =
+        use_signal(|| gloo_storage::LocalStorage::get::<Pane>("lastTab").unwrap_or(Pane::Program));
 
     use_effect(move || {
         gloo_storage::LocalStorage::set("lastTab", pane()).expect("Writing failed");
     });
-
 
     rsx! {
         DisconnectHelper {},
@@ -141,7 +140,6 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
     }
 }
 
-
 #[component]
 fn DisconnectHelper() -> Element {
     let info = use_context::<Signal<Info>>();
@@ -152,21 +150,19 @@ fn DisconnectHelper() -> Element {
         }
     });
 
-    let _guard = use_future(move || {
-        async move {
-            let mut failed = 0;
-            while failed <= 5 {
-                let r = utils::fetch::<String>("/util/heartbeat").await;
-                if r.is_ok() {
-                    async_std::task::sleep(Duration::from_secs(5)).await;
-                } else {
-                    failed += 1;
-                    log::warn!("Failed heartbeat {} times", failed);
-                }
+    let _guard = use_future(move || async move {
+        let mut failed = 0;
+        while failed <= 5 {
+            let r = utils::fetch::<String>("/util/heartbeat").await;
+            if r.is_ok() {
+                async_std::task::sleep(Duration::from_secs(5)).await;
+            } else {
+                failed += 1;
+                log::warn!("Failed heartbeat {} times", failed);
             }
-
-            active.set(true);
         }
+
+        active.set(true);
     });
 
     if active() {
@@ -227,10 +223,18 @@ fn provide_info() {
                     }
                     Info::FixtureTypesUpdated => {}
                     Info::UniversePatchChanged(u) => {
-                        toaster.log("Universe Patch changed", format!("Universe {} changed", u.0));
+                        toaster.log(
+                            "Universe Patch changed",
+                            format!("Universe {} changed", u.0),
+                        );
                     }
                     Info::UniversesUpdated => {}
-                    Info::EndpointConfigChanged => {}
+                    Info::EndpointConfigChanged => {
+                        toaster.info(
+                            "Endpoint Config chnaged",
+                            "The Endpoint configuration was changed!",
+                        );
+                    }
                     Info::EffectListChanged => {}
                     Info::None => {}
                 }

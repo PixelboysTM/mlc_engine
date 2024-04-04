@@ -9,8 +9,7 @@ use rocket::{
     futures::{SinkExt, StreamExt},
     get, post,
     serde::json::Json,
-    Shutdown,
-    State, tokio::{
+    tokio::{
         select,
         sync::{
             broadcast::{self, Receiver, Sender},
@@ -18,25 +17,23 @@ use rocket::{
         },
         time::sleep,
     },
+    Shutdown, State,
 };
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_ws::{Message, WebSocket};
 
-use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 use mlc_common::config::{DmxRange, Percentage, Value, ValueResolution};
 use mlc_common::endpoints::EndPointConfig;
-use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeature};
+use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
+use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 
-use crate::{
-    data_serving::ProjectGuard, module::Module,
-    project::Project, send,
-};
 use crate::fixture::feature::ApplyFeature;
 use crate::runtime::endpoints::CreateEndpoints;
+use crate::{data_serving::ProjectGuard, module::Module, project::Project, send};
 
 use self::{effects::EffectModule, endpoints::EndpointData};
 
@@ -401,10 +398,11 @@ async fn set_endpoint_config(
     runtime: &State<RuntimeData>,
     tx: &State<Sender<Info>>,
     _g: ProjectGuard,
-) {
+) -> Json<&'static str> {
     project.set_endpoint_config(data.0).await;
     runtime.adapt(project, false).await;
     send!(tx, Info::EndpointConfigChanged);
+    Json("ok")
 }
 
 /// # Set Feature
@@ -478,7 +476,6 @@ async fn set_feature<'a>(
     })
 }
 
-
 pub trait ToFaderValue {
     fn to_fader_value(&self) -> u8;
     fn to_fader_value_range(&self, range: &DmxRange) -> u8;
@@ -500,13 +497,15 @@ impl ToFaderValue for f32 {
 
     fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val = (lerp(range.start, range.end, Percentage::new(v)).raw() * ValueResolution::U16.max() as f32) as u32;
+        let val = (lerp(range.start, range.end, Percentage::new(v)).raw()
+            * ValueResolution::U16.max() as f32) as u32;
         ((val >> 8) as u8, val as u8)
     }
 
     fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val = (lerp(range.start, range.end, Percentage::new(v)).raw() * ValueResolution::U24.max() as f32) as u32;
+        let val = (lerp(range.start, range.end, Percentage::new(v)).raw()
+            * ValueResolution::U24.max() as f32) as u32;
         ((val >> 16) as u8, (val >> 8) as u8, val as u8)
     }
 }
@@ -514,4 +513,3 @@ impl ToFaderValue for f32 {
 fn lerp(v0: Value, v1: Value, t: Percentage) -> Value {
     Value::new(v0.raw() + t.raw() * (v1.raw() - v0.raw()))
 }
-

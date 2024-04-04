@@ -8,7 +8,6 @@ pub struct IconProps {
     height: Option<String>,
 }
 
-
 pub fn Settings(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -31,7 +30,6 @@ pub fn Settings(props: IconProps) -> Element {
     }
 }
 
-
 pub fn Pencil(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -52,7 +50,6 @@ pub fn Pencil(props: IconProps) -> Element {
         }
     }
 }
-
 
 pub fn LightBulb(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -75,7 +72,6 @@ pub fn LightBulb(props: IconProps) -> Element {
         }
     }
 }
-
 
 pub fn Save(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -100,7 +96,6 @@ pub fn Save(props: IconProps) -> Element {
     }
 }
 
-
 pub fn UploadCloud(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -123,7 +118,6 @@ pub fn UploadCloud(props: IconProps) -> Element {
         }
 }
 
-
 pub fn ExternalLink(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -144,7 +138,6 @@ pub fn ExternalLink(props: IconProps) -> Element {
         }
     }
 }
-
 
 pub fn TabletSmartphone(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -167,7 +160,6 @@ pub fn TabletSmartphone(props: IconProps) -> Element {
 
     }
 }
-
 
 pub fn Cable(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -195,7 +187,6 @@ pub fn Cable(props: IconProps) -> Element {
     }
 }
 
-
 pub fn Download(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -219,7 +210,6 @@ pub fn Download(props: IconProps) -> Element {
     }
 }
 
-
 pub fn FileUp(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -241,7 +231,6 @@ pub fn FileUp(props: IconProps) -> Element {
     }}
 }
 
-
 pub fn Plus(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -261,7 +250,6 @@ pub fn Plus(props: IconProps) -> Element {
     }}
 }
 
-
 pub fn FolderOpen(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -279,7 +267,6 @@ pub fn FolderOpen(props: IconProps) -> Element {
         path { d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" }
     }}
 }
-
 
 pub fn X(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -300,7 +287,6 @@ pub fn X(props: IconProps) -> Element {
         }
     }
 }
-
 
 pub fn Lamp(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -346,7 +332,6 @@ pub fn LampDesk(props: IconProps) -> Element {
     }
 }
 
-
 pub fn Blocks(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -368,7 +353,6 @@ pub fn Blocks(props: IconProps) -> Element {
     }
 }
 
-
 pub fn Minus(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
     let height = props.height.unwrap_or("1.25rem".to_string());
@@ -389,7 +373,6 @@ pub fn Minus(props: IconProps) -> Element {
 
     }
 }
-
 
 pub fn Check(props: IconProps) -> Element {
     let width = props.width.unwrap_or("1.25rem".to_string());
@@ -478,5 +461,99 @@ pub fn PencilRuler(props: IconProps) -> Element {
         path { "d": "m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17" }
     }
 
+    }
+}
+
+pub fn MessageCircleQuestion(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "xmlns": "http://www.w3.org/2000/svg",
+        width,
+        height,
+        "fill": "none",
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+        "stroke-width": "2",
+        "viewBox": "0 0 24 24",
+        "stroke": "currentColor",
+        class: "lucide lucide-message-circle-question",
+        path { "d": "M7.9 20A9 9 0 1 0 4 16.1L2 22Z" }
+        path { "d": "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" }
+        path { "d": "M12 17h.01" }
+    }
+    }
+}
+
+pub fn Palette(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "xmlns": "http://www.w3.org/2000/svg",
+        width,
+        height,
+        "stroke-linejoin": "round",
+        "stroke": "currentColor",
+        "fill": "none",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "viewBox": "0 0 24 24",
+        class: "lucide lucide-palette",
+        circle { "cy": "6.5", "r": ".5", "cx": "13.5", "fill": "currentColor" }
+        circle { "cy": "10.5", "r": ".5", "fill": "currentColor", "cx": "17.5" }
+        circle { "fill": "currentColor", "r": ".5", "cx": "8.5", "cy": "7.5" }
+        circle { "r": ".5", "fill": "currentColor", "cy": "12.5", "cx": "6.5" }
+        path { "d": "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" }
+    }
+    }
+}
+
+pub fn Wand(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "xmlns": "http://www.w3.org/2000/svg",
+        width,
+        height,
+        "stroke": "currentColor",
+        "stroke-width": "2",
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+        "fill": "none",
+        "viewBox": "0 0 24 24",
+        class: "lucide lucide-wand",
+        path { "d": "M15 4V2" }
+        path { "d": "M15 16v-2" }
+        path { "d": "M8 9h2" }
+        path { "d": "M20 9h2" }
+        path { "d": "M17.8 11.8 19 13" }
+        path { "d": "M15 9h0" }
+        path { "d": "M17.8 6.2 19 5" }
+        path { "d": "m3 21 9-9" }
+        path { "d": "M12.2 6.2 11 5" }
+    }
+    }
+}
+
+pub fn Trash2(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "stroke-linejoin": "round",
+        "viewBox": "0 0 24 24",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "stroke": "currentColor",
+        "xmlns": "http://www.w3.org/2000/svg",
+        width,
+        height,
+        "fill": "none",
+        class: "lucide lucide-trash-2",
+        path { "d": "M3 6h18" }
+        path { "d": "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" }
+        path { "d": "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" }
+        line { "x1": "10", "y1": "11", "y2": "17", "x2": "10" }
+        line { "x1": "14", "x2": "14", "y1": "11", "y2": "17" }
+    }
     }
 }

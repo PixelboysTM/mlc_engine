@@ -424,6 +424,115 @@
 .overlay-content.endpoint-mapping {
     width: 60vw;
     height: 90vh;
+    position: relative;
+
+    .overlay-body {
+        display: flex;
+        flex-direction: row;
+        gap: 0.25rem;
+        overflow-x: auto;
+    }
+
+    .btns {
+        position: absolute;
+        bottom: 0.25rem;
+        left: 0.25rem;
+        display: flex;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        background-color: var(--color-panel);
+    }
+
+    .universe {
+        border: 1px solid var(--color-primary);
+        border-radius: var(--number-border-radius);
+        width: 16rem;
+        min-width: 16rem;
+        height: fit-content;
+
+        .universe-id {
+            padding: 0.25rem;
+            margin: 0;
+            background-color: var(--color-background);
+            border-bottom: 1px solid var(--color-primary);
+            border-top-left-radius: var(--number-border-radius);
+            border-top-right-radius: var(--number-border-radius);
+        }
+
+        .endpoints {
+            padding: 0.25rem;
+
+            .endpoint {
+                padding: 0.25rem;
+                border-bottom: 1px solid var(--color-background);
+                margin-bottom: 0.25rem;
+                position: relative;
+
+                .endpoint-type {
+                    display: grid;
+                    width: 5rem;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    border: 1px solid var(--color-primary);
+                    --br: 0.6rem;
+                    border-radius: var(--br);
+
+                    div {
+                        height: 1.5rem;
+                        display: flex;
+                        align-items: center;
+                        width: 100%;
+                        background-color: var(--color-background);
+                        cursor: pointer;
+
+                        svg {
+                            margin-left: auto;
+                            margin-right: auto;
+                        }
+
+                        &.sel {
+                            background-color: var(--color-accent);
+                            cursor: auto;
+                        }
+
+                        &:first-child {
+                            border-top-left-radius: var(--br);
+                            border-bottom-left-radius: var(--br);
+                        }
+
+                        &:last-child {
+                            border-top-right-radius: var(--br);
+                            border-bottom-right-radius: var(--br);
+                        }
+                    }
+                }
+
+                .property {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.25rem;
+                    margin-bottom: 0.25rem;
+                }
+
+                .delete-btn {
+                    position: absolute;
+                    top: 0.1rem;
+                    right: 0.1rem;
+                    width: 1.5rem;
+                    height: 1.5rem;
+                    margin: 0;
+                    padding: 0.2rem;
+                    display: none;
+                    opacity: 0;
+                    transition: all 200ms ease-in;
+                }
+
+                &:hover .delete-btn {
+                    display: block;
+                    opacity: 1;
+                }
+            }
+        }
+    }
 }
 
 .overlay-content.fixture-tester {

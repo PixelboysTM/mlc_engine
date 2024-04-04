@@ -1,27 +1,30 @@
+use std::collections::HashMap;
 use std::ops::Deref;
+use std::str::FromStr;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
+use futures::future::{select, Either};
 use futures::{SinkExt, StreamExt};
-use futures::future::{Either, select};
 use gloo_net::websocket::Message;
 
 use fixture_tester::FixtureTester;
-use mlc_common::{FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate};
-use mlc_common::endpoints::EndPointConfig;
+use mlc_common::endpoints::{EPConfigItem, EndPointConfig, Speed};
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{
+    FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate,
+};
 
-use crate::{icons, utils};
+use crate::utils::toaster::{Toaster, ToasterWriter};
 use crate::utils::{CheckboxState, Loading};
+use crate::{icons, utils};
 
 mod fixture_tester;
 
 #[component]
 pub fn ConfigurePanel() -> Element {
-    let project_info = use_resource(|| {
-        utils::fetch::<ProjectDefinition>("/projects/current")
-    });
+    let project_info = use_resource(|| utils::fetch::<ProjectDefinition>("/projects/current"));
 
     rsx! {
         div {
@@ -195,119 +198,109 @@ fn ProjectSettings() -> Element {
 #[component]
 fn FaderPanel() -> Element {
     let mut current_universe = use_signal(|| 1);
-    let mut universes = use_resource(|| {
-        async move {
-            if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
-                d
-            } else {
-                vec![]
-            }
+    let mut universes = use_resource(|| async move {
+        if let Ok(d) = utils::fetch::<Vec<u16>>("/data/universes").await {
+            d
+        } else {
+            vec![]
         }
     });
     let info = use_context::<Signal<Info>>();
-    use_effect(move || {
-        match info() {
-            Info::UniversesUpdated => {
-                universes.restart();
-            }
-            _ => {}
+    use_effect(move || match info() {
+        Info::UniversesUpdated => {
+            universes.restart();
         }
+        _ => {}
     });
 
     let mut current_values = use_signal(|| [0_u8; 512]);
 
     let mut started = use_signal(|| false);
-    let get = use_coroutine(|mut rx: UnboundedReceiver<u16>| {
-        async move {
-            if started() {
-                return;
-            }
-            started.set(true);
+    let get = use_coroutine(|mut rx: UnboundedReceiver<u16>| async move {
+        if started() {
+            return;
+        }
+        started.set(true);
 
-            let ws_o = utils::ws("/runtime/fader-values/get").await;
+        let ws_o = utils::ws("/runtime/fader-values/get").await;
 
-            if let Ok(mut get_ws) = ws_o {
-                loop {
-                    let i = select(rx.next(), get_ws.next()).await;
-                    match i {
-                        Either::Left((Some(msg), _)) => {
-                            let _ = get_ws.send(Message::Text(msg.to_string())).await;
-                        }
-                        Either::Right((Some(Ok(msg)), _)) => {
-                            let d = match msg {
-                                Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
-                                Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
-                                    &String::from_utf8(b).unwrap(),
-                                ),
-                            };
+        if let Ok(mut get_ws) = ws_o {
+            loop {
+                let i = select(rx.next(), get_ws.next()).await;
+                match i {
+                    Either::Left((Some(msg), _)) => {
+                        let _ = get_ws.send(Message::Text(msg.to_string())).await;
+                    }
+                    Either::Right((Some(Ok(msg)), _)) => {
+                        let d = match msg {
+                            Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
+                            Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
+                                &String::from_utf8(b).unwrap(),
+                            ),
+                        };
 
-                            if let Ok(update) = d {
-                                match update {
-                                    RuntimeUpdate::ValueUpdated {
-                                        universe,
-                                        channel_index,
-                                        value,
-                                    } => {
-                                        if current_universe.read().deref() == &universe.0 {
-                                            current_values.with_mut(|g| g[channel_index] = value);
-                                        }
+                        if let Ok(update) = d {
+                            match update {
+                                RuntimeUpdate::ValueUpdated {
+                                    universe,
+                                    channel_index,
+                                    value,
+                                } => {
+                                    if current_universe.read().deref() == &universe.0 {
+                                        current_values.with_mut(|g| g[channel_index] = value);
                                     }
-                                    RuntimeUpdate::ValuesUpdated {
-                                        universes,
-                                        channel_indexes,
-                                        values,
-                                    } => {
-                                        current_values.with_mut(|g| {
-                                            for (i, index) in channel_indexes.iter().enumerate() {
-                                                if current_universe.read().deref()
-                                                    == &universes[i].0
-                                                {
-                                                    g[*index] = values[i];
-                                                }
+                                }
+                                RuntimeUpdate::ValuesUpdated {
+                                    universes,
+                                    channel_indexes,
+                                    values,
+                                } => {
+                                    current_values.with_mut(|g| {
+                                        for (i, index) in channel_indexes.iter().enumerate() {
+                                            if current_universe.read().deref() == &universes[i].0 {
+                                                g[*index] = values[i];
                                             }
-                                        });
-                                    }
-                                    RuntimeUpdate::Universe {
-                                        universe, values, ..
-                                    } => {
-                                        if current_universe() == universe.0 {
-                                            current_values.set(values);
                                         }
+                                    });
+                                }
+                                RuntimeUpdate::Universe {
+                                    universe, values, ..
+                                } => {
+                                    if current_universe() == universe.0 {
+                                        current_values.set(values);
                                     }
-                                };
+                                }
                             };
-                        }
+                        };
+                    }
 
-                        d => {
-                            let b = match d {
-                                Either::Left((a, _b)) => format!("{:?}", a),
-                                Either::Right((a, _b)) => format!("{:?}", a),
-                            };
-                            log::error!("Error {b:?}");
-                        }
-                    };
-                }
-            } else {
-                log::error!("Error creating {:?}", ws_o.err().unwrap());
+                    d => {
+                        let b = match d {
+                            Either::Left((a, _b)) => format!("{:?}", a),
+                            Either::Right((a, _b)) => format!("{:?}", a),
+                        };
+                        log::error!("Error {b:?}");
+                    }
+                };
             }
+        } else {
+            log::error!("Error creating {:?}", ws_o.err().unwrap());
         }
     });
-    let set = use_coroutine(|mut rx: UnboundedReceiver<FaderUpdateRequest>| {
-        async move {
-            let ws = utils::ws("/runtime/fader-values/set").await;
+    let set = use_coroutine(|mut rx: UnboundedReceiver<FaderUpdateRequest>| async move {
+        let ws = utils::ws("/runtime/fader-values/set").await;
 
-            if let Ok(mut ws) = ws {
-                loop {
-                    let m = rx.next().await;
-                    if let Some(r) = m {
-                        let _ = ws
-                            .send(Message::Text(serde_json::to_string(&r).unwrap()))
-                            .await;
-                    }
+        if let Ok(mut ws) = ws {
+            loop {
+                let m = rx.next().await;
+                if let Some(r) = m {
+                    let _ = ws
+                        .send(Message::Text(serde_json::to_string(&r).unwrap()))
+                        .await;
                 }
-            } else {
-                log::error!("Error opening websocket: {:?}", ws.err().unwrap());
             }
+        } else {
+            log::error!("Error opening websocket: {:?}", ws.err().unwrap());
         }
     });
     rsx! {
@@ -361,7 +354,7 @@ fn FaderPanel() -> Element {
 fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
     let mut val = use_signal(|| (value, true));
     // let _ = use_memo(move || val.set((value, true)));
-    use_effect(use_reactive((&value, ), move |(v, )| val.set((v, true))));
+    use_effect(use_reactive((&value,), move |(v,)| val.set((v, true))));
 
     use_effect(move || {
         let (vl, ext) = val();
@@ -444,13 +437,11 @@ fn FixtureTypeExplorer() -> Element {
     });
 
     let info = use_context::<Signal<Info>>();
-    use_effect(move || {
-        match info() {
-            Info::FixtureTypesUpdated => {
-                fixture_query.restart();
-            }
-            _ => {}
+    use_effect(move || match info() {
+        Info::FixtureTypesUpdated => {
+            fixture_query.restart();
         }
+        _ => {}
     });
 
     let mut detail_fixture = use_signal::<Option<FixtureInfo>>(|| None);
@@ -523,10 +514,20 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
     let inf = use_memo(move || t.clone());
 
     let mut create_new_universe = use_signal(|| true);
-    let mut sel_mode = use_signal(|| inf().modes.first().map(|m| m.short_name.clone()).unwrap_or("No modes".to_string()));
+    let mut sel_mode = use_signal(|| {
+        inf()
+            .modes
+            .first()
+            .map(|m| m.short_name.clone())
+            .unwrap_or("No modes".to_string())
+    });
 
     let sel_mode_o = use_memo(move || {
-        inf().modes.iter().find(|mo| mo.short_name == sel_mode()).cloned()
+        inf()
+            .modes
+            .iter()
+            .find(|mo| mo.short_name == sel_mode())
+            .cloned()
     });
 
     rsx! {
@@ -652,18 +653,16 @@ fn UniverseExplorer() -> Element {
     });
 
     let info = use_context::<Signal<Info>>();
-    use_effect(move || {
-        match info() {
-            Info::UniversePatchChanged(id) => {
-                if id == *selected.peek() {
-                    selected.set(id);
-                }
+    use_effect(move || match info() {
+        Info::UniversePatchChanged(id) => {
+            if id == *selected.peek() {
+                selected.set(id);
             }
-            Info::UniversesUpdated => {
-                universes.restart();
-            }
-            _ => {}
         }
+        Info::UniversesUpdated => {
+            universes.restart();
+        }
+        _ => {}
     });
 
     match universes.read_unchecked().as_ref().cloned() {
@@ -749,7 +748,7 @@ fn UniverseExplorer() -> Element {
 
             }
         }
-        None => utils::Loading()
+        None => utils::Loading(),
     }
 }
 
@@ -787,39 +786,38 @@ struct AvailableFixture {
     name: String,
 }
 
-
 #[component]
 pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
     let mut source = use_signal(|| FixtureSource::Ofl);
 
-    let available_fixtures =
-        use_resource(move || async move {
-            let r = utils::fetch_post::<Vec<String>, _>(
-                "https://open-fixture-library.org/api/v1/get-search-results",
-                SearchBody {
-                    searchQuery: "",
-                    categoriesQuery: [],
-                    manufacturersQuery: [],
-                },
-            )
-                .await;
+    let available_fixtures = use_resource(move || async move {
+        let r = utils::fetch_post::<Vec<String>, _>(
+            "https://open-fixture-library.org/api/v1/get-search-results",
+            SearchBody {
+                searchQuery: "",
+                categoriesQuery: [],
+                manufacturersQuery: [],
+            },
+        )
+        .await;
 
-            let result = r.map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
-                .ok()
-                .map(|v| {
-                    v.iter()
-                        .map(|e| {
-                            let mut s = e.split('/');
-                            AvailableFixture {
-                                manufacturer: s.next().unwrap().to_string(),
-                                name: s.next().unwrap().to_string(),
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                });
+        let result = r
+            .map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
+            .ok()
+            .map(|v| {
+                v.iter()
+                    .map(|e| {
+                        let mut s = e.split('/');
+                        AvailableFixture {
+                            manufacturer: s.next().unwrap().to_string(),
+                            name: s.next().unwrap().to_string(),
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            });
 
-            result.expect("Must be")
-        });
+        result.expect("Must be")
+    });
 
     let mut search = use_signal(|| "".to_string());
 
@@ -949,7 +947,7 @@ fn filter_search(fs: Vec<AvailableFixture>, search: &str) -> Vec<AvailableFixtur
 
 #[component]
 fn EndPointMapping(onclose: EventHandler) -> Element {
-    let config = use_resource(|| async move {
+    let mut config = use_resource(|| async move {
         let r = utils::fetch::<EndPointConfig>("/runtime/endpoints/get").await;
         match r {
             Ok(c) => {
@@ -962,7 +960,36 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
             }
         }
     });
-    
+
+    let mut transformed_config = use_signal(|| None);
+    use_effect(move || {
+        let r = config().map(|c| {
+            c.map(|(us, ep_config)| {
+                us.iter()
+                    .map(|u| {
+                        (
+                            *u,
+                            ep_config
+                                .endpoints
+                                .get(u)
+                                .map(|v| v.clone())
+                                .unwrap_or(vec![]),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+        });
+        transformed_config.set(r);
+    });
+
+    let mut toaster = use_context::<Signal<Toaster>>();
+
+    let info = use_context::<Signal<Info>>();
+    use_effect(move || {
+        if info() == Info::EndpointConfigChanged || info() == Info::UniversesUpdated {
+            config.restart();
+        }
+    });
 
     rsx! {
         utils::Overlay {
@@ -973,33 +1000,246 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
               onclose.call(());
             },
 
-            match &*config.read_unchecked() {
-                    Some(Some((us, c))) => {
-                        rsx!{
-                            for u in us {
+            match transformed_config() {
+                Some(Some(us)) => {
+                    rsx!{
+                        for (u, eps) in us {
+                            div {
+                                class: "universe",
+                                p {
+                                    class: "universe-id",
+                                    {format!("Universe: {}", u.0)}
+                                },
                                 div {
-                                    class: "universe",
-                                    p {
-                                        {u.0.to_string()}
-                                    },
-                                    div {
-                                        class: "endpoints",
-                                        for _e in c.endpoints.get(u).unwrap_or(&vec![]) {
+                                    class: "endpoints",
+                                    for (i, ep) in eps.iter().cloned().enumerate() {
+                                        div {
+                                            class: "endpoint",
                                             div {
-                                                class: "endpoint",
-                                                "e"
+                                                class: "endpoint-type",
+                                                div {
+                                                    class: "sacn",
+                                                    class: if matches!(ep, EPConfigItem::Sacn {..}) {"sel"},
+                                                    title: "sACN",
+                                                    onclick: move |_| {
+                                                        if !matches!(ep, EPConfigItem::Sacn{..}) {
+                                                            let mut w = transformed_config.write();
+                                                            let c = w.as_mut().expect("").as_mut().expect("");
+                                                            for (uid, conf) in c {
+                                                                if *uid == u {
+                                                                    conf[i] = EPConfigItem::Sacn {
+                                                                        universe: 1,
+                                                                        speed: Speed::Medium,
+                                                                    };
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    icons::Wand{
+                                                        width: "1rem",
+                                                        height: "1rem"
+                                                    },
+                                                },
+                                                div {
+                                                    class: "log",
+                                                    class: if matches!(ep, EPConfigItem::Logger) {"sel"},
+                                                    title: "Logger",
+                                                    onclick: move |_| {
+                                                        if !matches!(ep, EPConfigItem::Logger) {
+                                                            let mut w = transformed_config.write();
+                                                            let c = w.as_mut().expect("").as_mut().expect("");
+                                                            for (uid, conf) in c {
+                                                                if *uid == u {
+                                                                    conf[i] = EPConfigItem::Logger;
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    icons::MessageCircleQuestion{
+                                                        width: "1rem",
+                                                        height: "1rem"
+                                                    },
+                                                },
+                                                div {
+                                                    class: "artnet",
+                                                    class: if matches!(ep, EPConfigItem::ArtNet) {"sel"},
+                                                    title: "ArtNet",
+                                                    onclick: move |_| {
+                                                        if !matches!(ep, EPConfigItem::ArtNet) {
+                                                            let mut w = transformed_config.write();
+                                                            let c = w.as_mut().expect("").as_mut().expect("");
+                                                            for (uid, conf) in c {
+                                                                if *uid == u {
+                                                                    conf[i] = EPConfigItem::ArtNet;
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    icons::Palette{
+                                                        width: "1rem",
+                                                        height: "1rem"
+                                                    },
+                                                }
+                                            },
+                                            div {
+                                                class: "content",
+                                                {match ep {
+                                                    EPConfigItem::Logger => {
+                                                        rsx! {
+                                                            p {
+                                                                "Logger (no config needed)",
+                                                            }
+                                                        }
+                                                    }
+                                                    EPConfigItem::ArtNet => {
+                                                        rsx! {
+                                                            p {
+                                                                "ArtNet (no config needed)",
+                                                            }
+                                                        }
+                                                    }
+                                                    EPConfigItem::Sacn{ universe, speed } => {
+                                                        rsx! {
+                                                            p {
+                                                                "sACN",
+                                                            },
+                                                            div {
+                                                                class: "property",
+                                                                p {
+                                                                    "Universe:",
+                                                                },
+                                                                input {
+                                                                    r#type: "number",
+                                                                    value: universe as i64,
+                                                                    min: 1,
+                                                                    oninput: move |e| {
+                                                                        let mut w = transformed_config.write();
+                                                                        let c = w.as_mut().expect("").as_mut().expect("");
+                                                                        for (uid, conf) in c {
+                                                                            if *uid == u {
+                                                                                let item = conf.get_mut(i).expect("");
+                                                                                if let EPConfigItem::Sacn{universe, ..} = item {
+                                                                                    *universe = u16::from_str(&e.value()).unwrap_or(1).max(1);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                }
+                                                            },
+                                                            div {
+                                                                class: "property",
+                                                                p {
+                                                                    "Speed:",
+                                                                },
+                                                                select {
+                                                                    value: format!("\"{:?}\"", speed),
+                                                                    onchange: move |e| {
+                                                                        let mut w = transformed_config.write();
+                                                                        let c = w.as_mut().expect("").as_mut().expect("");
+                                                                        for (uid, conf) in c {
+                                                                            if *uid == u {
+                                                                                let item = conf.get_mut(i).expect("");
+                                                                                if let EPConfigItem::Sacn{universe: _, speed} = item {
+                                                                                    *speed = serde_json::from_str(&e.value()).unwrap_or(Speed::Medium);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Fast\"",
+                                                                        "Fast"
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Medium\"",
+                                                                        "Medium"
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Slow\"",
+                                                                        "Slow"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }}
+                                            },
+                                            button {
+                                                class: "icon delete-btn",
+                                                onclick: move |_| {
+                                                    let mut w = transformed_config.write();
+                                                    let c = w.as_mut().expect("").as_mut().expect("");
+                                                    for (uid, conf) in c {
+                                                        if *uid == u {
+                                                            conf.remove(i);
+                                                        }
+                                                    }
+                                                },
+                                                icons::Trash2 {
+                                                    width: "1rem",
+                                                    height: "1rem",
+                                                }
                                             }
                                         }
                                     }
+                                },
+                                button {
+                                    class: "add-endpoint-btn icon",
+                                    title: "Add new Endpoint",
+                                    onclick: move |_| {
+                                        let mut w = transformed_config.write();
+                                        let c = w.as_mut().expect("").as_mut().expect("");
+                                        for (uid, conf) in c {
+                                            if *uid == u {
+                                                conf.push(EPConfigItem::Logger);
+                                            }
+                                        }
+                                    },
+                                    icons::Plus {}
                                 }
                             }
                         }
-                    }
-                    Some(None) => {rsx!{"Error fetching config see console for more information!"}}
-                    None => {
-                        rsx!{utils::Loading{}}
+
+                        div {
+                            class: "btns",
+                            button {
+                                onclick: move |_| {
+                                     async move {
+                                        let w = transformed_config();
+                                        if let Some(Some(c)) = w {
+                                            let mut map = HashMap::new();
+                                            for (id, conf) in c {
+                                                if !conf.is_empty() {
+                                                    map.insert(id, conf);
+                                                }
+                                            }
+                                            let ep_config = EndPointConfig {
+                                                endpoints: map,
+                                            };
+                                            let r = utils::fetch_post::<String, _>("/runtime/endpoints/set", ep_config).await;
+                                            if r.is_ok() {
+                                                onclose.call(());
+                                            } else {
+                                                toaster.error("Endpoint config Update failed", "Failed to apply new endpoint config. See Backend output for more Information");
+                                            }
+                                        }
+                                    }
+                                },
+                                "Apply"
+                            },
+                            button {
+                                onclick: move |_| {
+                                    onclose.call(())
+                                },
+                                "Cancel"
+                            }
+                        }
                     }
                 }
+                Some(None) => {rsx!{"Error fetching config see console for more information!"}}
+                None => {
+                    rsx!{utils::Loading{}}
+                }
+            }
         }
     }
 }
