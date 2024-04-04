@@ -17,11 +17,20 @@ pub fn ProjectSelection() -> Element {
     rsx! {
         div {
             class: "headbar project-bar",
-            img {
-                class: "iconMarvin",
-                src: "./images/icon.png",
-                alt: "MLC",
-            },
+            div {
+                class: "left",
+                onclick: move |_| {
+                   toaster.info("Hello", "**zwitscher**");
+                },
+                img {
+                    class: "iconMarvin",
+                    src: "./images/icon.png",
+                    alt: "MLC",
+                },
+                h1 {
+                    "MLC"
+                }
+            }
 
             div {
                 style: "display: flex; align-items: center;",
@@ -68,6 +77,19 @@ pub fn ProjectSelection() -> Element {
                         for p in ps {
                             div {
                                 class: "project",
+                                div {
+                                    class: "bin-ico",
+                                    title: if p.binary {"Compressed"} else {"Uncompressed"},
+                                {if p.binary {
+                                    rsx! {
+                                        icons::FileArchive {}
+                                    }
+                                } else {
+                                    rsx!{
+                                        icons::FileJson {}
+                                    }
+                                }}
+                                }
 
                                 h2 {
                                     class: "name",

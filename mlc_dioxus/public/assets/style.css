@@ -15,6 +15,7 @@
     --color-background: #242424;
     --color-panel: #151111;
     --color-accent: #ff3e3e;
+    --color-primary: var(--color-accent);
     --color-secondary: #3eff41;
     --color-tertiary: #3e88ff;
     --color-text: #fff;

@@ -63,7 +63,7 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
         None
     }
 
-    let path = project::make_path("test", "mlc")
+    let path = project::make_path("test", None)
         .unwrap()
         .parent()
         .unwrap()
@@ -77,11 +77,8 @@ async fn get_available_projects() -> Json<Vec<ProjectDefinition>> {
             let ext = ext.expect("Tested before");
             let data = fs::read(f.path()).await.unwrap();
             let mut definition: ProjectDefinition = ext.definition(&data).unwrap();
-            definition.file_name = f.file_name().to_string_lossy().replace(&format!(".{}", ext.extension()), "");
-
-            // let data = fs::read_to_string(f.path()).await.unwrap();
-            // let mut defintition: ProjectDefinition = serde_json::from_str(&data).unwrap();
-            // defintition.file_name = f.file_name().to_string_lossy().replace(".mlc", "");
+            definition.file_name = f.path().file_name().expect("Why no Filename?").to_string_lossy().to_string();
+            definition.binary = ext.is_binary();
             projects.push(definition);
         }
     }

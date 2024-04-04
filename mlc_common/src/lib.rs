@@ -29,9 +29,11 @@ pub enum Info {
 #[derive(Debug, serde::Deserialize, serde::Serialize, JsonSchema, Clone)]
 pub struct ProjectDefinition {
     pub name: String,
+    pub last_edited: DateTime<Local>,
     #[serde(default)]
     pub file_name: String,
-    pub last_edited: DateTime<Local>,
+    #[serde(default)]
+    pub binary: bool,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, JsonSchema)]

@@ -409,3 +409,49 @@ pub fn Check(props: IconProps) -> Element {
     }
     }
 }
+
+pub fn FileArchive(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "viewBox": "0 0 24 24",
+        "stroke-linejoin": "round",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "fill": "none",
+        "stroke": "currentColor",
+        class: "lucide lucide-file-archive",
+        path { "d": "M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v18" }
+        path { "d": "M14 2v4a2 2 0 0 0 2 2h4" }
+        circle { "r": "2", "cx": "10", "cy": "20" }
+        path { "d": "M10 7V6" }
+        path { "d": "M10 12v-1" }
+        path { "d": "M10 18v-2" }
+    }
+    }
+}
+
+pub fn FileJson(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "stroke": "currentColor",
+        "stroke-linecap": "round",
+        "fill": "none",
+        "stroke-linejoin": "round",
+        width,
+        height,
+        "stroke-width": "2",
+        "viewBox": "0 0 24 24",
+        "xmlns": "http://www.w3.org/2000/svg",
+        class: "lucide lucide-file-json",
+        path { "d": "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" }
+        path { "d": "M14 2v4a2 2 0 0 0 2 2h4" }
+        path { "d": "M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" }
+        path { "d": "M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" }
+    }
+    }
+}

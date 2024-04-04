@@ -26,8 +26,12 @@ pub use crate::project::byte_provider::{Provider};
 pub(crate) struct ProjectI {
     // Common with general Information
     pub(crate) name: String,
+    // Begin manually set
     #[serde(skip)]
     pub(crate) file_name: String,
+    #[serde(skip)]
+    pub(crate) binary: bool,
+    // End manually set
     pub(crate) last_edited: DateTime<Local>,
 
     // Other stuff
@@ -66,12 +70,23 @@ impl Project {
 
         data.last_edited = Local::now();
 
-        let provider: Provider = if cfg!(debug_assertions) { Provider::Json } else { Provider::Ciborium };
-        //
-        // let json_data =
-        //     serde_json::to_string_pretty(data).map_err(|_| "Failed serializing data")?;
+        let name_provider = Provider::from_filename(&data.file_name);
+
+        let provider: Provider = name_provider.unwrap_or_else(|| if cfg!(debug_assertions) { Provider::Json } else { Provider::Ciborium });
+
         let raw_data = provider.to(data);
-        if let Some(path) = make_path(name.unwrap_or(&data.file_name), provider.extension()) {
+
+        let p = if let Some(n) = name {
+            make_path(n, Some(provider.extension()))
+        } else {
+            if name_provider.is_some() {
+                make_path(&data.file_name, None)
+            } else {
+                make_path(&data.file_name, Some(provider.extension()))
+            }
+        };
+
+        if let Some(path) = p {
             std::fs::write(path, raw_data).map_err(|_| "Failed writing to file")?;
         } else {
             Err("Failed creating path")?;
@@ -91,19 +106,38 @@ impl Project {
         let possible_loaders: Vec<(&str, Provider)> = Provider::valid_extensions();
 
         let mut success = false;
-        for (ext, possible_loader) in possible_loaders {
-            let path = make_path(name, ext).ok_or("Path creation failed")?;
+        if let Some(p) = Provider::from_filename(name) {
+            let path = make_path(name, None).ok_or("Path creation failed")?;
             if let Ok(raw_data) = std::fs::read(path) {
-                let new_data: ProjectI = possible_loader.from(&raw_data).map_err(|e| {
+                let new_data: ProjectI = p.from(&raw_data).map_err(|e| {
                     eprintln!("{e}");
                     "Failed deserializing data"
                 })?;
                 let mut data = self.project.lock().await;
                 *data = new_data;
                 data.file_name = name.to_string();
+                data.binary = p.is_binary();
 
                 success = true;
-                break;
+            }
+        }
+
+        if !success {
+            println!("No extension provided or loading with extension failed trying all possible providers!");
+            for (ext, possible_loader) in possible_loaders {
+                let path = make_path(name, Some(ext)).ok_or("Path creation failed")?;
+                if let Ok(raw_data) = std::fs::read(path.clone()) {
+                    let new_data: ProjectI = possible_loader.from(&raw_data).map_err(|e| {
+                        eprintln!("{e}");
+                        "Failed deserializing data"
+                    })?;
+                    let mut data = self.project.lock().await;
+                    *data = new_data;
+                    data.file_name = path.file_name().expect("Why no Filename?").to_string_lossy().to_string();
+                    data.binary = possible_loader.is_binary();
+                    success = true;
+                    break;
+                }
             }
         }
 
@@ -233,6 +267,7 @@ impl Project {
             file_name: data.file_name.clone(),
             last_edited: data.last_edited,
             name: data.name.clone(),
+            binary: data.binary,
         }
     }
 
@@ -278,6 +313,7 @@ impl Default for ProjectI {
             },
             endpoints: EndPointConfig::default(),
             effects: Vec::new(),
+            binary: false,
         }
     }
 }
@@ -286,19 +322,25 @@ fn get_project_dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("de", "pixelboystm", "mlc_engine")
 }
 
-pub fn make_path(name: &str, extension: &str) -> Option<PathBuf> {
+pub fn make_path(name: &str, extension: Option<&str>) -> Option<PathBuf> {
     get_project_dirs().map(|d| {
         let dir = d.data_dir();
         std::fs::create_dir_all(dir).unwrap();
-        dir.join(format!("{}.{}", name, extension))
+        dir.join(if let Some(ext) = extension {
+            format!("{}.{}", name, ext)
+        } else {
+            name.to_string()
+        })
     })
 }
 
 mod byte_provider {
     use rocket::http::hyper::body::Buf;
+    use serde::de::DeserializeOwned;
     use mlc_common::ProjectDefinition;
     use crate::project::ProjectI;
 
+    #[derive(Copy, Clone)]
     pub enum Provider {
         Json,
         Ciborium,
@@ -316,18 +358,22 @@ mod byte_provider {
             }
         }
 
-        pub fn from(&self, b: &Vec<u8>) -> Result<ProjectI, String> {
+        pub fn is_binary(&self) -> bool {
             match self {
-                Provider::Json => {
-                    serde_json::from_slice(b).map_err(|e| format!("{e:?}"))
-                }
-                Provider::Ciborium => {
-                    ciborium::from_reader(b.reader()).map_err(|e| format!("{e:?}"))
-                }
+                Provider::Json => false,
+                Provider::Ciborium => true,
             }
         }
 
+        pub fn from(&self, b: &Vec<u8>) -> Result<ProjectI, String> {
+            self.parse(b)
+        }
+
         pub fn definition(&self, b: &Vec<u8>) -> Result<ProjectDefinition, String> {
+            self.parse(b)
+        }
+
+        fn parse<T>(&self, b: &Vec<u8>) -> Result<T, String> where T: DeserializeOwned {
             match self {
                 Provider::Json => {
                     serde_json::from_slice(b).map_err(|e| format!("{e:?}"))
@@ -349,6 +395,18 @@ mod byte_provider {
                     b
                 }
             }
+        }
+
+        pub fn from_filename(file_name: &str) -> Option<Provider> {
+            let ext = file_name.split('.').last()?;
+
+            for (e, p) in Provider::valid_extensions() {
+                if e == ext {
+                    return Some(p);
+                }
+            }
+
+            None
         }
     }
 }

@@ -54,7 +54,7 @@ To run MLC on your local machine the following steps will help you:
 - [X] Add a new binary more kompakt file format for projects
 - [X] Update Dioxus to 0.5
 - [ ] Fix things that broke with dioxus update
-- [ ] Save extension in file name to make naming and loading unique
+- [X] Save extension in file name to make naming and loading unique
 - [ ] Ui
     - [X] Fixture Details/Patch Modal
     - [ ] Endpoint Mapping Modal

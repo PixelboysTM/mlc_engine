@@ -11,6 +11,7 @@
         width: 16rem;
         height: 12rem;
         padding: 0.25rem;
+        position: relative;
 
         background-color: var(--color-panel);
         border-radius: var(--number-border-radius);
@@ -18,10 +19,26 @@
         display: grid;
         grid-template-rows: 1fr 1fr 1fr 3rem;
 
+        .bin-ico {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.25rem;
+            transition: color 500ms ease-in-out;
+        }
+
+        &:hover .bin-ico {
+            color: var(--color-primary);
+        }
+
         h2 {
             margin: 0;
             padding: 0;
             text-align: center;
+            transition: color 500ms ease-in-out;
+        }
+
+        &:hover h2 {
+            color: var(--color-accent);
         }
 
         p {
