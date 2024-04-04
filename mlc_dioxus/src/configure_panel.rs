@@ -28,12 +28,26 @@ pub fn ConfigurePanel() -> Element {
             class: "configure-panel",
             div {
                 class: "panel info",
+
                 h3 {
                     class: "header",
                     "Project Info",
                 },
                 match &*project_info.read_unchecked() {
                     Some(Ok(d)) => {rsx!{
+                        div {
+                            class: "bin-ico",
+                            title: if d.binary {"Compressed"} else {"Uncompressed"},
+                            {if d.binary {
+                                rsx! {
+                                    icons::FileArchive {}
+                                }
+                            } else {
+                                rsx!{
+                                    icons::FileJson {}
+                                }
+                            }}
+                        }
                         p {
                             span {
                                 class: "pis",

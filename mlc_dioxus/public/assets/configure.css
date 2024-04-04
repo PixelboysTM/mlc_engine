@@ -16,12 +16,20 @@
         grid-row: 1 / 4;
         align-items: center;
         justify-content: center;
+        position: relative;
 
         span.pis {
             width: 10ch;
             display: inline-block;
             text-align: end;
             margin-right: 1ch;
+        }
+
+        .bin-ico {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.25rem;
+            transition: color 500ms ease-in-out;
         }
     }
 
