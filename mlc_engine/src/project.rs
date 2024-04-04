@@ -20,7 +20,7 @@ use crate::{
     send,
 };
 use crate::fixture::universe as u;
-pub use crate::project::byte_provider::{Provider};
+pub use crate::project::byte_provider::Provider;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct ProjectI {
@@ -57,11 +57,20 @@ impl Project {
         self.save_(None, info).await
     }
 
-    pub async fn save_as(&self, name: &str, file_name: &str, info: &Sender<Info>) -> Result<(), &'static str> {
+    pub async fn save_as(
+        &self,
+        name: &str,
+        file_name: &str,
+        info: &Sender<Info>,
+    ) -> Result<(), &'static str> {
         self.save_(Some((name, file_name)), info).await
     }
 
-    async fn save_(&self, name: Option<(&str, &str)>, info: &Sender<Info>) -> Result<(), &'static str> {
+    async fn save_(
+        &self,
+        name: Option<(&str, &str)>,
+        info: &Sender<Info>,
+    ) -> Result<(), &'static str> {
         let data: &mut ProjectI = &mut *self.project.lock().await;
         if let Some((new_name, new_file_name)) = name {
             data.name = new_name.to_string();
@@ -72,16 +81,21 @@ impl Project {
 
         let name_provider = Provider::from_filename(&data.file_name);
 
-        let provider: Provider = name_provider.unwrap_or_else(|| if cfg!(debug_assertions) { Provider::Json } else { Provider::Ciborium });
+        let provider: Provider = name_provider.unwrap_or_else(|| {
+            if cfg!(debug_assertions) {
+                Provider::Json
+            } else {
+                Provider::Ciborium
+            }
+        });
 
         let raw_data = provider.to(data);
 
-        let p =
-            if name_provider.is_some() {
-                make_path(&data.file_name, None)
-            } else {
-                make_path(&data.file_name, Some(provider.extension()))
-            };
+        let p = if name_provider.is_some() {
+            make_path(&data.file_name, None)
+        } else {
+            make_path(&data.file_name, Some(provider.extension()))
+        };
 
         if let Some(path) = p {
             std::fs::write(path, raw_data).map_err(|_| "Failed writing to file")?;
@@ -130,7 +144,11 @@ impl Project {
                     })?;
                     let mut data = self.project.lock().await;
                     *data = new_data;
-                    data.file_name = path.file_name().expect("Why no Filename?").to_string_lossy().to_string();
+                    data.file_name = path
+                        .file_name()
+                        .expect("Why no Filename?")
+                        .to_string_lossy()
+                        .to_string();
                     data.binary = possible_loader.is_binary();
                     success = true;
                     break;
@@ -238,7 +256,8 @@ impl Project {
         let mut data = self.project.lock().await;
         let universe = data.universes.get_mut(&universe_id)?;
         if u::can_patch(universe, &fixture, mode_index) {
-            u::patch(universe, &fixture, mode_index).expect("Why error when can patch returns true?");
+            u::patch(universe, &fixture, mode_index)
+                .expect("Why error when can patch returns true?");
             send!(info, Info::UniversePatchChanged(universe_id));
             Some(())
         } else {
@@ -305,9 +324,7 @@ impl Default for ProjectI {
             last_edited: DateTime::default(),
             fixtures: Vec::new(),
             universes: s,
-            settings: ProjectSettings {
-                save_on_quit: false,
-            },
+            settings: ProjectSettings { save_on_quit: true },
             endpoints: EndPointConfig::default(),
             effects: Vec::new(),
             binary: false,
@@ -334,7 +351,9 @@ pub fn make_path(name: &str, extension: Option<&str>) -> Option<PathBuf> {
 mod byte_provider {
     use rocket::http::hyper::body::Buf;
     use serde::de::DeserializeOwned;
+
     use mlc_common::ProjectDefinition;
+
     use crate::project::ProjectI;
 
     #[derive(Copy, Clone)]
@@ -370,11 +389,12 @@ mod byte_provider {
             self.parse(b)
         }
 
-        fn parse<T>(&self, b: &Vec<u8>) -> Result<T, String> where T: DeserializeOwned {
+        fn parse<T>(&self, b: &Vec<u8>) -> Result<T, String>
+            where
+                T: DeserializeOwned,
+        {
             match self {
-                Provider::Json => {
-                    serde_json::from_slice(b).map_err(|e| format!("{e:?}"))
-                }
+                Provider::Json => serde_json::from_slice(b).map_err(|e| format!("{e:?}")),
                 Provider::Ciborium => {
                     ciborium::from_reader(b.reader()).map_err(|e| format!("{e:?}"))
                 }
@@ -383,9 +403,7 @@ mod byte_provider {
 
         pub fn to(&self, p: &ProjectI) -> Vec<u8> {
             match self {
-                Provider::Json => {
-                    serde_json::to_vec_pretty(p).expect("Why?")
-                }
+                Provider::Json => serde_json::to_vec_pretty(p).expect("Why?"),
                 Provider::Ciborium => {
                     let mut b = Vec::<u8>::new();
                     ciborium::into_writer(p, &mut b).expect("Why");

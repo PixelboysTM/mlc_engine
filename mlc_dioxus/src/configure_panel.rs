@@ -4,21 +4,21 @@ use std::str::FromStr;
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::future::{select, Either};
 use futures::{SinkExt, StreamExt};
+use futures::future::{Either, select};
 use gloo_net::websocket::Message;
 
 use fixture_tester::FixtureTester;
-use mlc_common::endpoints::{EPConfigItem, EndPointConfig, Speed};
-use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
-use mlc_common::universe::FixtureUniverse;
 use mlc_common::{
     FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate,
 };
+use mlc_common::endpoints::{EndPointConfig, EPConfigItem, Speed};
+use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
+use mlc_common::universe::FixtureUniverse;
 
-use crate::utils::toaster::{Toaster, ToasterWriter};
-use crate::utils::{CheckboxState, Loading};
 use crate::{icons, utils};
+use crate::utils::{CheckboxState, Loading};
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 mod fixture_tester;
 
@@ -354,7 +354,7 @@ fn FaderPanel() -> Element {
 fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
     let mut val = use_signal(|| (value, true));
     // let _ = use_memo(move || val.set((value, true)));
-    use_effect(use_reactive((&value,), move |(v,)| val.set((v, true))));
+    use_effect(use_reactive((&value, ), move |(v, )| val.set((v, true))));
 
     use_effect(move || {
         let (vl, ext) = val();
@@ -799,7 +799,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                 manufacturersQuery: [],
             },
         )
-        .await;
+            .await;
 
         let result = r
             .map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
@@ -868,7 +868,10 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                                             input {
                                                 r#type: "text",
                                                 onchange: move |e| {
-                                                search.set(e.data.value());
+                                                    search.set(e.data.value());
+                                                },
+                                                oninput: move |e| {
+                                                    search.set(e.data.value());
                                                 }
                                             }
                                         },

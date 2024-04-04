@@ -1,6 +1,8 @@
-use crate::{icons, utils};
 use dioxus::prelude::*;
+
 use mlc_common::{CreateProjectData, ProjectDefinition};
+
+use crate::{icons, utils};
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
 #[component]
@@ -9,6 +11,11 @@ pub fn ProjectSelection() -> Element {
         utils::fetch::<Vec<ProjectDefinition>>("/projects/projects-list")
             .await
             .map_err(|e| log::error!("Error Loading Project list: {e}"))
+            .map(|mut s| {
+                s.sort_by(|a, b| a.last_edited.cmp(&b.last_edited));
+                s.reverse();
+                s
+            })
             .ok()
     });
 

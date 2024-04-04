@@ -1,15 +1,15 @@
 use std::net::{IpAddr, Ipv4Addr};
 
 use rocket::{
-    catch, catchers, config::Ident, get, launch, serde::json::Json, tokio::sync::broadcast::Sender,
-    Config, State,
+    catch, catchers, Config, config::Ident, get, launch, serde::json::Json,
+    State, tokio::sync::broadcast::Sender,
 };
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_okapi::rapidoc::{GeneralConfig, HideShowConfig, RapiDocConfig};
 use rocket_okapi::settings::UrlObject;
 use rocket_okapi::swagger_ui::SwaggerUIConfig;
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 
 use data_serving::DataServingModule;
 use mlc_common::Info;
@@ -38,7 +38,6 @@ async fn rocket() -> _ {
         .mount(RuntimeModule)
         .launch()
 }
-
 
 /// # Heartbeat
 /// Is used to detect whether the backend is still running
@@ -71,7 +70,16 @@ impl Module for MainModule {
         let (routes, s) = openapi_get_routes_spec![heart_beat, create_empty];
         merge_specs(spec, &"/util".to_string(), &s).expect("Merging OpenApi spec failed");
 
-        app.manage(Project::default())
+        let p = pollster::block_on(async {
+            let p = Project::default();
+            {
+                let mut m = p.lock().await;
+                m.settings.save_on_quit = false;
+            }
+            p
+        });
+
+        app.manage(p)
             // .attach(utils::BrowserGuard)
             .manage(tx)
             .manage(rx)

@@ -1,6 +1,7 @@
 .project-list {
     /*min-height: calc(100vh - 3.25rem);*/
-    padding: 0.25rem 0.25rem 0;
+    padding: 0.5rem 0.25rem 0;
+    margin-bottom: 1rem;
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
@@ -56,6 +57,9 @@
 
 .project-bar {
     animation: project-color-spin 30s infinite linear;
+    position: sticky;
+    top: 0;
+    z-index: 30;
 }
 
 @keyframes project-color-spin {
