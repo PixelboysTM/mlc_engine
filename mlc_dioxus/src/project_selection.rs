@@ -70,7 +70,7 @@ pub fn ProjectSelection() -> Element {
                                         binary: *new_project_binary.peek(),
                                     }).await;
                                     if let Ok(_) = result {
-                                        gloo_utils::window().location().reload().expect("");
+                                        utils::toast_reload(toaster);
                                     } else {
                                         log::error!("{result:?}");
                                         toaster.error("Project creation failed!", "Failed to create new project. See the console for more detailed information.");
@@ -195,7 +195,7 @@ pub fn ProjectSelection() -> Element {
                                         async move {
                                             let u = utils::fetch::<String>(&format!("/projects/load/{}", n)).await;
                                             if u.is_ok() {
-                                                let _ = eval("window.location.reload()");
+                                                utils::toast_reload(toaster);
                                             } else {
                                                 log::error!("Error opening project: {:?}", u.err().unwrap());
                                                 toaster.error("Project Loading Error", "An error occurred while loading the project! For more detailed information see the backend log or browser console.");

@@ -8,6 +8,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::icons;
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 pub mod toaster;
 pub mod context_menu;
@@ -40,6 +41,19 @@ pub async fn fetch_post<T, B>(url: &str, body: B) -> Result<T, gloo_net::Error>
 pub async fn ws(url: &str) -> Result<WebSocket, String> {
     let host = gloo_utils::window().location().host().map_err(|e| format!("{e:?}"))?;
     WebSocket::open(&format!("ws://{}{}", host, url)).map_err(|e| format!("{e:?}"))
+}
+
+pub fn reload_window() -> Result<(), String> {
+    gloo_utils::window().location().reload().map_err(|e| {
+        format!("{e:?}")
+    })
+}
+
+pub fn toast_reload(mut toaster: Signal<Toaster>) {
+    let _ = reload_window().map_err(|e| {
+        log::error!("{e}");
+        toaster.error("Failed to reload window!", "See console for more detailed information!");
+    });
 }
 
 #[component]

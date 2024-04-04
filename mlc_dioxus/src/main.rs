@@ -21,10 +21,10 @@ mod utils;
 
 fn main() {
     wasm_logger::init(Config::default());
-    launch(start);
+    launch(root);
 }
 
-fn start() -> Element {
+fn root() -> Element {
     utils::toaster::init_toaster();
     rsx! {
         utils::toaster::ToasterElement {},
@@ -178,7 +178,7 @@ fn DisconnectHelper() -> Element {
                     Loading {},
                     button {
                         onclick: move |_| {
-                            let _ = eval("window.location.reload()");
+                            utils::reload_window().expect("");
                         },
                         "Reload"
                     }
@@ -193,10 +193,8 @@ fn DisconnectHelper() -> Element {
 }
 
 fn provide_info() {
-    log::info!("Providing Info");
     let mut info = provide_root_context(Signal::new(Info::None));
     use_future(move || async move {
-        log::info!("Started");
         let mut toaster = use_context::<Signal<Toaster>>();
 
         let ws = utils::ws("/data/info").await;
@@ -216,15 +214,13 @@ fn provide_info() {
                     }
                     Info::ProjectLoaded => {
                         toaster.info("Project Loaded", "Project Loaded successfully!");
+                        utils::toast_reload(toaster);
                     }
                     Info::SystemShutdown => {
                         toaster.info("Shutting down", "MLC is exiting");
                     }
                     Info::RequireReload => {
-                        let _ = gloo_utils::window().location().reload().map_err(|e| {
-                            log::error!("{e:?}");
-                            toaster.error("Reload Error", "Failed to reload the window please do so manually! For more information see the console output.");
-                        });
+                        utils::toast_reload(toaster);
                     }
                     Info::FixtureTypesUpdated => {}
                     Info::UniversePatchChanged(u) => {
