@@ -1,6 +1,6 @@
 use crate::{icons, utils};
 use dioxus::prelude::*;
-use mlc_common::ProjectDefinition;
+use mlc_common::{CreateProjectData, ProjectDefinition};
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
 #[component]
@@ -62,6 +62,22 @@ pub fn ProjectSelection() -> Element {
                     class: "buttons",
                     button {
                         class: "create-btn",
+                        onclick: move |_| {
+                            async move {
+                                if !new_project_name.peek().is_empty() {
+                                    let result = utils::fetch_post::<String, _>("/projects/create", CreateProjectData{
+                                        name: new_project_name.peek().clone(),
+                                        binary: *new_project_binary.peek(),
+                                    }).await;
+                                    if let Ok(_) = result {
+                                        gloo_utils::window().location().reload().expect("");
+                                    } else {
+                                        log::error!("{result:?}");
+                                        toaster.error("Project creation failed!", "Failed to create new project. See the console for more detailed information.");
+                                    }
+                                }
+                            }
+                        },
                         "Create"
                     },
                     button {

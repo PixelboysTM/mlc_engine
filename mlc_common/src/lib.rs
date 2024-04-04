@@ -101,3 +101,9 @@ pub fn to_save_file_name(file: &str) -> String {
 
     new_name
 }
+
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize, JsonSchema, )]
+pub struct CreateProjectData {
+    pub name: String,
+    pub binary: bool,
+}

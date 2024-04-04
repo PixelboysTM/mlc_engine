@@ -53,19 +53,19 @@ pub struct Project {
 }
 
 impl Project {
-    #[allow(unused)]
     pub async fn save(&self, info: &Sender<Info>) -> Result<(), &'static str> {
         self.save_(None, info).await
     }
 
-    pub async fn save_as(&self, name: &str, info: &Sender<Info>) -> Result<(), &'static str> {
-        self.save_(Some(name), info).await
+    pub async fn save_as(&self, name: &str, file_name: &str, info: &Sender<Info>) -> Result<(), &'static str> {
+        self.save_(Some((name, file_name)), info).await
     }
 
-    async fn save_(&self, name: Option<&str>, info: &Sender<Info>) -> Result<(), &'static str> {
+    async fn save_(&self, name: Option<(&str, &str)>, info: &Sender<Info>) -> Result<(), &'static str> {
         let data: &mut ProjectI = &mut *self.project.lock().await;
-        if let Some(new_name) = name {
+        if let Some((new_name, new_file_name)) = name {
             data.name = new_name.to_string();
+            data.file_name = new_file_name.to_string();
         }
 
         data.last_edited = Local::now();
@@ -76,15 +76,12 @@ impl Project {
 
         let raw_data = provider.to(data);
 
-        let p = if let Some(n) = name {
-            make_path(n, Some(provider.extension()))
-        } else {
+        let p =
             if name_provider.is_some() {
                 make_path(&data.file_name, None)
             } else {
                 make_path(&data.file_name, Some(provider.extension()))
-            }
-        };
+            };
 
         if let Some(path) = p {
             std::fs::write(path, raw_data).map_err(|_| "Failed writing to file")?;

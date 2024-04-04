@@ -116,5 +116,5 @@ fn catch_404() -> &'static str {
 #[get("/dCreate/<name>")]
 async fn create_empty(name: &str, info: &State<Sender<Info>>) {
     let project = Project::default();
-    project.save_as(name, info).await.unwrap();
+    project.save_as(name, name, info).await.unwrap();
 }

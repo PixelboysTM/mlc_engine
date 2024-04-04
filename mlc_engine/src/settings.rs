@@ -9,10 +9,10 @@ use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 
-use mlc_common::{Info, ProjectDefinition, ProjectSettings};
+use mlc_common::{CreateProjectData, Info, ProjectDefinition, ProjectSettings};
 
 use crate::{data_serving::ProjectGuard, module::Module, project::{self, Project}, runtime::{effects::EffectPlayerAction, RuntimeData}, send, ui_serving::ProjectSelection};
-use crate::project::Provider;
+use crate::project::{Provider};
 
 /// # Get Settings
 /// Returns the current project settings
@@ -157,6 +157,36 @@ async fn close_project(project: &State<Project>, info: &State<Sender<Info>>, pro
     Ok(())
 }
 
+/// # Create New Project
+/// If Currently no project is loaded creates a new project with the given configuratzion and loads it.
+#[openapi(tag = "Projects")]
+#[post("/create", data = "<data>")]
+async fn create_project(
+    data: Json<CreateProjectData>,
+    info: &State<Sender<Info>>,
+    runtime: &State<RuntimeData>,
+    effect_handler: &State<Sender<EffectPlayerAction>>,
+    project: &State<Project>,
+    project_selection: &State<ProjectSelection>,
+) -> Result<Json<String>, Json<String>> {
+    if project_selection.0.lock().await.is_some() {
+        return Err(Json("Can't create projects while a project is loaded!".to_string()));
+    }
+
+    let name = data.name.clone();
+    let binary = data.binary;
+    let file_name = format!("{}.{}", mlc_common::to_save_file_name(&name), if binary { Provider::Ciborium } else { Provider::Json }.extension());
+
+    let new_project = Project::default();
+    new_project.save_as(&name, &file_name, info).await.map_err(|e| Json(e.to_string()))?;
+
+    project.load(&file_name, info, runtime, effect_handler).await.map_err(|e| Json(e.to_string()))?;
+    let mut p = project_selection.0.lock().await;
+    *p = Some(name.to_string());
+
+    Ok(Json("Loaded successful".to_string()))
+}
+
 fn get_routes() -> (Vec<Route>, OpenApi) {
     openapi_get_routes_spec![get_settings, update_settings]
 }
@@ -170,7 +200,7 @@ impl Module for SettingsModule {
         spec: &mut OpenApi,
     ) -> rocket::Rocket<rocket::Build> {
         let (routes, s) =
-            openapi_get_routes_spec![get_available_projects, load_project, get_current_project, close_project];
+            openapi_get_routes_spec![get_available_projects, load_project, get_current_project, close_project, create_project];
         merge_specs(spec, &"/projects".to_string(), &s).expect("Merging OpenApi failed");
         let (routes2, s2) = get_routes();
         merge_specs(spec, &"/settings".to_string(), &s2).expect("Merging OpenApi failed");

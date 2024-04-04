@@ -58,7 +58,7 @@ To run MLC on your local machine the following steps will help you:
 - [ ] Ui
     - [X] Fixture Details/Patch Modal
     - [ ] Endpoint Mapping Modal
-    - [ ] New Project Modal
+    - [X] New Project Modal
     - [ ] Widgets
         - [X] Color
         - [X] 2D Vec
