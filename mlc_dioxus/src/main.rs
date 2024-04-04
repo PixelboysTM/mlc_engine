@@ -43,7 +43,10 @@ enum Route {
 
 #[allow(non_snake_case)]
 fn Projects() -> Element {
-    project_selection::ProjectSelection()
+    provide_info();
+    rsx! {
+        project_selection::ProjectSelection{}
+    }
 }
 
 #[allow(non_snake_case)]

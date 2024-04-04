@@ -962,6 +962,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
             }
         }
     });
+    
 
     rsx! {
         utils::Overlay {
