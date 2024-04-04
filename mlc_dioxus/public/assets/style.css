@@ -55,13 +55,34 @@ button {
     font-size: 1em;
     font-weight: 500;
     font-family: inherit;
-    background-color: #1a1a1a;
+    background-color: var(--color-button);
     cursor: pointer;
     transition: border-color 0.25s;
 }
 
 button:hover {
     border-color: var(--color-accent);
+}
+
+input[type=text] {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: border-color 0.25s;
+}
+
+input[type=text]:hover {
+    border-color: var(--color-accent);
+}
+
+input[type=text]:focus-visible {
+    border-color: var(--color-accent);
+    outline: none;
 }
 
 
@@ -718,5 +739,26 @@ button:hover {
             }
         }
 
+    }
+}
+
+.toggle-ele {
+    width: 2.2em;
+    height: 1.1em;
+    border: 2px solid var(--color-button);
+    background-color: var(--color-panel);
+    border-radius: 1em;
+
+    .knob {
+        width: 1em;
+        height: 1em;
+        border-radius: 50%;
+        background-color: var(--color-disabled);
+        transition: all 200ms linear;
+
+        &.activated {
+            margin-left: 1.1em;
+            background-color: var(--color-primary);
+        }
     }
 }

@@ -655,3 +655,23 @@ pub fn Checkbox(init: CheckboxState, onchange: EventHandler<CheckboxState>) -> E
         }
     }
 }
+
+#[component]
+pub fn Toggle(value: Signal<bool>, onchange: Option<EventHandler<bool>>) -> Element {
+    rsx! {
+        div {
+            class: "toggle-ele",
+            onclick: move |_| {
+                value.toggle();
+                if let Some(h) = onchange.as_ref() {
+                    h.call(*value.peek());
+                }
+            },
+            div {
+                class: "knob",
+                class: if value() {"activated"},
+                style: "pointer-events: none;",
+            }
+        }
+    }
+}

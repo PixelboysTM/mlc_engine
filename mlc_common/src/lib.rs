@@ -77,3 +77,27 @@ pub struct FixtureInfo {
     pub id: uuid::Uuid,
     pub modes: Vec<FixtureMode>,
 }
+
+pub fn to_save_file_name(file: &str) -> String {
+    let mut new_name = String::new();
+    for char in file.chars() {
+        if char.is_whitespace() {
+            if char == ' ' && !new_name.ends_with('_') {
+                new_name += "_";
+            }
+            continue;
+        }
+        if char.is_ascii_alphanumeric() {
+            new_name += &char.to_string();
+            continue;
+        }
+        if ['_', '-'].contains(&char) {
+            new_name += &char.to_string();
+            continue;
+        }
+    }
+
+    new_name = new_name.trim_matches(&[' ', '_']).to_string();
+
+    new_name
+}

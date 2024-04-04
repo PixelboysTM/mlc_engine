@@ -14,7 +14,69 @@ pub fn ProjectSelection() -> Element {
 
     let mut toaster = use_context::<Signal<Toaster>>();
 
+    let mut create_project = use_signal(|| false);
+    let mut new_project_name = use_signal(|| "New Project".to_string());
+    let mut new_project_binary = use_signal(|| false);
+
     rsx! {
+        if create_project(){
+            utils::Overlay {
+                title: "Create New Project",
+                class: "new-project",
+                icon: rsx!(icons::PencilRuler{}),
+                onclose: move |_| {
+                    create_project.set(false);
+                    new_project_name.set("New Project".to_string());
+                    new_project_binary.set(false);
+                },
+                p {
+                    class: "name-title",
+                    "Project Name:"
+                }
+                input {
+                    class: "name",
+                    r#type: "text",
+                    onchange: move |e| {
+                        new_project_name.set(e.value());
+                    },
+                    oninput: move |e| {
+                        new_project_name.set(e.value());
+                    },
+                    value: new_project_name(),
+                },
+                p {
+                    class: "file",
+                    "Will be saved as: ",
+                    span {
+                        {mlc_common::to_save_file_name(&new_project_name())}
+                    }
+                },
+                p {
+                    class: "binary-toggle",
+                    "Binary format: ",
+                    utils::Toggle {
+                        value: new_project_binary,
+                    }
+                }
+                div {
+                    class: "buttons",
+                    button {
+                        class: "create-btn",
+                        "Create"
+                    },
+                    button {
+                        class: "cancel-btn",
+                        onclick: move |_| {
+                            create_project.set(false);
+                            new_project_name.set("New Project".to_string());
+                    new_project_binary.set(false);
+                        },
+                        "Cancel"
+                    }
+                }
+            }
+        }
+
         div {
             class: "headbar project-bar",
             div {
@@ -58,7 +120,8 @@ pub fn ProjectSelection() -> Element {
                     class: "icon",
                     title: "Create new Project",
                     onclick: move |_event| {
-                        log::info!("New Project")
+                        log::info!("New Project");
+                        create_project.set(true);
                     },
                     icons::Plus {},
                 },

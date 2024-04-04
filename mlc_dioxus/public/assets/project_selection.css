@@ -72,3 +72,55 @@
         border-bottom: 1px solid var(--color-accent);
     }
 }
+
+.overlay-content.new-project {
+    width: 45vw;
+    height: 50vh;
+    max-width: 30rem;
+    max-height: 40rem;
+
+    .overlay-body {
+        padding: 0 0.5rem 0.5rem;
+    }
+
+    p {
+        margin: 0;
+        padding: 0;
+
+        &.name-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+            width: 100%;
+        }
+
+        &.file {
+            margin-bottom: 0.25rem;
+            margin-left: 0.25rem;
+            overflow-x: scroll;
+
+            span {
+                color: var(--color-disabled);
+            }
+        }
+
+        &.binary-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    }
+
+    input {
+        width: calc(100% - 2.5rem);
+        margin-bottom: 0.25rem;
+    }
+
+
+    .buttons {
+        position: absolute;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+}
