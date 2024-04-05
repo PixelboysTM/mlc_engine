@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 # Serde
 serde = { version = "1.0.197", features = ["derive"] }
-serde_with = "3.7.0"
+serde_with = { version = "3.7.0", features = ["chrono_0_4"] }
 # Docu
 get-size = { version = "0.1.4", features = ["derive"] }
 schemars = { version = "0.8.16", features = ["chrono", "uuid1", "derive"] }

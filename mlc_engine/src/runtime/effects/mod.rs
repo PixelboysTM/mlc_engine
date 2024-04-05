@@ -17,21 +17,17 @@ use rocket_ws::WebSocket;
 use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
 
-use mlc_common::fixture::FaderAddress;
+use mlc_common::effect::{Effect, Track};
 use mlc_common::Info;
 
 use crate::{module::Module, send};
 use crate::data_serving::ProjectGuard;
 use crate::project::{Project, ProjectI};
 use crate::runtime::effects::baking::{BakedEffect, BakedFixtureData, BakingNotification};
-use crate::runtime::effects::feature_track::FeatureTrack;
-use crate::runtime::effects::track_key::FaderKey;
 
 use super::{decode_msg, RuntimeData};
 
 mod baking;
-mod feature_track;
-mod track_key;
 
 pub struct EffectModule;
 
@@ -88,29 +84,6 @@ async fn get_effect_list(
             .map(|e| (e.name.to_string(), e.id))
             .collect(),
     )
-}
-
-#[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-pub struct Effect {
-    id: uuid::Uuid,
-    name: String,
-    looping: bool,
-    #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
-    duration: Duration,
-    tracks: Vec<Track>,
-}
-
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-pub enum Track {
-    FaderTrack(FaderTrack),
-    FeatureTrack(FeatureTrack),
-}
-
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-pub struct FaderTrack {
-    address: FaderAddress,
-    values: Vec<FaderKey>,
 }
 
 #[derive(Debug, serde::Serialize)]

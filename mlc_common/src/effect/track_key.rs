@@ -1,8 +1,8 @@
 use chrono::Duration;
+use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
-use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
-use crate::utils::easing::{Easing, EasingType};
+use crate::easing::{Easing, EasingType};
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]

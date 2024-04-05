@@ -1,9 +1,9 @@
 use dioxus::prelude::*;
 
+use crate::{configure_panel, utils};
 use crate::icons::{
     ExternalLink, LightBulb, Pencil, Save, Settings, TabletSmartphone, UploadCloud,
 };
-use crate::{configure_panel, utils};
 use crate::utils::context_menu::ContextMenu;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 

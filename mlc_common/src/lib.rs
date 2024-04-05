@@ -11,6 +11,10 @@ pub mod fixture;
 pub mod patched;
 pub mod universe;
 
+pub mod effect;
+
+pub mod easing;
+
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy, JsonSchema)]
 pub enum Info {

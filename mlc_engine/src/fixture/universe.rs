@@ -171,26 +171,3 @@ impl Deref for UniverseIdParam {
         &self.0
     }
 }
-
-#[cfg(test)]
-mod test {
-    use mlc_common::config::FixtureType;
-    use mlc_common::patched::UniverseId;
-    use mlc_common::universe::FixtureUniverse;
-
-    #[test]
-    fn test_out() {
-        let fixture: FixtureType =
-            serde_json::from_str(include_str!("../../../test_fixtures/led_par_56.json")).unwrap();
-
-        let mut universe = FixtureUniverse::empty(UniverseId(1));
-        {
-            universe.patch(&fixture, 0).unwrap();
-            universe.patch(&fixture, 0).unwrap();
-            universe.patch(&fixture, 0).unwrap();
-        }
-
-        println!("{:#?}", universe);
-        // assert!(false);
-    }
-}

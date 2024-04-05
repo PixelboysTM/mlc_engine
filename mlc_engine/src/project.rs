@@ -8,13 +8,14 @@ use rocket::{
 
 use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 use mlc_common::config::FixtureType;
+use mlc_common::effect::Effect;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
 
 use crate::{
     runtime::{
-        effects::{Effect, EffectPlayerAction},
+        effects::EffectPlayerAction,
         RuntimeData,
     },
     send,

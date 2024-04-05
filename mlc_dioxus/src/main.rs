@@ -9,13 +9,15 @@ use wasm_logger::Config;
 use mlc_common::Info;
 
 use crate::configure_panel::ConfigurePanel;
-use crate::headbar::{Headbar, Pane};
+use crate::head_bar::{Headbar, Pane};
+use crate::program_panel::ProgramPanel;
 use crate::utils::context_menu::ContextMenu;
-use crate::utils::toaster::{Toaster, ToasterWriter};
 use crate::utils::Loading;
+use crate::utils::toaster::{Toaster, ToasterWriter};
 
 pub(crate) mod configure_panel;
-mod headbar;
+pub(crate) mod program_panel;
+mod head_bar;
 pub mod icons;
 mod project_selection;
 mod utils;
@@ -74,8 +76,6 @@ fn Index() -> Element {
 
 #[component]
 fn IndexContent(pane: Signal<Pane>) -> Element {
-    let mut toaster = use_context::<Signal<Toaster>>();
-
     let mut c_menu = use_signal(|| None);
     rsx! {
         div {
@@ -86,33 +86,7 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
                     ConfigurePanel()
                 }
                 Pane::Program => {
-                    rsx!{
-                        "Program",
-                        button {
-                        onclick: move |_| {
-                            toaster.info("Test Info!", "This is a test notification and will be discarded shortly!");
-                        },
-                        "Toast Info"
-                        },
-                        button {
-                            onclick: move |_| {
-                                toaster.warning("Test Warning!", "This is a warning be carefull!");
-                            },
-                            "Toast Warning"
-                        },
-                        button {
-                            onclick: move |_| {
-                                toaster.error("An error occured", "This is a error message someting went wrong and it is your job to figure out what here is some context: Lorem ipsum dhuaijkdbasjdbahssdjd you are fucked!!!!!");
-                            },
-                            "Toast Error"
-                        }
-                        button {
-                            onclick: move |_| {
-                                toaster.log("Log", "This is just a bit of logging");
-                            },
-                            "Toast Log"
-                        }
-                    }
+                    ProgramPanel()
                 }
                 Pane::Show => {
                     rsx!{

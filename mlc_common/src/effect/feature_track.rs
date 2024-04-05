@@ -1,23 +1,21 @@
+use ::serde_with::{DurationSecondsWithFrac, formats::Flexible, formats::PreferOne, OneOrMany};
 use chrono::Duration;
-use mlc_common::patched::feature::FixtureFeatureType;
-use mlc_common::patched::FixtureId;
-use serde_with::formats::PreferOne;
 use serde_with::serde_as;
-use serde_with::OneOrMany;
-use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
-use crate::runtime::effects::track_key::{D3PercentageKey, PercentageKey, RotationKey};
+use crate::effect::track_key::{D3PercentageKey, PercentageKey, RotationKey};
+use crate::patched::feature::FixtureFeatureType;
+use crate::patched::FixtureId;
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct FeatureTrack {
     #[serde(alias = "fixture")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferOne>")]
-    pub(super) fixtures: Vec<FixtureId>,
-    pub(super) feature: FixtureFeatureType,
-    pub(super) detail: FeatureTrackDetail,
+    pub fixtures: Vec<FixtureId>,
+    pub feature: FixtureFeatureType,
+    pub detail: FeatureTrackDetail,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
-    pub(super) resolution: Duration,
+    pub resolution: Duration,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
@@ -34,20 +32,20 @@ pub enum FeatureTrackDetail {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct PercentTrack {
-    pub(super) values: Vec<PercentageKey>,
+    pub values: Vec<PercentageKey>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct D3PercentTrack {
-    pub(super) values: Vec<D3PercentageKey>,
+    pub values: Vec<D3PercentageKey>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct RotationTrack {
-    pub(super) values: Vec<RotationKey>,
+    pub values: Vec<RotationKey>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct D2RotationTrack {
-    pub(super) values: Vec<(RotationKey, RotationKey)>,
+    pub values: Vec<(RotationKey, RotationKey)>,
 }

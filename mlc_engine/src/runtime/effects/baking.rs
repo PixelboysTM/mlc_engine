@@ -5,17 +5,13 @@ use chrono::Duration;
 use tap::Tap;
 
 use feature_tile_to_raw as to_raw;
+use mlc_common::easing::{Easing, EasingType};
+use mlc_common::effect::*;
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeature;
 use mlc_common::patched::PatchedFixture;
 
 use crate::fixture::feature::feature_tile_to_raw;
-use crate::runtime::effects::{Effect, FaderTrack, Track};
-use crate::runtime::effects::feature_track::{
-    D3PercentTrack, FeatureTrack, FeatureTrackDetail, PercentTrack, RotationTrack,
-};
-use crate::runtime::effects::track_key::{D3PercentageKey, Key, PercentageKey, RotationKey};
-use crate::utils::easing::{Easing, EasingType};
 
 pub type BakedEffectCue = Vec<(Duration, u8)>;
 pub type BakedFixtureData = Vec<PatchedFixture>;
@@ -82,7 +78,7 @@ fn bake_fader_cue(fader_cue: &FaderTrack, max_time: &Duration) -> BakedEffectCue
 }
 
 async fn bake_feature_track(
-    track: &FeatureTrack,
+    track: &mlc_common::effect::FeatureTrack,
     max_time: &Duration,
     fixtures: &BakedFixtureData,
 ) -> Vec<(FaderAddress, BakedEffectCue)> {
