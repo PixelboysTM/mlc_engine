@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use color_art::Color;
 use dioxus::html::input_data::keyboard_types::{Key, Modifiers};
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
@@ -136,7 +137,7 @@ pub fn RgbWidget(
     onchange: EventHandler<(f32, f32, f32)>,
 ) -> Element {
     let mut color = use_signal(||
-        color_art::Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap()
+        Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap()
     );
 
     let hsv = use_memo(move || {
@@ -153,15 +154,13 @@ pub fn RgbWidget(
         (c.red(), c.green(), c.blue())
     });
 
-    use_effect(move || {
-        let c = color();
-        log::info!("Updating color");
-        onchange.call((
+    let to_color = |c: Color| {
+        (
             c.red() as f32 / 255.0,
             c.green() as f32 / 255.0,
             c.blue() as f32 / 255.0,
-        ));
-    });
+        )
+    };
 
     let mut hue_e = use_signal(|| None);
     let mut red_e = use_signal(|| None);
@@ -184,7 +183,9 @@ pub fn RgbWidget(
                         let s = 1.0 - e.element_coordinates().x / sat_e().unwrap().get_client_rect().await.unwrap().size.width;
                         let v = 1.0 - e.element_coordinates().y / sat_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let old = color();
-                        color.set(color_art::Color::from_hsv(old.hsv_hue(), s.clamp(0.0, 1.0), v.clamp(0.0,1.0)).expect("We have a problem!"));
+                        let v = Color::from_hsv(old.hsv_hue(), s.clamp(0.0, 1.0), v.clamp(0.0,1.0)).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onmousemove: move |e| {
@@ -195,7 +196,9 @@ pub fn RgbWidget(
                         let s = 1.0 - e.element_coordinates().x / sat_e().unwrap().get_client_rect().await.unwrap().size.width;
                         let v = 1.0 - e.element_coordinates().y / sat_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let old = color();
-                        color.set(color_art::Color::from_hsv(old.hsv_hue(), s.clamp(0.0,1.0), v.clamp(0.0,1.0)).expect("We have a problem!"));
+                        let v = Color::from_hsv(old.hsv_hue(), s.clamp(0.0, 1.0), v.clamp(0.0,1.0)).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onkeydown: move |e| {
@@ -221,7 +224,9 @@ pub fn RgbWidget(
                     }
 
                     if changed {
-                        color.set(color_art::Color::from_hsv(vl.hsv_hue(), s, v).expect("Is clamped"));
+                        let v = Color::from_hsv(vl.hsv_hue(), s, v).expect("Is clamped");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 div {
@@ -239,7 +244,9 @@ pub fn RgbWidget(
                     async move {
                         let h = e.element_coordinates().y / hue_e().unwrap().get_client_rect().await.unwrap().size.height * 360.0;
                         let old = color();
-                        color.set(color_art::Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                        let v = Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onmousemove: move |e| {
@@ -249,7 +256,9 @@ pub fn RgbWidget(
                         }
                         let h = e.element_coordinates().y / hue_e().unwrap().get_client_rect().await.unwrap().size.height * 360.0;
                         let old = color();
-                        color.set(color_art::Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                        let v = Color::from_hsv(h.clamp(0.0, 360.0), old.hsv_saturation(), old.hsv_value()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onkeydown: move |e| {
@@ -257,11 +266,15 @@ pub fn RgbWidget(
                     let old = color();
                     if e.key() == Key::ArrowUp {
                         let h = (old.hsv_hue() - amount).clamp(0.0, 359.99);
-                        color.set(color_art::Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                        let v = Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                     if e.key() == Key::ArrowDown {
                         let h = (old.hsv_hue() + amount).clamp(0.0, 359.99);
-                        color.set(color_art::Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!"));
+                        let v = Color::from_hsv(h, old.hsv_saturation(), old.hsv_value()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 div {
@@ -279,7 +292,9 @@ pub fn RgbWidget(
                     async move {
                         let r = e.element_coordinates().x / red_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!"));
+                        let v = Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onmousemove: move |e| {
@@ -289,7 +304,9 @@ pub fn RgbWidget(
                         }
                         let r = e.element_coordinates().x / red_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!"));
+                        let v = Color::from_rgb(r.clamp(0.0, 255.0), old.green() as f64, old.blue() as f64).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onkeydown: move |e| {
@@ -297,11 +314,15 @@ pub fn RgbWidget(
                     let old = color();
                     if e.key() == Key::ArrowLeft {
                         let r = ((old.red() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!"));
+                        let v = Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                     if e.key() == Key::ArrowRight {
                         let r = ((old.red() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!"));
+                        let v = Color::from_rgb(r, old.green(), old.blue()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 div {
@@ -319,7 +340,9 @@ pub fn RgbWidget(
                     async move {
                         let g = e.element_coordinates().x / green_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onmousemove: move |e| {
@@ -329,7 +352,9 @@ pub fn RgbWidget(
                         }
                         let g = e.element_coordinates().x / green_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red() as f64, g.clamp(0.0, 255.0), old.blue() as f64).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onkeydown: move |e| {
@@ -337,11 +362,15 @@ pub fn RgbWidget(
                     let old = color();
                     if e.key() == Key::ArrowLeft {
                         let g = ((old.green() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                     if e.key() == Key::ArrowRight {
                         let g = ((old.green() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red(), g, old.blue()).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 div {
@@ -359,7 +388,9 @@ pub fn RgbWidget(
                     async move {
                         let b = e.element_coordinates().x / blue_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onmousemove: move |e| {
@@ -369,7 +400,9 @@ pub fn RgbWidget(
                         }
                         let b = e.element_coordinates().x / blue_e().unwrap().get_client_rect().await.unwrap().size.width * 255.0;
                         let old = color();
-                        color.set(color_art::Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red() as f64, old.green() as f64, b.clamp(0.0, 255.0)).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 onkeydown: move |e| {
@@ -377,11 +410,15 @@ pub fn RgbWidget(
                     let old = color();
                     if e.key() == Key::ArrowLeft {
                         let b = ((old.blue() as f32 / 255.0 - amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                     if e.key() == Key::ArrowRight {
                         let b = ((old.blue() as f32 / 255.0 + amount) * 255.0).clamp(0.0, 255.0) as u8;
-                        color.set(color_art::Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!"));
+                        let v = Color::from_rgb(old.red(), old.green(), b).expect("We have a problem!");
+                        color.set(v);
+                        onchange.call(to_color(v));
                     }
                 },
                 div {
@@ -404,9 +441,6 @@ pub fn PanTiltWidget(
 
     let tilt = use_memo(move || pt().1);
 
-    use_effect(move || {
-        onchange.call(*pt.read());
-    });
 
     let mut pan_e = use_signal(|| None);
     let mut tilt_e = use_signal(|| None);
@@ -426,7 +460,9 @@ pub fn PanTiltWidget(
                     async move {
                         let p = e.element_coordinates().y / zone_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let t = e.element_coordinates().x / zone_e().unwrap().get_client_rect().await.unwrap().size.width;
-                        pt.set((p.clamp(0.0,1.0) as f32, t.clamp(0.0,1.0) as f32));
+                        let v = (p.clamp(0.0,1.0) as f32, t.clamp(0.0,1.0) as f32);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onmousemove: move |e| {
@@ -436,7 +472,9 @@ pub fn PanTiltWidget(
                         }
                         let p = e.element_coordinates().y / zone_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let t = e.element_coordinates().x / zone_e().unwrap().get_client_rect().await.unwrap().size.width;
-                        pt.set((p.clamp(0.0,1.0) as f32, t.clamp(0.0,1.0) as f32));
+                        let v = (p.clamp(0.0,1.0) as f32, t.clamp(0.0,1.0) as f32);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onkeydown: move |e| {
@@ -462,6 +500,7 @@ pub fn PanTiltWidget(
 
                     if changed {
                         pt.set(v);
+                        onchange.call(v);
                     }
                 },
             },
@@ -475,7 +514,9 @@ pub fn PanTiltWidget(
                     async move {
                         let p = e.element_coordinates().y / pan_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let old = pt();
-                        pt.set((p.clamp(0.0,1.0) as f32, old.1));
+                        let v = (p.clamp(0.0,1.0) as f32, old.1);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onmousemove: move |e| {
@@ -485,17 +526,23 @@ pub fn PanTiltWidget(
                         }
                         let p = e.element_coordinates().y / pan_e().unwrap().get_client_rect().await.unwrap().size.height;
                         let old = pt();
-                        pt.set((p.clamp(0.0,1.0) as f32, old.1));
+                        let v = (p.clamp(0.0,1.0) as f32, old.1);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onkeydown: move |e| {
                     let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
                     let old = pt();
                     if e.key() == Key::ArrowUp {
-                        pt.set(((old.0 - amount).clamp(0.0,1.0), old.1));
+                        let v = ((old.0 - amount).clamp(0.0,1.0) as f32, old.1);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                     if e.key() == Key::ArrowDown {
-                        pt.set(((old.0 + amount).clamp(0.0,1.0), old.1));
+                        let v = ((old.0 + amount).clamp(0.0,1.0) as f32, old.1);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 div {
@@ -514,7 +561,9 @@ pub fn PanTiltWidget(
                     async move {
                         let t = e.element_coordinates().x / tilt_e().unwrap().get_client_rect().await.unwrap().size.width;
                         let old = pt();
-                        pt.set((old.0, t.clamp(0.0,1.0) as f32));
+                        let v = (old.0, t.clamp(0.0,1.0) as f32);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onmousemove: move |e| {
@@ -524,17 +573,23 @@ pub fn PanTiltWidget(
                         }
                         let t = e.element_coordinates().x / tilt_e().unwrap().get_client_rect().await.unwrap().size.width;
                         let old = pt();
-                        pt.set((old.0, t.clamp(0.0,1.0) as f32));
+                        let v = (old.0, t.clamp(0.0,1.0) as f32);
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 onkeydown: move |e| {
                     let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
                     let old = pt();
                     if e.key() == Key::ArrowLeft {
-                        pt.set((old.0, (old.1 - amount).clamp(0.0,1.0)));
+                        let v = (old.0, (old.1 - amount).clamp(0.0,1.0));
+                        pt.set(v);
+                        onchange.call(v);
                     }
                     if e.key() == Key::ArrowRight {
-                        pt.set((old.0, (old.1 + amount).clamp(0.0,1.0)));
+                        let v = (old.0, (old.1 + amount).clamp(0.0,1.0));
+                        pt.set(v);
+                        onchange.call(v);
                     }
                 },
                 div {
@@ -558,10 +613,6 @@ pub fn PanTiltWidget(
 pub fn Slider(initial: f32, onchange: EventHandler<f32>) -> Element {
     let mut val = use_signal(|| 1.0 - initial);
 
-    use_effect(move || {
-        onchange.call(1.0 - val());
-    });
-
     let mut size_e = use_signal(|| None);
 
     rsx! {
@@ -576,7 +627,9 @@ pub fn Slider(initial: f32, onchange: EventHandler<f32>) -> Element {
                 async move {
                     if e.held_buttons() == MouseButton::Primary{
                         let h = e.element_coordinates().y / size_e().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
-                        val.set(h.clamp(0.0,1.0) as f32);
+                        let v = h.clamp(0.0,1.0) as f32;
+                        val.set(v);
+                        onchange.call(1.0 - v);
                     }
                 }
             },
@@ -584,17 +637,34 @@ pub fn Slider(initial: f32, onchange: EventHandler<f32>) -> Element {
                 async move {
                     if e.held_buttons() == MouseButton::Primary{
                         let h = e.element_coordinates().y / size_e().expect("Not mounted?").get_client_rect().await.unwrap().size.height;
-                        val.set(h.clamp(0.0,1.0) as f32);
+                        let v = h.clamp(0.0,1.0) as f32;
+                        val.set(v);
+                        onchange.call(1.0 - v);
+                    }
+                }
+            },
+            ontouchmove: move |e| {
+                async move {
+                    if !e.target_touches().is_empty(){
+                        let rect = size_e().expect("Not mounted?").get_client_rect().await.unwrap();
+                        let h = (e.target_touches()[0].client_coordinates().y - rect.origin.y ) / rect.size.height;
+                        let v = h.clamp(0.0,1.0) as f32;
+                        val.set(v);
+                        onchange.call(1.0 - v);
                     }
                 }
             },
             onkeydown: move |e| {
                 let amount = if e.modifiers() == Modifiers::CONTROL {0.001} else {0.01};
                 if e.key() == Key::ArrowUp {
-                    val.set((val() - amount).clamp(0.0,1.0))
+                    let v = (val() - amount).clamp(0.0,1.0);
+                    val.set(v);
+                    onchange.call(1.0 - v);
                 }
                 if e.key() == Key::ArrowDown {
-                    val.set((val() + amount).clamp(0.0,1.0))
+                    let v = (val() + amount).clamp(0.0,1.0);
+                    val.set(v);
+                    onchange.call(1.0 - v);
                 }
             },
             div {

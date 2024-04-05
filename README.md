@@ -53,7 +53,7 @@ To run MLC on your local machine the following steps will help you:
 - [X] Decouple FixtureType Data Structure from AGLight and built separate importer
 - [X] Add a new binary more kompakt file format for projects
 - [X] Update Dioxus to 0.5
-- [ ] Fix things that broke with dioxus update
+- [X] Fix things that broke with dioxus update
 - [X] Save extension in file name to make naming and loading unique
 - [ ] Ui
     - [X] Fixture Details/Patch Modal
