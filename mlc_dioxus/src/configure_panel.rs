@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
+use dioxus::html::div;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::{SinkExt, StreamExt};
+use futures::{SinkExt, Stream, StreamExt};
 use futures::future::{Either, select};
 use gloo_net::websocket::Message;
 
@@ -225,21 +226,42 @@ fn FaderPanel() -> Element {
         let ws_o = utils::ws("/runtime/fader-values/get").await;
 
         if let Ok(mut get_ws) = ws_o {
+            let mut get_ws = get_ws.fuse();
             loop {
-                let i = select(rx.next(), get_ws.next()).await;
-                match i {
-                    Either::Left((Some(msg), _)) => {
-                        let _ = get_ws.send(Message::Text(msg.to_string())).await;
-                    }
-                    Either::Right((Some(Ok(msg)), _)) => {
+                let res = futures::select! {
+                    msg = rx.next() => {
+                        if let Some(msg) = msg {
+                            let _ = get_ws.send(Message::Text(msg.to_string())).await;
+                        }
+                    },
+                    msg = get_ws.next() => {
                         let d = match msg {
-                            Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
-                            Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
-                                &String::from_utf8(b).unwrap(),
-                            ),
+                            Some(Ok(msg)) => {
+                                match msg {
+                                    Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t).ok(),
+                                    Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
+                                        &String::from_utf8(b).unwrap(),
+                                    ).ok(),
+                                }
+                            }
+                            Some(Err(e)) => {
+                                let e: gloo_net::websocket::WebSocketError = e;
+                                match e {
+                                    gloo_net::websocket::WebSocketError::ConnectionClose(c) => {
+                                        log::info!("WS was closed code: {}", c.code);
+                                    }
+                                    e => {
+                                        log::error!("Websocket error: {e:?}");
+                                    }
+                                }
+                                None
+                            }
+                            None => {
+                                None
+                            }
                         };
 
-                        if let Ok(update) = d {
+                        if let Some(update) = d {
                             match update {
                                 RuntimeUpdate::ValueUpdated {
                                     universe,
@@ -273,15 +295,64 @@ fn FaderPanel() -> Element {
                             };
                         };
                     }
-
-                    d => {
-                        let b = match d {
-                            Either::Left((a, _b)) => format!("{:?}", a),
-                            Either::Right((a, _b)) => format!("{:?}", a),
-                        };
-                        log::error!("Error {b:?}");
-                    }
-                };
+                }
+                    ;
+                // let i = select(rx.next(), get_ws.next()).await;
+                // match i {
+                //     Either::Left((Some(msg), _)) => {
+                //         let _ = get_ws.send(Message::Text(msg.to_string())).await;
+                //     }
+                //     Either::Right((Some(Ok(msg)), _)) => {
+                //         let d = match msg {
+                //             Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
+                //             Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
+                //                 &String::from_utf8(b).unwrap(),
+                //             ),
+                //         };
+                //
+                //         if let Ok(update) = d {
+                //             match update {
+                //                 RuntimeUpdate::ValueUpdated {
+                //                     universe,
+                //                     channel_index,
+                //                     value,
+                //                 } => {
+                //                     if current_universe.read().deref() == &universe.0 {
+                //                         current_values.with_mut(|g| g[channel_index] = value);
+                //                     }
+                //                 }
+                //                 RuntimeUpdate::ValuesUpdated {
+                //                     universes,
+                //                     channel_indexes,
+                //                     values,
+                //                 } => {
+                //                     current_values.with_mut(|g| {
+                //                         for (i, index) in channel_indexes.iter().enumerate() {
+                //                             if current_universe.read().deref() == &universes[i].0 {
+                //                                 g[*index] = values[i];
+                //                             }
+                //                         }
+                //                     });
+                //                 }
+                //                 RuntimeUpdate::Universe {
+                //                     universe, values, ..
+                //                 } => {
+                //                     if current_universe() == universe.0 {
+                //                         current_values.set(values);
+                //                     }
+                //                 }
+                //             };
+                //         };
+                //     }
+                //
+                //     d => {
+                //         let b = match d {
+                //             Either::Left((a, _b)) => format!("{:?}", a),
+                //             Either::Right((a, _b)) => format!("{:?}", a),
+                //         };
+                //         log::error!("Error {b:?}");
+                //     }
+                // };
             }
         } else {
             log::error!("Error creating {:?}", ws_o.err().unwrap());
