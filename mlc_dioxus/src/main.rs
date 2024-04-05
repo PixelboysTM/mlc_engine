@@ -83,10 +83,14 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
             height: "calc(100vh - 3rem)",
             match pane() {
                 Pane::Configure => {
-                    ConfigurePanel()
+                    rsx! {
+                        ConfigurePanel{}
+                    }
                 }
                 Pane::Program => {
-                    ProgramPanel()
+                    rsx! {
+                        ProgramPanel{}
+                    }
                 }
                 Pane::Show => {
                     rsx!{

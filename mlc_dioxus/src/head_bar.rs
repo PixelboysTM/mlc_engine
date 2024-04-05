@@ -73,7 +73,6 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                     title: "Configure",
                     onclick: move |_event| {
                         pane.set(Pane::Configure);
-                        log::info!("Clicked Configure");
                     },
                     Settings {}
                 }
@@ -83,7 +82,6 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                     title: "Program",
                     onclick: move |_event| {
                         pane.set(Pane::Program);
-                        log::info!("Clicked Program")
                     },
                     Pencil {}
                 }

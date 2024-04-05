@@ -598,7 +598,48 @@ pub fn PanelLeftOpen(props: IconProps) -> Element {
         path { "d": "M9 3v18" }
         path { "d": "m14 9 3 3-3 3" }
     }
+    }
+}
 
+pub fn Folder(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "xmlns": "http://www.w3.org/2000/svg",
+        height,
+        width,
+        "fill": "none",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "viewBox": "0 0 24 24",
+        "stroke-linejoin": "round",
+        "stroke": "currentColor",
+        class: "lucide lucide-folder",
+        path { "d": "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" }
+    }
+    }
+}
+
+pub fn Sparkles(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "stroke-width": "2",
+        "stroke-linejoin": "round",
+        "stroke": "currentColor",
+        "fill": "none",
+        "stroke-linecap": "round",
+        "xmlns": "http://www.w3.org/2000/svg",
+        height,
+        width,
+        "viewBox": "0 0 24 24",
+        class: "lucide lucide-sparkles",
+        path { "d": "m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" }
+        path { "d": "M5 3v4" }
+        path { "d": "M19 17v4" }
+        path { "d": "M3 5h4" }
+        path { "d": "M17 19h4" }
+    }
 
     }
 }

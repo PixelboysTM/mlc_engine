@@ -20,7 +20,7 @@
         .close-browser-btn {
             position: absolute;
             top: 0.25rem;
-            left: 0.25rem;
+            left: -0.4rem;
             width: 1.6rem;
             height: 1.6rem;
             padding: 0.1rem;
@@ -75,6 +75,34 @@
 
         &:hover {
             color: var(--color-primary);
+        }
+    }
+
+    .effect-browser {
+        .effect-tree {
+            width: 100%;
+
+            .element {
+                height: 1rlh;
+                background-color: var(--color-button);
+                border-radius: var(--number-border-radius);
+                margin-bottom: 0.25rem;
+                display: grid;
+                grid-template-columns: 1.25rem 1fr;
+                align-items: center;
+                padding: 0.1rem 0.1rem 0.1rem 0.25rem;
+                cursor: pointer;
+                transition: color 100ms;
+                user-select: none;
+
+                &:hover {
+                    color: var(--color-primary);
+                }
+            }
+
+            .children {
+                margin-left: 1.5rem;
+            }
         }
     }
 

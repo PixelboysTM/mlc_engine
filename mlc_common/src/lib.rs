@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local};
 use schemars::JsonSchema;
+pub use uuid;
 
 use crate::config::FixtureMode;
 use crate::patched::{UniverseAddress, UniverseId};
@@ -14,7 +15,6 @@ pub mod universe;
 pub mod effect;
 
 pub mod easing;
-
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy, JsonSchema)]
 pub enum Info {
