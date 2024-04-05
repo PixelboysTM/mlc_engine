@@ -2,11 +2,9 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use dioxus::html::div;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use futures::{SinkExt, Stream, StreamExt};
-use futures::future::{Either, select};
+use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 
 use fixture_tester::FixtureTester;
@@ -225,10 +223,10 @@ fn FaderPanel() -> Element {
 
         let ws_o = utils::ws("/runtime/fader-values/get").await;
 
-        if let Ok(mut get_ws) = ws_o {
+        if let Ok(get_ws) = ws_o {
             let mut get_ws = get_ws.fuse();
             loop {
-                let res = futures::select! {
+                futures::select! {
                     msg = rx.next() => {
                         if let Some(msg) = msg {
                             let _ = get_ws.send(Message::Text(msg.to_string())).await;
@@ -296,63 +294,6 @@ fn FaderPanel() -> Element {
                         };
                     }
                 }
-                    ;
-                // let i = select(rx.next(), get_ws.next()).await;
-                // match i {
-                //     Either::Left((Some(msg), _)) => {
-                //         let _ = get_ws.send(Message::Text(msg.to_string())).await;
-                //     }
-                //     Either::Right((Some(Ok(msg)), _)) => {
-                //         let d = match msg {
-                //             Message::Text(t) => serde_json::from_str::<RuntimeUpdate>(&t),
-                //             Message::Bytes(b) => serde_json::from_str::<RuntimeUpdate>(
-                //                 &String::from_utf8(b).unwrap(),
-                //             ),
-                //         };
-                //
-                //         if let Ok(update) = d {
-                //             match update {
-                //                 RuntimeUpdate::ValueUpdated {
-                //                     universe,
-                //                     channel_index,
-                //                     value,
-                //                 } => {
-                //                     if current_universe.read().deref() == &universe.0 {
-                //                         current_values.with_mut(|g| g[channel_index] = value);
-                //                     }
-                //                 }
-                //                 RuntimeUpdate::ValuesUpdated {
-                //                     universes,
-                //                     channel_indexes,
-                //                     values,
-                //                 } => {
-                //                     current_values.with_mut(|g| {
-                //                         for (i, index) in channel_indexes.iter().enumerate() {
-                //                             if current_universe.read().deref() == &universes[i].0 {
-                //                                 g[*index] = values[i];
-                //                             }
-                //                         }
-                //                     });
-                //                 }
-                //                 RuntimeUpdate::Universe {
-                //                     universe, values, ..
-                //                 } => {
-                //                     if current_universe() == universe.0 {
-                //                         current_values.set(values);
-                //                     }
-                //                 }
-                //             };
-                //         };
-                //     }
-                //
-                //     d => {
-                //         let b = match d {
-                //             Either::Left((a, _b)) => format!("{:?}", a),
-                //             Either::Right((a, _b)) => format!("{:?}", a),
-                //         };
-                //         log::error!("Error {b:?}");
-                //     }
-                // };
             }
         } else {
             log::error!("Error creating {:?}", ws_o.err().unwrap());
@@ -407,11 +348,11 @@ fn FaderPanel() -> Element {
                         value: current_values.read()[i],
                         id: make_three_digit(i as u16),
                         onchange: move |v| {
-                            set.send(FaderUpdateRequest{
-                                universe: UniverseId(*current_universe.read().deref()),
-                                channel: UniverseAddress::create(i as u16).expect("Must be"),
-                                value: v
-                            });
+                                set.send(FaderUpdateRequest{
+                                    universe: UniverseId(*current_universe.read().deref()),
+                                    channel: UniverseAddress::create(i as u16).expect("Must be"),
+                                    value: v
+                                });
                         },
                     }
                     }
@@ -423,16 +364,8 @@ fn FaderPanel() -> Element {
 
 #[component]
 fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
-    let mut val = use_signal(|| (value, true));
-    // let _ = use_memo(move || val.set((value, true)));
-    use_effect(use_reactive((&value, ), move |(v, )| val.set((v, true))));
-
-    use_effect(move || {
-        let (vl, ext) = val();
-        if !ext {
-            onchange.call(vl);
-        }
-    });
+    let mut val = use_signal(|| value);
+    use_effect(use_reactive((&value, ), move |(v, )| val.set(v)));
 
     let mut size_e = use_signal(|| None);
     rsx! {
@@ -445,19 +378,20 @@ fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
 
             div{
                 class: "range",
-                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val().0 as f32 / 255.0) * 100.0}%, transparent {(val().0 as f32 / 255.0) * 100.0}%, transparent 100%)",
+                background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val() as f32 / 255.0) * 100.0}%, transparent {(val() as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
                     size_e.set(Some(e.data));
                 },
 
                 onmousemove: move |e| {
                     async move {
-                        if e.data.held_buttons() == MouseButton::Primary {
+                        if e.held_buttons() == MouseButton::Primary {
                             let size = size_e().unwrap().get_client_rect().await.unwrap().size.height;
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
-                            val.set((v, false));
+                            val.set(v);
+                            onchange.call(v);
                         }
                     }
                 },
@@ -468,7 +402,8 @@ fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
-                            val.set((v, false));
+                            val.set(v);
+                            onchange.call(v);
                         }
                     }
                 }
@@ -477,7 +412,7 @@ fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
 
             div{
                 class: "value",
-                {make_three_digit(val().0 as u16)}
+                {make_three_digit(val() as u16)}
             }
         }
     }
