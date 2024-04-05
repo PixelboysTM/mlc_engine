@@ -299,6 +299,7 @@ impl Project {
     pub async fn close(&self) {
         let mut l = self.lock().await;
         *l = ProjectI::default();
+        l.settings.save_on_quit = false;
     }
 
     pub async fn lock(&self) -> MutexGuard<'_, ProjectI> {
