@@ -236,7 +236,7 @@ pub fn Plus(props: IconProps) -> Element {
     let height = props.height.unwrap_or("1.25rem".to_string());
     rsx! { svg {
         fill: "none",
-        stroke: "#ffffff",
+        stroke: "currentColor",
         stroke_width: "2",
         stroke_linecap: "round",
         width: width,
@@ -555,5 +555,50 @@ pub fn Trash2(props: IconProps) -> Element {
         line { "x1": "10", "y1": "11", "y2": "17", "x2": "10" }
         line { "x1": "14", "x2": "14", "y1": "11", "y2": "17" }
     }
+    }
+}
+
+pub fn PanelLeftClose(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "fill": "none",
+        "stroke-linecap": "round",
+        width,
+        height,
+        "viewBox": "0 0 24 24",
+        "stroke-width": "2",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke-linejoin": "round",
+        "stroke": "currentColor",
+        class: "lucide lucide-panel-left-close",
+        rect { width: "18", "x": "3", "y": "3", height: "18", "rx": "2" }
+        path { "d": "M9 3v18" }
+        path { "d": "m16 15-3-3 3-3" }
+    }
+
+    }
+}
+
+pub fn PanelLeftOpen(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "stroke-linecap": "round",
+        "stroke": "currentColor",
+        "stroke-width": "2",
+        width,
+        height,
+        "fill": "none",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "viewBox": "0 0 24 24",
+        "stroke-linejoin": "round",
+        class: "lucide lucide-panel-left-open",
+        rect { height: "18", width: "18", "y": "3", "rx": "2", "x": "3" }
+        path { "d": "M9 3v18" }
+        path { "d": "m14 9 3 3-3 3" }
+    }
+
+
     }
 }

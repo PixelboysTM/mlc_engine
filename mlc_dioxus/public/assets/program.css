@@ -1,0 +1,81 @@
+.program-panel {
+    width: calc(100% - 1rem);
+    height: calc(100% - 1rem);
+    display: grid;
+    padding: 0.5rem;
+    position: relative;
+
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    gap: 0.5rem;
+
+    min-width: 0;
+    min-height: 0;
+
+    .effect-browser {
+        grid-column: 1 / 5;
+        grid-row: 1 / 13;
+        position: relative;
+
+        .close-browser-btn {
+            position: absolute;
+            top: 0.25rem;
+            left: 0.25rem;
+            width: 1.6rem;
+            height: 1.6rem;
+            padding: 0.1rem;
+            display: flex;
+            align-items: center;
+
+            * {
+                margin: auto;
+            }
+        }
+    }
+
+    .effect-info {
+        grid-column: 10 / 13;
+        grid-row: 1 / 7;
+    }
+
+    .timeline {
+        grid-column: 5 / 13;
+        grid-row: 7 / 13;
+    }
+
+    .visualizer {
+        grid-column: 5 / 10;
+        grid-row: 1 / 7;
+    }
+
+    &.no-browser {
+        .timeline {
+            grid-column: 1 / 13;
+        }
+
+        .visualizer {
+            grid-column: 1 / 10;
+        }
+    }
+
+    .effect-browser-open-btn {
+        position: absolute;
+        top: 0.5rem;
+        left: 0;
+        width: 1.5rem;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        z-index: 12;
+        padding: 0.25rem;
+        background-color: var(--color-button);
+        border-top-right-radius: var(--number-border-radius);
+        border-bottom-right-radius: var(--number-border-radius);
+        box-shadow: var(--color-background) 0 0 0.1rem 0.1rem;
+
+        &:hover {
+            color: var(--color-primary);
+        }
+    }
+
+}

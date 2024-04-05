@@ -14,6 +14,7 @@ index_on_404 = true
 style = [
     "./assets/style.css",
     "./assets/configure.css",
+    "./assets/program.css",
     "./assets/project_selection.css",
 ]
 
