@@ -429,7 +429,7 @@
     .overlay-body {
         display: flex;
         flex-direction: row;
-        gap: 0.25rem;
+        gap: 0.5rem;
         overflow-x: auto;
     }
 
@@ -449,6 +449,7 @@
         width: 16rem;
         min-width: 16rem;
         height: fit-content;
+        padding-bottom: 0.5rem;
 
         .universe-id {
             padding: 0.25rem;

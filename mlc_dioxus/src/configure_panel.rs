@@ -707,10 +707,14 @@ fn UniverseExplorer() -> Element {
                                                 rsx! {
                                                     div {
                                                         class: "patched-channel {channel_type(data.fixtures[c.fixture_index].num_channels as usize, c.channel_index)}",
-                                                        onclick: move |_| {
-                                                            detail_fixture_id.set(Some(c.fixture_index))
-                                                            // let d = &data;
-                                                            // detail_fixture.set(Some(d.fixtures[c.fixture_index].clone()));
+                                                        title: data.fixtures[c.fixture_index].name.clone(),
+                                                        onclick: move |e| {
+                                                            if let Some(MouseButton::Primary) = e.trigger_button(){
+                                                                detail_fixture_id.set(Some(c.fixture_index))
+                                                            }
+                                                            if let Some(MouseButton::Secondary) = e.trigger_button(){
+                                                                log::info!("Right Click");
+                                                            }
                                                         },
                                                         if c.channel_index == 0 {
                                                             code {
@@ -1123,6 +1127,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                                                 let item = conf.get_mut(i).expect("");
                                                                                 if let EPConfigItem::Sacn{universe, ..} = item {
                                                                                     *universe = u16::from_str(&e.value()).unwrap_or(1).max(1);
+                                                                                    needs_update();
                                                                                 }
                                                                             }
                                                                         }
