@@ -130,10 +130,11 @@ fn DisconnectHelper() -> Element {
 
     let _guard = use_future(move || async move {
         let mut failed = 0;
-        while failed <= 5 {
+        while failed <= 3 {
             let r = utils::fetch::<String>("/util/heartbeat").await;
             if r.is_ok() {
                 async_std::task::sleep(Duration::from_secs(5)).await;
+                failed = 0;
             } else {
                 failed += 1;
                 log::warn!("Failed heartbeat {} times", failed);

@@ -759,6 +759,11 @@ select:hover {
         left: var(--cm-p-x);
         margin: 0.25rem;
         z-index: 50;
+
+        &:focus-visible {
+            outline: none;
+        }
+
         /*bottom: calc(-0.25rem - (var(--cm-cc) * var(--cm-mi-h)));*/
 
         .menu-item {

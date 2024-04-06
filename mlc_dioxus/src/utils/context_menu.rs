@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::sync::Mutex;
+
 use dioxus::prelude::*;
 
 #[derive(Clone, PartialEq)]
@@ -48,11 +49,15 @@ pub fn ContextMenu(mut menu: ContextMenu, onclose: EventHandler) -> Element {
             div {
                 class: "context-menu",
                 style: "--cm-p-x: {menu.x_pos}px; --cm-p-y: {menu.y_pos}px; --cm-cc: {child_count};",
+                tabindex: -1,
+                onmounted: move |e| {
+                    e.set_focus(true);
+                },
                 onclick: move |e| {
                     e.stop_propagation();
                 },
                 onfocusout: move |_| {
-                    log::info!("Focus lost!");
+                    onclose.call(());
                 },
                 for item in menu.items {
                     div {
