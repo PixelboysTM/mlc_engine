@@ -4,38 +4,154 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 use dioxus::web::WebEventExt;
+use futures::{select, SinkExt, StreamExt};
+use gloo_net::websocket::futures::WebSocket;
+use gloo_net::websocket::Message;
 use gloo_storage::Storage;
+use log::{info, log, warn};
 
 use mlc_common::effect::Effect;
+use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
 use mlc_common::Info;
 use mlc_common::uuid::Uuid;
 
 use crate::{icons, utils};
+use crate::utils::{ToWebSocketMessage, ws};
+use crate::utils::toaster::{Toaster, ToasterWriter};
+
+struct EffectInvalidate;
 
 #[component]
 pub fn ProgramPanel() -> Element {
-    let current_effect = use_context_provider::<Signal<Option<Effect>>>(|| Signal::new(None));
+    let mut current_effect = use_context_provider::<Signal<Option<Effect>>>(|| Signal::new(None));
+
+    let mut toaster = use_context::<Signal<Toaster>>();
+
+    let effect_handler = use_coroutine(|mut rx: UnboundedReceiver<EHRequest>| async move {
+        let ws = utils::ws("/effects/effectHandler").await;
+        match ws {
+            Ok(ws) => {
+                let mut ws = ws.fuse();
+                loop {
+                    select! {
+                        msg = rx.next() => {
+                            if let Some(msg) = msg {
+                                let msg: EHRequest = msg;
+                                match msg {
+                                    EHRequest::OpenEffect(id) => {
+                                        let _ = ws.send(EffectHandlerRequest::Get {
+                                            id,
+                                        }.to_msg().unwrap()).await;
+                                    }
+                                    EHRequest::UpdateEffect(effect) => {
+                                        let _ = ws.send(EffectHandlerRequest::Update {
+                                            id: effect.id,
+                                            looping: effect.looping,
+                                            duration: effect.duration,
+                                            tracks: effect.tracks,
+                                        }.to_msg().unwrap()).await;
+                                    }
+                                }
+                            }
+                        },
+                        msg = ws.next() => {
+                            let d = match msg {
+                                Some(Ok(msg)) => {
+                                    match msg {
+                                        Message::Text(t) => serde_json::from_str::<EffectHandlerResponse>(&t).ok(),
+                                        Message::Bytes(b) => serde_json::from_str::<EffectHandlerResponse>(
+                                            &String::from_utf8(b).unwrap(),
+                                        ).ok()
+                                    }
+                                }
+                                Some(Err(e)) => {
+                                    let e: gloo_net::websocket::WebSocketError = e;
+                                    match e {
+                                        gloo_net::websocket::WebSocketError::ConnectionClose(c) => {
+                                            log::info!("WS was closed code: {}", c.code);
+                                        },
+                                        e => {
+                                            log::error!("Websocket error: {e:?}");
+                                        },
+                                    }
+                                    None
+                                }
+                                None => {
+                                    None
+                                }
+                            };
+
+                            if let Some(update) = d {
+                                match update {
+                                    EffectHandlerResponse::EffectCreated{ name, .. } => {
+                                        toaster.info("Created Effect", &format!("Created Effect: {name}"));
+                                        info!("update: EffectCreated");
+                                    }
+                                    EffectHandlerResponse::EffectUpdated{ id } => {
+                                        info!("update: EffectUpdated");
+                                        if Some(id) == current_effect().map(|e| e.id) {
+                                            let _ = ws.send(EffectHandlerRequest::Get {
+                                                id,
+                                            }.to_msg().unwrap()).await;
+                                        }
+                                    }
+                                    EffectHandlerResponse::EffectRunning{ .. } => {}
+                                    EffectHandlerResponse::EffectList{ .. } => {
+                                        log::warn!("Received effect list via ws why do we use this?")
+                                    }
+                                    EffectHandlerResponse::Effect{ effect } => {
+                                        current_effect.set(Some(effect));
+                                        info!("update: Effect");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Unable to open ws to effectHandler: {e:?}");
+                toaster.error(
+                    "Effect Handler error!",
+                    "Unable to open effectHandler see console for more detailed information.",
+                );
+            }
+        }
+    });
+
+    use_effect(move || {
+        info!("Effect was set to: {:?}", current_effect());
+    });
+
+
+    let effect_invalidator = use_coroutine(move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
+        while let Some(_) = rx.next().await {
+            if let Some(e) = &*current_effect.peek() {
+                effect_handler.send(EHRequest::UpdateEffect(e.clone()));
+            } else {
+                warn!("Why needs update when no effect is loaded?");
+            }
+        }
+    });
 
     let mut effect_browser_out = use_signal(|| true);
 
     rsx! {
         div {
             class: "program-panel",
-            class: if !effect_browser_out() {"no-browser"},
+            class: if !effect_browser_out() { "no-browser" },
             if effect_browser_out() {
-                div {
-                    class: "panel effect-browser",
-                    h3 {
-                        class: "header",
-                        "Effect Browser",
+                div { class: "panel effect-browser",
+                    h3 { class: "header",
+                        "Effect Browser"
                         button {
                             class: "icon close-browser-btn",
                             onclick: move |_| {
-                              effect_browser_out.set(false);
+                                effect_browser_out.set(false);
                             },
-                            icons::PanelLeftClose{},
-                        },
-                    },
+                            icons::PanelLeftClose {}
+                        }
+                    }
                     EffectBrowser {}
                 }
             }
@@ -52,38 +168,45 @@ pub fn ProgramPanel() -> Element {
 
             div {
                 class: "panel effect-info",
-                "Effect Info",
-                {format!("Effect: {:?}", current_effect())}
-            },
-            div {
-                class: "panel timeline",
-                "Timeline"
-            },
-            div {
-                class: "panel visualizer",
-                "Visualizer"
+                h3 { class: "header",
+                    "Effect Info",
+                }
+                EffectInfo {}
             }
+            div { class: "panel timeline", "Timeline" }
+            div { class: "panel visualizer", "Visualizer" }
         }
     }
+}
+
+#[derive(Debug, Clone)]
+enum EHRequest {
+    OpenEffect(Uuid),
+    UpdateEffect(Effect),
 }
 
 #[component]
 fn EffectBrowser() -> Element {
     let mut effect_list = use_resource(|| async {
-        utils::fetch::<Vec<(String, Uuid)>>("/effects/get").await.map(|effects| {
-            build_effect_tree(&effects)
-        }).map_err(|e| {
-            log::error!("{e:?}");
-        })
+        utils::fetch::<Vec<(String, Uuid)>>("/effects/get")
+            .await
+            .map(|effects| build_effect_tree(&effects))
+            .map_err(|e| {
+                log::error!("{e:?}");
+            })
     });
 
-    let browser_register: Signal<HashMap<String, bool>> = use_signal(||
-        gloo_storage::SessionStorage::get::<HashMap<String, bool>>("effectBrowserOpenMap").unwrap_or(HashMap::new())
-    );
+    let browser_register: Signal<HashMap<String, bool>> = use_signal(|| {
+        gloo_storage::SessionStorage::get::<HashMap<String, bool>>("effectBrowserOpenMap")
+            .unwrap_or(HashMap::new())
+    });
 
     use_effect(move || {
         gloo_storage::SessionStorage::set("effectBrowserOpenMap", browser_register()).expect("");
     });
+
+    let effect_handler: Coroutine<EHRequest> = use_coroutine_handle();
+
 
     let info = use_context::<Signal<Info>>();
 
@@ -99,39 +222,40 @@ fn EffectBrowser() -> Element {
                 DrawEffectTree {
                     tree: effects.clone(),
                     browser_register,
+                    on_open_effect: move |id| {
+                        log::info!("Load effect with id: {id}");
+                        effect_handler.send(EHRequest::OpenEffect(id));
+                    }
                 }
             }
         }
         Some(Err(_)) => {
-            rsx! {
-                "Error loading effect library",
-            }
+            rsx! {"Error loading effect library"}
         }
         None => {
-            rsx! {
-            utils::Loading {}
-        }
+            rsx! { utils::Loading {} }
         }
     }
 }
 
 #[component]
-fn DrawEffectTree(tree: Vec<Rc<RefCell<Tree>>>, browser_register: Signal<HashMap<String, bool>>) -> Element {
+fn DrawEffectTree(
+    tree: Vec<Rc<RefCell<Tree>>>,
+    on_open_effect: EventHandler<Uuid>,
+    browser_register: Signal<HashMap<String, bool>>,
+) -> Element {
     let elements = tree.iter().map(|e| e.borrow().clone()).collect::<Vec<_>>();
 
-    // let mut browser_register: Signal<HashMap<String, bool>> = use_context();
-
     rsx! {
-        div {
-            class: "effect-tree",
+        div { class: "effect-tree",
             for i in elements {
                 match i.data {
-                    TreeItem::Effect{ label, .. } => {
+                    TreeItem::Effect{ label, id, .. } => {
                         rsx! {
                             div {
                                 class: "element effect",
-                                ondoubleclick: move |e| {
-                                    log::info!("{e:?}");
+                                ondoubleclick: move |_| {
+                                    on_open_effect.call(id);
                                 },
                                 icons::Sparkles {
                                     width: "1rem",
@@ -154,7 +278,7 @@ fn DrawEffectTree(tree: Vec<Rc<RefCell<Tree>>>, browser_register: Signal<HashMap
                                     } else {
                                         false
                                     };
-
+                
                                     w.insert(path.clone(), new_val);
                                 },
                                 icons::Folder {
@@ -169,6 +293,7 @@ fn DrawEffectTree(tree: Vec<Rc<RefCell<Tree>>>, browser_register: Signal<HashMap
                                     DrawEffectTree {
                                         tree: i.children.clone(),
                                         browser_register,
+                                        on_open_effect,
                                     }
                                 }
                             }
@@ -179,7 +304,6 @@ fn DrawEffectTree(tree: Vec<Rc<RefCell<Tree>>>, browser_register: Signal<HashMap
         }
     }
 }
-
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TreeItem {
@@ -210,7 +334,7 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
         let (path, name) = match split_ref {
             [n] => (vec![], *n),
             [p @ .., n] => (p.iter().cloned().collect::<Vec<_>>(), *n),
-            [] => unreachable!("Why does split return an empty list!")
+            [] => unreachable!("Why does split return an empty list!"),
         };
 
         fn create_effect(raw: String, name: String, id: Uuid) -> Rc<RefCell<Tree>> {
@@ -236,16 +360,23 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
     trees
 }
 
-fn find_parent(children: &mut Vec<Rc<RefCell<Tree>>>, paths: &[&str], full_path: &str) -> Rc<RefCell<Tree>> {
+fn find_parent(
+    children: &mut Vec<Rc<RefCell<Tree>>>,
+    paths: &[&str],
+    full_path: &str,
+) -> Rc<RefCell<Tree>> {
     let (path, rest) = match paths {
         [path, rest @ ..] => (path, rest),
-        [] => unreachable!()
+        [] => unreachable!(),
     };
 
-    let p = children.iter().find(|e| match &e.borrow().data {
-        TreeItem::Effect { .. } => { false }
-        TreeItem::Folder { name, .. } => { name == path }
-    }).cloned();
+    let p = children
+        .iter()
+        .find(|e| match &e.borrow().data {
+            TreeItem::Effect { .. } => false,
+            TreeItem::Folder { name, .. } => name == path,
+        })
+        .cloned();
 
     let parent = if let Some(pr) = p {
         pr
@@ -264,6 +395,70 @@ fn find_parent(children: &mut Vec<Rc<RefCell<Tree>>>, paths: &[&str], full_path:
     if rest.is_empty() {
         parent
     } else {
-        find_parent(&mut parent.borrow_mut().children, rest, &format!("{}/{}", full_path, path))
+        find_parent(
+            &mut parent.borrow_mut().children,
+            rest,
+            &format!("{}/{}", full_path, path),
+        )
     }
 }
+
+#[component]
+fn EffectInfo() -> Element {
+    let mut current_effect = use_context::<Signal<Option<Effect>>>();
+    let effect_invalidator: Coroutine<EffectInvalidate> = use_coroutine_handle();
+
+    info!("DRawing EffectInfo");
+
+    // use_effect(move || {
+    //     let e = current_effect();
+    //     info!("Effect run: {e:?}");
+    //     if let Some(scope) = scope {
+    //         needs_update_any(scope);
+    //     }
+    // });
+
+    rsx! {
+        match current_effect() {
+            None => {
+                rsx! {"No Effect currently loaded!"}
+            }
+            Some(effect) => {
+                rsx!{
+                    div {
+                        class: "property container",
+                        div {
+                            class: "property",
+                            p {
+                                "Name",
+                            },
+                            p {
+                                {effect.name.clone()}
+                            }
+                        }
+                        div {
+                            class: "property",
+                            p {
+                                "Loop Effect",
+                            },
+                            utils::Toggle {
+                                value: effect.looping,
+                                onchange: move |v| {
+                                    {
+                                        let mut w = current_effect.write();
+                                        if let Some(w) = &mut *w {
+                                        w.looping = v;
+                                    }
+                                    }
+                                    effect_invalidator.send(EffectInvalidate);
+                                }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+

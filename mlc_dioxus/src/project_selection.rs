@@ -62,7 +62,7 @@ pub fn ProjectSelection() -> Element {
                     class: "binary-toggle",
                     "Binary format: ",
                     utils::Toggle {
-                        value: new_project_binary,
+                        value: new_project_binary(),
                     }
                 }
                 div {

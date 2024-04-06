@@ -9,6 +9,8 @@ use crate::fixture::FaderAddress;
 
 mod track_key;
 mod feature_track;
+pub mod rest;
+
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]

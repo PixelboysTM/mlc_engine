@@ -61,6 +61,7 @@ impl Module for MainModule {
 
         let config = Config {
             address: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+            workers: 16,
             cli_colors: true,
             ident: Ident::try_new("Marvin Lighting Controller").unwrap(),
 

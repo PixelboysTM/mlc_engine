@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use chrono::Duration;
 use rocket::{get, Shutdown, State};
 use rocket::fairing::AdHoc;
+use rocket::form::validate::range;
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::futures::lock::MutexGuard;
 use rocket::serde::json::Json;
@@ -14,10 +15,12 @@ use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
+use serde::{Deserialize, Serialize};
 use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
 
 use mlc_common::effect::{Effect, Track};
+use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
 use mlc_common::Info;
 
 use crate::{module::Module, send};
@@ -38,12 +41,14 @@ impl Module for EffectModule {
         spec: &mut OpenApi,
     ) -> rocket::Rocket<rocket::Build> {
         let (baking_tx, baking_rx) = broadcast::channel::<BakingNotification>(512);
+        let (effect_handler_tx, effect_handler_rx) = broadcast::channel::<InterEffectHandlerMsg>(512);
 
         let tx = startup_effect_player(
             app.state::<RuntimeData>().unwrap().clone(),
             app.state::<Project>().unwrap().clone(),
             baking_tx.clone(),
         );
+
 
         let (routes, s) = openapi_get_routes_spec![
             get_effect_handler,
@@ -55,6 +60,8 @@ impl Module for EffectModule {
         app.manage(tx)
             .manage(baking_rx)
             .manage(baking_tx)
+            .manage(effect_handler_rx)
+            .manage(effect_handler_tx)
             .attach(AdHoc::on_shutdown("Shutdown EffectPlayer", |a| {
                 Box::pin(async move {
                     let _ = a
@@ -86,37 +93,12 @@ async fn get_effect_list(
     )
 }
 
-#[derive(Debug, serde::Serialize)]
-#[allow(dead_code)]
-pub enum EffectHandlerResponse {
-    EffectCreated { name: String, id: uuid::Uuid },
-    EffectUpdated { id: uuid::Uuid },
-    EffectRunning { id: uuid::Uuid, running: bool },
-    EffectList { effects: Vec<(String, uuid::Uuid)> },
-    Effect { effect: Effect },
+/// Serves the purpose to send messages between effectHandlers
+#[derive(Clone, Debug)]
+pub enum InterEffectHandlerMsg {
+    Updated { id: uuid::Uuid }
 }
 
-#[serde_as]
-#[derive(Debug, serde::Deserialize)]
-pub enum EffectHandlerRequest {
-    Create {
-        name: String,
-    },
-    Update {
-        id: uuid::Uuid,
-        tracks: Vec<Track>,
-        looping: bool,
-        #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
-        duration: Duration,
-    },
-    Toggle {
-        id: uuid::Uuid,
-    },
-    Get {
-        id: uuid::Uuid,
-    },
-    List,
-}
 
 /// # Effect Handler
 /// Opens a WebSocket connection to control effect creation and playback.
@@ -131,9 +113,13 @@ async fn get_effect_handler<'a>(
     mut shutdown: Shutdown,
     info: &'a State<Sender<Info>>,
     tx: &'a State<Sender<EffectPlayerAction>>,
+    effect_handler_tx: &'a State<Sender<InterEffectHandlerMsg>>,
     project: &'a State<Project>,
     _g: ProjectGuard,
 ) -> rocket_ws::Channel<'a> {
+    let mut rx = effect_handler_tx.subscribe();
+
+
     ws.channel(move |mut stream| {
         Box::pin(async move {
             loop {
@@ -144,14 +130,26 @@ async fn get_effect_handler<'a>(
 
                                 let send_info = matches!(req, EffectHandlerRequest::Create {..});
 
-                                handle_msg(&mut stream, req, tx, project).await;
+                                handle_msg(&mut stream, req, tx, effect_handler_tx, project).await;
                                 if send_info {
                                     send!(info, Info::EffectListChanged);
                                 }
                             }
                         }
                     }
+                    Ok(msg) = rx.recv() => {
+                        let m = match msg {
+                            InterEffectHandlerMsg::Updated {id} => {
+                                Some(EffectHandlerResponse::EffectUpdated {
+                                    id,
+                                })
+                            }
+                        };
 
+                        if let Some(m) = m {
+                            let _ = stream.send(make_msg(&m)).await;
+                        }
+                    }
                     _ = &mut shutdown => {
                         break;
                     }
@@ -166,6 +164,7 @@ async fn get_effect_handler<'a>(
 /// Upgrades to a WebSocket connection on which updates about baking processes
 ///
 /// [Guarded][`ProjectGuard`]
+#[deprecated(note = "Will all be integrated in effectHandler and remodeled")]
 #[openapi(tag = "Effects")]
 #[get("/baking")]
 async fn get_baking_notifications(
@@ -198,6 +197,7 @@ async fn handle_msg(
     req: EffectHandlerRequest,
     // runtime: &State<RuntimeData>,
     tx: &Sender<EffectPlayerAction>,
+    effect_handler_tx: &Sender<InterEffectHandlerMsg>,
     project: &Project,
 ) {
     match req {
@@ -229,9 +229,12 @@ async fn handle_msg(
                 effect.looping = looping;
                 effect.duration = duration;
             }
-            let _ = stream
-                .send(make_msg(&EffectHandlerResponse::EffectUpdated { id }))
-                .await;
+            // let _ = stream
+            //     .send(make_msg(&EffectHandlerResponse::EffectUpdated { id }))
+            //     .await;
+            effect_handler_tx.send(InterEffectHandlerMsg::Updated {
+                id,
+            }).unwrap();
             tx.send(EffectPlayerAction::EffectsChanged { id }).unwrap();
         }
         EffectHandlerRequest::Toggle { id } => {

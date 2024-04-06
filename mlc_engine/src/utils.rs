@@ -27,3 +27,4 @@ impl Fairing for BrowserGuard {
         }
     }
 }
+

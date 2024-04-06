@@ -5,7 +5,9 @@ use dioxus::html::input_data::keyboard_types::{Key, Modifiers};
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use gloo_net::websocket::futures::WebSocket;
+use gloo_net::websocket::Message;
 use serde::de::DeserializeOwned;
+use serde::ser::Error;
 use serde::Serialize;
 
 use crate::icons;
@@ -741,21 +743,35 @@ pub fn Checkbox(init: CheckboxState, onchange: EventHandler<CheckboxState>) -> E
 }
 
 #[component]
-pub fn Toggle(value: Signal<bool>, onchange: Option<EventHandler<bool>>) -> Element {
+pub fn Toggle(value: bool, onchange: Option<EventHandler<bool>>) -> Element {
+    let mut signal_value = use_signal(|| value);
+    use_effect(use_reactive!(|value| { signal_value.set(value)}));
+
     rsx! {
         div {
             class: "toggle-ele",
             onclick: move |_| {
-                value.toggle();
+                signal_value.toggle();
                 if let Some(h) = onchange.as_ref() {
-                    h.call(*value.peek());
+                    h.call(*signal_value.peek());
                 }
             },
             div {
                 class: "knob",
-                class: if value() {"activated"},
+                class: if signal_value() {"activated"},
                 style: "pointer-events: none;",
             }
         }
+    }
+}
+
+pub trait ToWebSocketMessage {
+    fn to_msg(self) -> Result<Message, serde_json::error::Error>;
+}
+
+impl<D: Serialize> ToWebSocketMessage for D {
+    fn to_msg(self) -> Result<Message, serde_json::error::Error> {
+        let json = serde_json::to_string(&self)?;
+        Ok(Message::Text(json))
     }
 }
