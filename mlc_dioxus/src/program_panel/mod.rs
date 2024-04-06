@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus::web::WebEventExt;
 use futures::{select, SinkExt, StreamExt};
@@ -13,6 +14,7 @@ use log::{info, log, warn};
 use mlc_common::effect::Effect;
 use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
 use mlc_common::Info;
+use mlc_common::utils::FormatEffectDuration;
 use mlc_common::uuid::Uuid;
 
 use crate::{icons, utils};
@@ -119,12 +121,7 @@ pub fn ProgramPanel() -> Element {
         }
     });
 
-    use_effect(move || {
-        info!("Effect was set to: {:?}", current_effect());
-    });
-
-
-    let effect_invalidator = use_coroutine(move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
+    let _effect_invalidator = use_coroutine(move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
         while let Some(_) = rx.next().await {
             if let Some(e) = &*current_effect.peek() {
                 effect_handler.send(EHRequest::UpdateEffect(e.clone()));
@@ -281,10 +278,25 @@ fn DrawEffectTree(
                 
                                     w.insert(path.clone(), new_val);
                                 },
-                                icons::Folder {
-                                    width: "1rem",
-                                    height: "1rem",
-                                },
+
+                                match *browser_register().get(&path as &str).unwrap_or(&true) {
+                                    true => {
+                                        rsx! {
+                                            icons::FolderOpen {
+                                                width: "1rem",
+                                                height: "1rem",
+                                            },
+                                        }
+                                    }
+                                    false => {
+                                        rsx! {
+                                            icons::Folder {
+                                                width: "1rem",
+                                                height: "1rem",
+                                            },
+                                        }
+                                    }
+                                }
                                 {name.clone()},
                             },
                             if *browser_register().get(&path as &str).unwrap_or(&true) {
@@ -360,11 +372,7 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
     trees
 }
 
-fn find_parent(
-    children: &mut Vec<Rc<RefCell<Tree>>>,
-    paths: &[&str],
-    full_path: &str,
-) -> Rc<RefCell<Tree>> {
+fn find_parent(children: &mut Vec<Rc<RefCell<Tree>>>, paths: &[&str], full_path: &str) -> Rc<RefCell<Tree>> {
     let (path, rest) = match paths {
         [path, rest @ ..] => (path, rest),
         [] => unreachable!(),
@@ -408,16 +416,6 @@ fn EffectInfo() -> Element {
     let mut current_effect = use_context::<Signal<Option<Effect>>>();
     let effect_invalidator: Coroutine<EffectInvalidate> = use_coroutine_handle();
 
-    info!("DRawing EffectInfo");
-
-    // use_effect(move || {
-    //     let e = current_effect();
-    //     info!("Effect run: {e:?}");
-    //     if let Some(scope) = scope {
-    //         needs_update_any(scope);
-    //     }
-    // });
-
     rsx! {
         match current_effect() {
             None => {
@@ -426,20 +424,22 @@ fn EffectInfo() -> Element {
             Some(effect) => {
                 rsx!{
                     div {
-                        class: "property container",
+                        class: "property-container",
                         div {
                             class: "property",
                             p {
                                 "Name",
                             },
                             p {
-                                {effect.name.clone()}
+                                to_visualized_effect_name {
+                                    name: effect.name,
+                                }
                             }
                         }
                         div {
                             class: "property",
                             p {
-                                "Loop Effect",
+                                "Looping",
                             },
                             utils::Toggle {
                                 value: effect.looping,
@@ -447,15 +447,55 @@ fn EffectInfo() -> Element {
                                     {
                                         let mut w = current_effect.write();
                                         if let Some(w) = &mut *w {
-                                        w.looping = v;
-                                    }
+                                            w.looping = v;
+                                        }
                                     }
                                     effect_invalidator.send(EffectInvalidate);
                                 }
                             },
+                        },
+                        div {
+                            class: "property",
+                            p {
+                                "Duration"
+                            },
+                            p {
+                                {effect.duration.effect_format()}
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+#[component]
+fn to_visualized_effect_name(name: String) -> Element {
+    let paths = use_memo(use_reactive!(|name| {
+        let paths = name.split('/').map(|p| p.to_string()).collect::<Vec<_>>();
+        let r: &[String] = &paths;
+        match r {
+            [] => unreachable!(),
+            [rest @ .., name] => (rest.to_vec(), name.clone())
+        }
+    }));
+    rsx! {
+        p {
+            class: "visualized-effect-name",
+            for r in paths().0 {
+                span {
+                    class: "folder",
+                    {r},
+                }
+                span {
+                    class: "divider",
+                    "/"
+                }
+            }
+            span {
+                class: "name",
+                {paths().1},
             }
         }
     }

@@ -15,6 +15,7 @@ pub mod universe;
 pub mod effect;
 
 pub mod easing;
+pub mod utils;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Copy, JsonSchema)]
 pub enum Info {

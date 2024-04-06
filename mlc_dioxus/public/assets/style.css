@@ -668,6 +668,7 @@ select:hover {
     bottom: 0.1rem;
     right: 0.25rem;
     overflow-y: hidden;
+    z-index: 110;
 
     .toast-wrapper {
         position: relative;
