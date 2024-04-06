@@ -2,14 +2,11 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use chrono::Duration;
 use dioxus::prelude::*;
-use dioxus::web::WebEventExt;
 use futures::{select, SinkExt, StreamExt};
-use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
 use gloo_storage::Storage;
-use log::{info, log, warn};
+use log::{info, warn};
 
 use mlc_common::effect::Effect;
 use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
@@ -18,8 +15,8 @@ use mlc_common::utils::FormatEffectDuration;
 use mlc_common::uuid::Uuid;
 
 use crate::{icons, utils};
-use crate::utils::{ToWebSocketMessage, ws};
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::utils::ToWebSocketMessage;
 
 struct EffectInvalidate;
 

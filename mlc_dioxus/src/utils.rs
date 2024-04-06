@@ -7,7 +7,6 @@ use dioxus::prelude::*;
 use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
 use serde::de::DeserializeOwned;
-use serde::ser::Error;
 use serde::Serialize;
 
 use crate::icons;
