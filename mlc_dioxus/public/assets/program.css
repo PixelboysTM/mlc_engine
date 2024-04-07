@@ -13,7 +13,7 @@
     min-height: 0;
 
     .effect-browser {
-        grid-column: 1 / 5;
+        grid-column: 1 / 4;
         grid-row: 1 / 13;
         position: relative;
 
@@ -39,12 +39,12 @@
     }
 
     .timeline {
-        grid-column: 5 / 13;
+        grid-column: 4 / 13;
         grid-row: 7 / 13;
     }
 
     .visualizer {
-        grid-column: 5 / 10;
+        grid-column: 4 / 10;
         grid-row: 1 / 7;
     }
 
@@ -118,6 +118,15 @@
                 grid-template-columns: 1fr 2fr;
                 margin-bottom: 0.5rem;
                 align-items: center;
+
+                .effect-duration {
+                    width: fit-content;
+                    cursor: pointer;
+
+                    &:hover {
+                        color: var(--color-primary);
+                    }
+                }
             }
         }
     }
@@ -138,5 +147,18 @@ p.visualized-effect-name {
             color: var(--color-primary);
         }
     }
+}
 
+.edit-effect-duration {
+    display: flex;
+    gap: 0.25rem;
+    color: var(--color-text);
+
+    input[type=number] {
+        width: 3rem;
+
+        &.milliseconds {
+            width: 3.5rem;
+        }
+    }
 }

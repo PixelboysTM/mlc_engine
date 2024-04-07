@@ -13,6 +13,7 @@ use crate::head_bar::{Headbar, Pane};
 use crate::program_panel::ProgramPanel;
 use crate::utils::context_menu::ContextMenu;
 use crate::utils::Loading;
+use crate::utils::popover::Popover;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
 pub(crate) mod configure_panel;
@@ -77,6 +78,7 @@ fn Index() -> Element {
 #[component]
 fn IndexContent(pane: Signal<Pane>) -> Element {
     let mut c_menu = use_signal(|| None);
+    let mut popover = use_signal(|| false);
     rsx! {
         div {
             width: "100vw",
@@ -107,6 +109,27 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
                                     onclose: move |_| {
                                         log::info!("Context Menu closing");
                                         c_menu.set(None);
+                                    }
+                                }
+                            }
+                        },
+                        button {
+                            onclick: move |_| {
+                                popover.set(true);
+                            },
+                            "Popover",
+                            if popover() {
+                                Popover {
+                                    class: "test-popover",
+                                    onclose: move |_| {
+                                        popover.set(false);
+                                    },
+                                    "Popover",
+                                    button {
+                                        onclick: move |_| {
+                                            log::info!("CLike die click")
+                                        },
+                                        "Blip"
                                     }
                                 }
                             }

@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use chrono::Duration;
 use dioxus::prelude::*;
 use futures::{select, SinkExt, StreamExt};
 use gloo_net::websocket::Message;
@@ -15,8 +16,11 @@ use mlc_common::utils::FormatEffectDuration;
 use mlc_common::uuid::Uuid;
 
 use crate::{icons, utils};
+use crate::utils::popover::Popover;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 use crate::utils::ToWebSocketMessage;
+
+mod effect_timeline;
 
 struct EffectInvalidate;
 
@@ -413,6 +417,8 @@ fn EffectInfo() -> Element {
     let mut current_effect = use_context::<Signal<Option<Effect>>>();
     let effect_invalidator: Coroutine<EffectInvalidate> = use_coroutine_handle();
 
+    let mut edit_duration = use_signal(|| false);
+
     rsx! {
         match current_effect() {
             None => {
@@ -457,7 +463,79 @@ fn EffectInfo() -> Element {
                                 "Duration"
                             },
                             p {
-                                {effect.duration.effect_format()}
+                                class: "effect-duration",
+                                onclick: move |_| {
+                                    edit_duration.set(true);
+                                },
+                                {effect.duration.effect_format()},
+                                if edit_duration() {
+                                    Popover {
+                                        class: "edit-effect-duration",
+                                        onclose: move |_| {
+                                            edit_duration.set(false);
+                                        },
+                                        input {
+                                            class: "minutes",
+                                            r#type: "number",
+                                            min: 0,
+                                            value: effect.duration.num_minutes(),
+                                            onchange: move |v| {
+                                                let minutes = effect.duration.num_minutes();
+                                                let new_minutes = v.value().parse::<i64>().unwrap_or(0);
+                                                let delta = new_minutes - minutes;
+                                                log::info!("Delta: {delta}");
+                                                {
+                                                    let mut w = current_effect.write();
+                                                    if let Some(w) = &mut *w {
+                                                        w.duration += Duration::minutes(delta);
+                                                        w.duration = w.duration.max(Duration::zero());
+                                                    }
+                                                }
+                                                effect_invalidator.send(EffectInvalidate);
+                                            },
+                                        },
+                                        ":",
+                                        input {
+                                            class: "seconds",
+                                            r#type: "number",
+                                            value: effect.duration.num_seconds() % 60,
+                                            onchange: move |v| {
+                                                let seconds = effect.duration.num_seconds() % 60;
+                                                let new_seconds = v.value().parse::<i64>().unwrap_or(0);
+                                                let delta = new_seconds - seconds;
+                                                log::info!("Delta: {delta}");
+                                                {
+                                                    let mut w = current_effect.write();
+                                                    if let Some(w) = &mut *w {
+                                                        w.duration += Duration::seconds(delta);
+                                                        w.duration = w.duration.max(Duration::zero());
+                                                    }
+                                                }
+                                                effect_invalidator.send(EffectInvalidate);
+                                            },
+                                        },
+                                        ".",
+                                        input {
+                                            class: "milliseconds",
+                                            r#type: "number",
+                                            value: effect.duration.num_milliseconds() % 1000,
+                                            onchange: move |v| {
+                                                let milliseconds = effect.duration.num_milliseconds() % 1000;
+                                                let new_milliseconds = v.value().parse::<i64>().unwrap_or(0);
+                                                let delta = new_milliseconds - milliseconds;
+                                                log::info!("Delta: {delta}");
+                                                {
+                                                    let mut w = current_effect.write();
+                                                    if let Some(w) = &mut *w {
+                                                        w.duration += Duration::milliseconds(delta);
+                                                        w.duration = w.duration.max(Duration::zero());
+                                                    }
+                                                }
+                                                effect_invalidator.send(EffectInvalidate);
+                                            },
+                                        },
+                                    }
+                                }
                             }
                         }
                     }

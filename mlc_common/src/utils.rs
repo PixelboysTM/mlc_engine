@@ -8,7 +8,7 @@ impl FormatEffectDuration for chrono::Duration {
         let secs = self.num_seconds() % 60;
         let millis = self.num_milliseconds() % 1000;
 
-        format!("{minutes:02}:{secs:02}.{millis}")
+        format!("{minutes:02}:{secs:02}.{millis:03}")
     }
 }
 

@@ -12,6 +12,7 @@ gloo-net = "0.5.0"
 gloo-utils = "0.2.0"
 gloo-storage = "0.3.0"
 reqwest = "0.12.2"
+web-sys = "0.3.69"
 # Data
 mlc_common = { path = "../mlc_common" }
 serde = "1.0.197"

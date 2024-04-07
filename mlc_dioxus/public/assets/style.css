@@ -806,3 +806,51 @@ select:hover {
         }
     }
 }
+
+.popover-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    --distance: 1.25rem;
+    --x: 0;
+    --y: 0;
+
+    .popover-content {
+        position: fixed;
+        top: calc(var(--y) + var(--distance));
+        left: var(--x);
+        padding: 0.25rem;
+        background-color: var(--color-panel);
+        border-radius: var(--number-border-radius);
+        border: 1px solid var(--color-accent);
+        transform: translateX(-50%);
+        z-index: 12;
+
+        &:focus-visible {
+            outline: none;
+        }
+
+    }
+
+    &::before {
+        --height: 0.5rem;
+        content: "";
+        display: block;
+        position: fixed;
+        top: calc(var(--y) + var(--distance) - var(--height));
+        background-color: var(--color-primary);
+        width: 1.5rem;
+        height: var(--height);
+        transform: translateX(-50%);
+        clip-path: polygon(
+                0 100%, 50% 0, 100% 100%
+        );
+    }
+
+}
+
+*:has(> .popover-container) {
+    position: relative;
+}
+

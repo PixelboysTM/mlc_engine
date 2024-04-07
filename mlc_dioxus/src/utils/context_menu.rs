@@ -51,7 +51,8 @@ pub fn ContextMenu(mut menu: ContextMenu, onclose: EventHandler) -> Element {
                 style: "--cm-p-x: {menu.x_pos}px; --cm-p-y: {menu.y_pos}px; --cm-cc: {child_count};",
                 tabindex: -1,
                 onmounted: move |e| {
-                    e.set_focus(true);
+                    let _ = e.set_focus(true);
+
                 },
                 onclick: move |e| {
                     e.stop_propagation();
