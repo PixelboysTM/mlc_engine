@@ -30,6 +30,19 @@ pub enum FeatureTrackDetail {
     D2Rotation(D2RotationTrack),
 }
 
+impl FeatureTrackDetail {
+    pub fn empty_from_feature_type(feature_type: &FixtureFeatureType) -> FeatureTrackDetail {
+        match feature_type {
+            FixtureFeatureType::Dimmer => Self::SinglePercent(PercentTrack { values: vec![] }),
+            FixtureFeatureType::White => Self::SinglePercent(PercentTrack { values: vec![] }),
+            FixtureFeatureType::Rgb => Self::D3Percent(D3PercentTrack { values: vec![] }),
+            FixtureFeatureType::Rotation => Self::SingleRotation(RotationTrack { values: vec![] }),
+            FixtureFeatureType::PanTilt => Self::D2Rotation(D2RotationTrack { values: vec![] }),
+            FixtureFeatureType::Amber => Self::SinglePercent(PercentTrack { values: vec![] }),
+        }
+    }
+}
+
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct PercentTrack {
     pub values: Vec<PercentageKey>,

@@ -24,6 +24,7 @@ use rocket_ws::WebSocket;
 use uuid::Uuid;
 
 use mlc_common::{FixtureInfo, Info};
+use mlc_common::patched::feature::{FixtureFeatureType, HasFixtureFeature};
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
 
@@ -282,6 +283,43 @@ fn patch_fixture(
     })
 }
 
+/// # Features by Fixture
+/// Returns a list of Tuples containing each patched fixture and its available FixtureFeatureTypes
+///
+/// [Guarded][`ProjectGuard`]
+#[openapi(tag = "Data Serving")]
+#[get("/all_features")]
+async fn get_features_by_fixtures(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<(uuid::Uuid, Vec<FixtureFeatureType>)>> {
+    let us = project.get_universes().await;
+    let mut result = vec![];
+    for u in us {
+        let universe = project.get_universe(&u).await.unwrap();
+        let mut fixtures = universe.fixtures.iter().map(|i| (i.id, i.features.iter().map(|f| f.name()).collect::<Vec<_>>())).collect::<Vec<_>>();
+        result.append(&mut fixtures);
+    }
+
+    Json(result)
+}
+
+/// # All Fixtures with Feature
+/// Returns all Fixtures that have the specified Feature
+///
+/// [Guarded][`ProjectGuard`]
+#[openapi(tag = "Data Serving")]
+#[get("/all_with_feature/<feature_name>")]
+async fn all_with_feature(project: &State<Project>, _g: ProjectGuard, feature_name: String) -> Result<Json<Vec<(Uuid, String)>>, String> {
+    let feature_name = feature_name.parse::<FixtureFeatureType>()?;
+    let us = project.get_universes().await;
+    let mut result = vec![];
+    for u in us {
+        let universe = project.get_universe(&u).await.unwrap();
+        let mut fixtures = universe.fixtures.iter().filter(|f| f.features.has(&feature_name)).map(|f| (f.id, f.name.clone())).collect::<Vec<_>>();
+        result.append(&mut fixtures);
+    }
+
+    Ok(Json(result))
+}
+
 fn get_routes() -> (Vec<Route>, OpenApi) {
     openapi_get_routes_spec![
         gen_info,
@@ -291,7 +329,9 @@ fn get_routes() -> (Vec<Route>, OpenApi) {
         save_project,
         get_universes,
         patch_fixture,
-        get_universe
+        get_universe,
+        get_features_by_fixtures,
+        all_with_feature
     ]
 }
 

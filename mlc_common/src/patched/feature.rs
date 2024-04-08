@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 use get_size::GetSize;
 use schemars::JsonSchema;
@@ -41,7 +42,7 @@ pub enum FixtureFeature {
     PanTilt(PanTilt),
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq, get_size::GetSize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, get_size::GetSize, JsonSchema)]
 pub enum FixtureFeatureType {
     Dimmer,
     White,
@@ -64,6 +65,22 @@ impl Display for FixtureFeatureType {
     }
 }
 
+impl FromStr for FixtureFeatureType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Dimmer" => Ok(FixtureFeatureType::Dimmer),
+            "White" => Ok(FixtureFeatureType::White),
+            "Rgb" => Ok(FixtureFeatureType::Rgb),
+            "Rotation" => Ok(FixtureFeatureType::Rotation),
+            "PanTilt" => Ok(FixtureFeatureType::PanTilt),
+            "Amber" => Ok(FixtureFeatureType::Amber),
+            s => Err(format!("Unknown FixtureFeatureType String: {s}"))
+        }
+    }
+}
+
 impl FixtureFeature {
     pub fn name(&self) -> FixtureFeatureType {
         match self {
@@ -74,6 +91,28 @@ impl FixtureFeature {
             FixtureFeature::PanTilt(_) => FixtureFeatureType::PanTilt,
             FixtureFeature::Amber(_) => FixtureFeatureType::Amber,
         }
+    }
+}
+
+pub trait HasFixtureFeature {
+    fn has(&self, feature: &FixtureFeatureType) -> bool;
+}
+
+impl HasFixtureFeature for Vec<FixtureFeature> {
+    fn has(&self, feature: &FixtureFeatureType) -> bool {
+        for f in self {
+            if f.name() == *feature {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+impl HasFixtureFeature for Vec<FixtureFeatureType> {
+    fn has(&self, feature: &FixtureFeatureType) -> bool {
+        self.contains(&feature)
     }
 }
 

@@ -26,3 +26,4 @@ futures = "0.3.30"
 # Misc
 color-art = "0.3.8"
 chrono = { version = "0.4.37" }
+uuid = { version = "0.8.2", features = ["v4", "serde"] }

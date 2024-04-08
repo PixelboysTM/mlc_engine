@@ -643,3 +643,28 @@ pub fn Sparkles(props: IconProps) -> Element {
 
     }
 }
+
+pub fn TrainTrack(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "fill": "none",
+        "stroke": "currentColor",
+        "stroke-linejoin": "round",
+        "viewBox": "0 0 24 24",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        class: "lucide lucide-train-track",
+        path { "d": "M2 17 17 2" }
+        path { "d": "m2 14 8 8" }
+        path { "d": "m5 11 8 8" }
+        path { "d": "m8 8 8 8" }
+        path { "d": "m11 5 8 8" }
+        path { "d": "m14 2 8 8" }
+        path { "d": "M7 22 22 7" }
+    }
+    }
+}

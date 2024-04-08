@@ -16,6 +16,7 @@ use mlc_common::utils::FormatEffectDuration;
 use mlc_common::uuid::Uuid;
 
 use crate::{icons, utils};
+use crate::program_panel::effect_timeline::EffectTimeline;
 use crate::utils::popover::Popover;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 use crate::utils::ToWebSocketMessage;
@@ -171,7 +172,7 @@ pub fn ProgramPanel() -> Element {
                 }
                 EffectInfo {}
             }
-            div { class: "panel timeline", "Timeline" }
+            div { class: "panel timeline", EffectTimeline {} }
             div { class: "panel visualizer", "Visualizer" }
         }
     }
