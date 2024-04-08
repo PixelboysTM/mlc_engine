@@ -112,6 +112,9 @@
             margin-right: auto;
             display: flex;
             align-items: center;
+            margin-top: 0.5rem;
+            position: sticky;
+            bottom: 0.25rem;
 
             * {
                 margin-left: auto;

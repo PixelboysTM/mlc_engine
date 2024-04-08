@@ -260,7 +260,7 @@ fn EffectBrowser() -> Element {
                                     effect_handler.send(EHRequest::CreateEffect(name.to_string()));
                                     new_effect.set(false);
                                 }
-                            }
+                            },
                         }
                     }
                 }
