@@ -668,3 +668,22 @@ pub fn TrainTrack(props: IconProps) -> Element {
     }
     }
 }
+
+pub fn Play(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "viewBox": "0 0 24 24",
+        "stroke-linejoin": "round",
+        "stroke-width": "2",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke": "currentColor",
+        "stroke-linecap": "round",
+        "fill": "none",
+        class: "lucide lucide-play",
+        polygon { "points": "6 3 20 12 6 21 6 3" }
+    }
+    }
+}

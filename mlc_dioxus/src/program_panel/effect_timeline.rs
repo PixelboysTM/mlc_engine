@@ -41,11 +41,11 @@ pub fn EffectTimeline() -> Element {
                         onclick: move |_| {
                             create_track_overlay.set(true);
                         },
-                        icons::Plus { width: "1.4rem", height: "1.4rem"},
+                        icons::Plus { width: "1.2rem", height: "1.2rem"},
 
                     },
                     button {
-                        icons::Plus { width: "1.4rem", height: "1.4rem"}
+                        icons::Play { width: "1rem", height: "1rem"}
                     }
                 },
                 div {
@@ -340,14 +340,14 @@ fn CreateTrackDetailFeature(onclose: EventHandler<Track>, feature_type: FixtureF
                 div {
                     class: "property",
                     p {
-                        "Track Resolution",
+                        "Track Resolution (ms)",
                     },
                     input {
                         r#type: "number",
                         value: resolution(),
                         min: 5,
                         oninput: move |e| {
-                            let v = e.value().parse::<i64>().unwrap_or(50).max(5);
+                            let v = e.value().parse::<i64>().unwrap_or(50);
                             resolution.set(v);
                         }
                     }
@@ -390,7 +390,7 @@ fn CreateTrackDetailFeature(onclose: EventHandler<Track>, feature_type: FixtureF
                     onclick: move |_| {
                         let fixtures = added_fixtures();
                         onclose.call(Track::FeatureTrack(FeatureTrack{
-                            resolution: Duration::milliseconds(50), //TODO: Expose
+                            resolution: Duration::milliseconds(resolution().max(5)),
                             feature: feature_type,
                             fixtures,
                             detail: FeatureTrackDetail::empty_from_feature_type(&feature_type),

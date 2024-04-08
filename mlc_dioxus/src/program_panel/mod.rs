@@ -55,6 +55,11 @@ pub fn ProgramPanel() -> Element {
                                             tracks: effect.tracks,
                                         }.to_msg().unwrap()).await;
                                     }
+                                    EHRequest::CreateEffect(name) => {
+                                        let _ = ws.send(EffectHandlerRequest::Create {
+                                            name,
+                                        }.to_msg().unwrap()).await;
+                                    }
                                 }
                             }
                         },
@@ -182,6 +187,7 @@ pub fn ProgramPanel() -> Element {
 enum EHRequest {
     OpenEffect(Uuid),
     UpdateEffect(Effect),
+    CreateEffect(String),
 }
 
 #[component]
@@ -215,6 +221,8 @@ fn EffectBrowser() -> Element {
         }
     });
 
+    let mut new_effect = use_signal(|| false);
+
     match &*effect_list.read_unchecked() {
         Some(Ok(effects)) => {
             rsx! {
@@ -222,8 +230,38 @@ fn EffectBrowser() -> Element {
                     tree: effects.clone(),
                     browser_register,
                     on_open_effect: move |id| {
-                        log::info!("Load effect with id: {id}");
                         effect_handler.send(EHRequest::OpenEffect(id));
+                    }
+                },
+                button {
+                    class: "icon create-effect",
+                    title: "Create New Effect",
+                    onclick: move |_| {
+                      new_effect.set(true);
+                    },
+                    icons::Plus {}
+                },
+
+                if new_effect() {
+                    utils::Overlay {
+                        title: "Create new Effect",
+                        class: "create-effect-overlay",
+                        icon: rsx!(icons::Sparkles {}),
+                        onclose: move |_| {
+                            new_effect.set(false);
+                        },
+                        input {
+                            r#type: "text",
+                            value: "New Effect",
+                            onchange: move |e| {
+                                let v = e.value();
+                                let name = v.trim();
+                                if !name.is_empty() {
+                                    effect_handler.send(EHRequest::CreateEffect(name.to_string()));
+                                    new_effect.set(false);
+                                }
+                            }
+                        }
                     }
                 }
             }
