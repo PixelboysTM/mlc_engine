@@ -42,6 +42,8 @@ enum Route {
     Index {},
     #[route("/projects")]
     Projects {},
+    #[route("/viewer")]
+    Viewer {}
 }
 
 #[allow(non_snake_case)]
@@ -153,7 +155,7 @@ fn DisconnectHelper() -> Element {
 
     let _guard = use_future(move || async move {
         let mut failed = 0;
-        while failed <= 3 {
+        while failed <= 3 && !active() {
             let r = utils::fetch::<String>("/util/heartbeat").await;
             if r.is_ok() {
                 async_std::task::sleep(Duration::from_secs(5)).await;
@@ -246,4 +248,14 @@ fn provide_info() {
             log::info!("Error creating ws {:?}", ws.err().unwrap());
         }
     });
+}
+
+#[component]
+fn Viewer() -> Element {
+    rsx! {
+        iframe {
+            src: "/iviewer",
+            style: "width: 100vw; height: 100vh",
+        }
+    }
 }

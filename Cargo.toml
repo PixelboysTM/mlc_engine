@@ -2,6 +2,7 @@
 members = [
     "mlc_common",
     "mlc_dioxus",
-    "mlc_engine"
+    "mlc_engine",
+    "mlc_viewer"
 ]
 resolver = "2"

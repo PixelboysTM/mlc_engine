@@ -26,6 +26,11 @@ run: dioxus-release
     
 run-release: dioxus-release
     cargo run --bin mlc_engine --release
+
+viewer:
+    cargo build --bin mlc_viewer --release --target wasm32-unknown-unknown
+    wasm-bindgen --out-name mlc_viewer --out-dir out/ --target web target/wasm32-unknown-unknown/release/mlc_viewer.wasm
+
     
 
     
