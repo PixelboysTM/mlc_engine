@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Copy, Clone, serde::Deserialize, serde::Serialize, PartialEq)]
 pub enum EasingType {
     Linear,
     Sine,
@@ -14,7 +14,7 @@ pub enum EasingType {
     Const,
 }
 
-#[derive(Debug, Copy, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Copy, Clone, serde::Deserialize, serde::Serialize, PartialEq)]
 pub struct Easing {
     pub in_type: EasingType,
     pub out_type: EasingType,

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use chrono::Duration;
 use dioxus::prelude::*;
 use crate::{icons, utils};
@@ -48,10 +49,10 @@ pub fn EffectTimeline() -> Element {
                         icons::Play { width: "1rem", height: "1rem"}
                     }
                 },
-                div {
-                    class: "tracks",
-                    {format!("{:?}", effect.tracks)}
+                EffectTracks {
+                    current_effect,
                 }
+
             },
 
             if create_track_overlay() {
@@ -327,6 +328,7 @@ fn CreateTrackDetailFeature(onclose: EventHandler<Track>, feature_type: FixtureF
     });
 
     use_effect(use_reactive!(|feature_type| {
+        let _ = feature_type;
         all_features.restart();
     }));
 
@@ -400,5 +402,159 @@ fn CreateTrackDetailFeature(onclose: EventHandler<Track>, feature_type: FixtureF
                 }
             }
         }
+    }
+}
+
+#[component]
+fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
+    let effect_invalidator: Coroutine<EffectInvalidate> = use_coroutine_handle();
+    let effect = current_effect.map(|e| e.as_ref().expect("Should only be called with a valid effect!"));
+    let duration_width = use_memo(move || {
+        current_effect().as_ref().unwrap().duration.num_milliseconds() as f64 / 10.0
+    });
+
+
+    let mut expanded = use_signal(|| HashSet::<usize>::new());
+
+    rsx! {
+        div {
+            class: "track-container",
+            div {
+                class: "headers",
+                div {
+                    class: "header top",
+                    "Tracks"
+                }
+                for (i, track) in effect().tracks.iter().cloned().enumerate() {
+                    div {
+                        class: "header",
+                        class: if expanded().contains(&i) {"expanded"},
+                        div {
+                            class: "expand-btn",
+                            onclick: move |_| {
+                                if !expanded.write().remove(&i) {
+                                    expanded.write().insert(i);
+                                }
+                            },
+                            match expanded().contains(&i) {
+                                true => rsx!(icons::ArrowDown {}),
+                                false => rsx!(icons::ArrowRight {})
+                            }
+                        },
+                        "Track"
+                    }
+                }
+            },
+            div {
+                class: "tracks",
+                style: "--duration-width: {duration_width()}px;",
+                div {
+                    class: "track top",
+                    for i in 0..effect().duration.num_milliseconds() / 100 {
+                        div {
+                            class: "sec"
+                        }
+                    }
+
+                }
+                for (i, track) in effect().tracks.iter().cloned().enumerate() {
+                    div {
+                        class: "track",
+                        class: if expanded().contains(&i) {"expanded"},
+                        match track {
+                            Track::FaderTrack(track) => {
+                                rsx! {
+                                    FaderTrackBody {
+                                        track,
+                                        current_effect,
+                                        invalidate: move |_| {
+                                            effect_invalidator.send(EffectInvalidate);
+                                        }
+                                    }
+                                }
+                            },
+                            Track::FeatureTrack(track) => {
+                                rsx!{
+                                    FeatureTrackBody {
+                                        track,
+                                        current_effect,
+                                        invalidate: move |_| {
+                                            effect_invalidator.send(EffectInvalidate);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // div {
+        //     class: "tracks",
+        //     style: "--duration-width: {duration_width()}px;",
+        //     for (i, track) in effect().tracks.iter().cloned().enumerate() {
+        //         div {
+        //             class: "header",
+        //             class: if expanded().contains(&i) {"expanded"},
+        //             div {
+        //                 class: "expand-btn",
+        //                 onclick: move |_| {
+        //                     if !expanded.write().remove(&i) {
+        //                         expanded.write().insert(i);
+        //                     }
+        //                 },
+        //                 match expanded().contains(&i) {
+        //                     true => rsx!(icons::ArrowDown {}),
+        //                     false => rsx!(icons::ArrowRight {})
+        //                 }
+        //             },
+        //             "Track"
+        //         }
+        //     }
+        //
+        //     for (i, track) in effect().tracks.iter().cloned().enumerate() {
+        //         div {
+        //             class: "track",
+        //             class: if expanded().contains(&i) {"expanded"},
+        //             match track {
+        //                 Track::FaderTrack(track) => {
+        //                     rsx! {
+        //                         FaderTrackBody {
+        //                             track,
+        //                             current_effect,
+        //                             invalidate: move |_| {
+        //                                 effect_invalidator.send(EffectInvalidate);
+        //                             }
+        //                         }
+        //                     }
+        //                 },
+        //                 Track::FeatureTrack(track) => {
+        //                     rsx!{
+        //                         FeatureTrackBody {
+        //                             track,
+        //                             current_effect,
+        //                             invalidate: move |_| {
+        //                                 effect_invalidator.send(EffectInvalidate);
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
+
+#[component]
+fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, invalidate: EventHandler) -> Element {
+    rsx! {
+    }
+}
+
+#[component]
+fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, invalidate: EventHandler) -> Element {
+    rsx! {
     }
 }

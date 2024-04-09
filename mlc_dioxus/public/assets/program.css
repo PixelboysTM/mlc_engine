@@ -195,10 +195,10 @@ p.visualized-effect-name {
     }
 
     .effect-timeline {
-        display: grid;
-        grid-template-rows: 1.75rem 1fr;
         width: 100%;
         height: 100%;
+        display: grid;
+        grid-template-rows: 1.75rem 1fr;
 
         .toolbar {
             height: 100%;
@@ -278,3 +278,139 @@ p.visualized-effect-name {
         }
     }
 }
+
+
+.effect-timeline .track-container {
+    overflow-y: auto;
+    padding-top: 1px;
+    display: grid;
+    grid-template-columns: 12rem 1fr;
+
+    .headers .header {
+        display: flex;
+        gap: 0.25rem;
+        padding: 0;
+        border: 1px solid var(--color-background);
+
+        height: 2rem;
+
+        &.expanded {
+            height: 5rem;
+        }
+
+        .expand-btn {
+            * {
+                margin-top: 0.25rem;
+                margin-left: 0.25rem;
+                background-color: var(--color-button);
+                border-radius: 4px;
+                cursor: pointer;
+
+                &:hover {
+                    color: var(--color-primary);
+                }
+            }
+        }
+
+        &.top {
+            display: grid;
+            align-items: center;
+        }
+    }
+
+    .tracks {
+        overflow-y: auto;
+        --duration-width: 69px;
+
+        .track {
+            border: 1px solid var(--color-background);
+            background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%);
+            width: var(--duration-width);
+
+            height: 2rem;
+
+            &.expanded {
+                height: 5rem;
+            }
+
+            &.top {
+                background: transparent;
+                display: flex;
+                justify-content: space-between;
+
+                .sec {
+                    height: 40%;
+                    margin-top: auto;
+                    width: 2px;
+                    background-color: white;
+
+                    &:nth-child(10n) {
+                        height: 60%;
+                    }
+
+                    &:nth-child(600n) {
+                        background-color: var(--color-tertiary);
+                    }
+                }
+
+
+            }
+        }
+    }
+}
+
+/*.effect-timeline .tracks {*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    overflow-y: auto;*/
+/*    margin-top: 1px;*/
+/*    --duration-width: 69px;*/
+/*    overflow-y: auto;*/
+/*    grid-template-columns: 12rem 1fr;*/
+/*    width: var(--duration-width);*/
+
+/*    .header {*/
+/*        border-right: 1px solid var(--color-background);*/
+/*        border-left: 1px solid var(--color-background);*/
+
+/*        display: flex;*/
+/*        gap: 0.25rem;*/
+/*        padding: 0;*/
+/*        position: sticky;*/
+/*        left: 0;*/
+
+/*        height: 2rem;*/
+/*        border: 1px solid var(--color-background);*/
+/*        display: grid;*/
+
+/*        &.expanded {*/
+/*            height: 5rem;*/
+/*        }*/
+
+
+/*        .expand-btn {*/
+/*            * {*/
+/*                margin-top: 0.25rem;*/
+/*                margin-left: 0.25rem;*/
+/*                background-color: var(--color-button);*/
+/*                border-radius: 4px;*/
+/*                cursor: pointer;*/
+
+/*                &:hover {*/
+/*                    color: var(--color-primary);*/
+/*                }*/
+/*            }*/
+/*        }*/
+/*    }*/
+
+/*    .track {*/
+/*        height: 2rem;*/
+/*        border: 1px solid var(--color-background);*/
+
+/*        &.expanded {*/
+/*            height: 5rem;*/
+/*        }*/
+
+/*        background-color: green;*/
+/*    }*/
+/*}*/

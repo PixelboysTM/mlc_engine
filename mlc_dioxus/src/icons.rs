@@ -687,3 +687,44 @@ pub fn Play(props: IconProps) -> Element {
     }
     }
 }
+
+pub fn ArrowRight(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "stroke-width": "2",
+        "stroke-linejoin": "round",
+        "viewBox": "0 0 24 24",
+        "stroke-linecap": "round",
+        "stroke": "currentColor",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "fill": "none",
+        class: "lucide lucide-arrow-right",
+        path { "d": "M5 12h14" }
+        path { "d": "m12 5 7 7-7 7" }
+    }
+    }
+}
+
+pub fn ArrowDown(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        height,
+        "viewBox": "0 0 24 24",
+        "stroke-width": "2",
+        "fill": "none",
+        "xmlns": "http://www.w3.org/2000/svg",
+        width,
+        "stroke-linecap": "round",
+        "stroke": "currentColor",
+        "stroke-linejoin": "round",
+        class: "lucide lucide-arrow-down",
+        path { "d": "M12 5v14" }
+        path { "d": "m19 12-7 7-7-7" }
+    }
+    }
+}
+

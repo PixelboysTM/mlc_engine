@@ -5,7 +5,7 @@ use serde_with::serde_as;
 use crate::easing::{Easing, EasingType};
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct FaderKey {
     pub value: u8,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
@@ -13,7 +13,7 @@ pub struct FaderKey {
 }
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct PercentageKey {
     pub value: f32,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
@@ -22,7 +22,7 @@ pub struct PercentageKey {
 }
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct D3PercentageKey {
     #[serde(alias = "r")]
     pub x: f32,
@@ -36,9 +36,19 @@ pub struct D3PercentageKey {
 }
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct RotationKey {
     pub value: f32,
+    #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
+    pub start_time: Duration,
+    pub easing: Easing,
+}
+
+#[serde_as]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
+pub struct D2RotationKey {
+    pub x: f32,
+    pub y: f32,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
     pub start_time: Duration,
     pub easing: Easing,
@@ -116,6 +126,22 @@ impl Key for D3PercentageKey {
 
     fn value(&self) -> Self::Value {
         (self.x, self.y, self.z)
+    }
+
+    fn easing(&self) -> Easing {
+        self.easing
+    }
+}
+
+impl Key for D2RotationKey {
+    type Value = (f32, f32);
+
+    fn time(&self) -> Duration {
+        self.start_time
+    }
+
+    fn value(&self) -> Self::Value {
+        (self.x, self.y)
     }
 
     fn easing(&self) -> Easing {

@@ -29,7 +29,7 @@ pub enum Track {
     FeatureTrack(FeatureTrack),
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct FaderTrack {
     pub address: FaderAddress,
     pub values: Vec<FaderKey>,

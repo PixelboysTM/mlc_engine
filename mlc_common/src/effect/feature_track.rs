@@ -1,13 +1,14 @@
 use ::serde_with::{DurationSecondsWithFrac, formats::Flexible, formats::PreferOne, OneOrMany};
 use chrono::Duration;
 use serde_with::serde_as;
+use crate::effect::D2RotationKey;
 
 use crate::effect::track_key::{D3PercentageKey, PercentageKey, RotationKey};
 use crate::patched::feature::FixtureFeatureType;
 use crate::patched::FixtureId;
 
 #[serde_as]
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct FeatureTrack {
     #[serde(alias = "fixture")]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferOne>")]
@@ -18,7 +19,7 @@ pub struct FeatureTrack {
     pub resolution: Duration,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub enum FeatureTrackDetail {
     /// A single percentage value from 0.0 to 1.0
     SinglePercent(PercentTrack),
@@ -43,22 +44,22 @@ impl FeatureTrackDetail {
     }
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct PercentTrack {
     pub values: Vec<PercentageKey>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct D3PercentTrack {
     pub values: Vec<D3PercentageKey>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct RotationTrack {
     pub values: Vec<RotationKey>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct D2RotationTrack {
-    pub values: Vec<(RotationKey, RotationKey)>,
+    pub values: Vec<D2RotationKey>,
 }
