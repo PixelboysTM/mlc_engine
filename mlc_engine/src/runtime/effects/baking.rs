@@ -105,7 +105,10 @@ async fn bake_feature_track(
                         bake_feature_track_single_rotation(t, max_time, feature, &track.resolution)
                             .await
                     }
-                    FeatureTrackDetail::D2Rotation(_) => todo!(),
+                    FeatureTrackDetail::D2Rotation(t) => {
+                        bake_feature_track_d2_rotation(t, max_time, feature, &track.resolution)
+                            .await
+                    }
                 }
             } else {
                 vec![]
@@ -144,7 +147,7 @@ async fn bake_feature_track_single_percent(
         in_v + (out_v - in_v) * val
     });
 
-    convert_to_cues::<PercentageKey, _>(&time_steps, |v| to_raw(feature_tile, v))
+    convert_to_cues::<PercentageKey, _, 1>(&time_steps, |v| [to_raw(feature_tile, v)])
 }
 
 async fn bake_feature_track_single_rotation(
@@ -170,12 +173,43 @@ async fn bake_feature_track_single_rotation(
         in_v + (out_v - in_v) * val
     });
 
-    convert_to_cues::<RotationKey, _>(&time_steps, |v| {
-        if v >= &0.0 {
+    convert_to_cues::<RotationKey, _, 1>(&time_steps, |v| {
+        [if v >= &0.0 {
             to_raw(feature_tile_cw, &(*v / 1.0))
         } else {
             to_raw(feature_tile_ccw, &(v.abs() / 1.0))
+        }]
+    })
+}
+
+async fn bake_feature_track_d2_rotation(
+    t: &D2RotationTrack,
+    max_time: &Duration,
+    fixture_feature: &FixtureFeature,
+    resolution: &Duration,
+) -> Vec<(FaderAddress, BakedEffectCue)> {
+    let (pan, tilt) = match fixture_feature {
+        FixtureFeature::PanTilt(r) => (&r.pan, &r.tilt),
+        _ => {
+            eprintln!(
+                "Baking Single Rotation for Feature: {} not supported",
+                fixture_feature.name()
+            );
+            return vec![];
         }
+    };
+
+    let vals = get_valid_keys_sorted(t.values.iter(), max_time);
+
+    let time_steps = build_time_steps(resolution, max_time, &vals, (0.0, 0.0), (0.0, 0.0), |(in_x, in_y), (out_x, out_y), val| {
+        (
+            in_x + (out_x - in_x) * val,
+            in_y + (out_y - in_y) * val
+        )
+    });
+
+    convert_to_cues::<D2RotationKey, _, 2>(&time_steps, |v| {
+        [to_raw(pan, &v.0), to_raw(tilt, &v.1)]
     })
 }
 
@@ -213,12 +247,8 @@ async fn bake_feature_track_three_percent(
         },
     );
 
-    convert_to_cues::<D3PercentageKey, _>(&time_steps, |v| {
+    convert_to_cues::<D3PercentageKey, _, 3>(&time_steps, |v| {
         [to_raw(d1, &v.0), to_raw(d2, &v.1), to_raw(d3, &v.2)]
-            .iter()
-            .flatten()
-            .copied()
-            .collect::<Vec<_>>()
     })
 }
 
@@ -301,17 +331,19 @@ fn get_t(in_t: Duration, out_t: Duration, time: Duration) -> f32 {
     time_point as f32 / range as f32
 }
 
-fn convert_to_cues<K: Key, F: Fn(&K::Value) -> Vec<(FaderAddress, u8)>>(
+fn convert_to_cues<K, F, const N: usize>(
     time_steps: &[(Duration, K::Value)],
     to_raw_val_fun: F,
-) -> Vec<(FaderAddress, Vec<(Duration, u8)>)> {
+) -> Vec<(FaderAddress, Vec<(Duration, u8)>)>
+    where K: Key, F: Fn(&K::Value) -> [Vec<(FaderAddress, u8)>; N]
+{
     if time_steps.is_empty() {
         return vec![];
     }
 
     let steps = time_steps
         .iter()
-        .map(|(t, v)| (t, to_raw_val_fun(v)))
+        .map(|(t, v)| (t, to_raw_val_fun(v).iter().flatten().copied().collect::<Vec<_>>()))
         .collect::<Vec<_>>();
 
     let mut faders = steps[0]
