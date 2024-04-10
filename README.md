@@ -64,9 +64,9 @@ To run MLC on your local machine the following steps will help you:
         - [X] 2D Vec
         - [X] Slider
         - [ ] Knob
-    - [ ] Project Panel Layout
-    - [ ] Effect Browser
-    - [ ] Effect Settings
+    - [X] Project Panel Layout
+    - [X] Effect Browser
+    - [X] Effect Settings
     - [ ] Effect Timeline
         - [ ] Basic
         - [ ] Fader Tracks
