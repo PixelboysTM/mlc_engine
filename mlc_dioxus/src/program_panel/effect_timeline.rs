@@ -491,7 +491,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                             current_duration.set(from_scaled_px(e.element_coordinates().x.max(0.0), scale()));
                         }
                     },
-                    for i in 0..effect().duration.num_milliseconds() / 100 {
+                    for i in 0..(effect().duration.num_milliseconds() / 100 + 1) {
                         div {
                             class: "sec",
                             style: format!("--time-px: {}px", to_scaled_px_ms(i * 100, scale())),

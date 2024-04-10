@@ -52,7 +52,7 @@ pub async fn gen_info(
             loop {
                 select! {
                     Ok(msg) = rx.recv() => {
-                        println!("{:?}", msg);
+                        // println!("{:?}", msg);
                         let _ = stream
                         .send(rocket_ws::Message::Text(
                             serde_json::to_string(&msg).unwrap(),
@@ -248,7 +248,6 @@ fn patch_fixture(
     create: bool,
     _g: ProjectGuard,
 ) -> PatchResult {
-    println!("{create}");
     let f_id = Uuid::from_str(id); //.map_err(|_| "Id is not valid".to_string())?;
     if f_id.is_err() {
         return PatchResult::IdInvalid("Id is not valid".to_string());
