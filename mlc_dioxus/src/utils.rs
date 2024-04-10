@@ -736,3 +736,23 @@ impl<D: Serialize> ToWebSocketMessage for D {
         Ok(Message::Text(json))
     }
 }
+
+#[component]
+pub fn RangeSlider(value: Signal<f32>, min: f32, max: f32, step: f32) -> Element {
+    rsx! {
+        div {
+            class: "range-slider-container",
+            input {
+                r#type: "range",
+                min: min as f64,
+                max: max as f64,
+                step: step as f64,
+                value: value() as f64,
+                onchange: move |e| {
+                    let val = e.value().parse::<f32>().unwrap_or(min);
+                    value.set(val);
+                }
+            }
+        }
+    }
+}

@@ -50,6 +50,16 @@ pub fn EffectTimeline() -> Element {
                     },
                     button {
                         icons::Play { width: "1rem", height: "1rem"}
+                    },
+                    div {},
+                    p {
+                        {format!("{:.1}x", timeline_scale())}
+                    }
+                    utils::RangeSlider {
+                        value: timeline_scale,
+                        min: 0.5,
+                        max: 10.01,
+                        step: 0.1
                     }
                 },
                 EffectTracks {
