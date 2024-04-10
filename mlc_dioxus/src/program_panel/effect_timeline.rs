@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 use chrono::Duration;
+use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use crate::{icons, utils};
 use mlc_common::effect::{Effect, FaderTrack, FeatureTrack, FeatureTrackDetail, Track};
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::{FixtureId, UniverseAddress, UniverseId};
 use mlc_common::patched::feature::FixtureFeatureType;
-use mlc_common::utils::IntRange;
+use mlc_common::utils::{FormatEffectDuration, IntRange};
 use crate::program_panel::EffectInvalidate;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
@@ -32,7 +33,9 @@ pub fn EffectTimeline() -> Element {
     let mut create_track_overlay = use_signal(|| false);
     let create_track_type = use_signal(|| CreateTrackType::None);
 
-    if let Some(effect) = current_effect() {
+    let timeline_scale = use_signal(|| 5.0);
+
+    if let Some(_effect) = current_effect() {
         rsx! {
             div {
                 class: "effect-timeline",
@@ -51,6 +54,7 @@ pub fn EffectTimeline() -> Element {
                 },
                 EffectTracks {
                     current_effect,
+                    scale: timeline_scale,
                 }
 
             },
@@ -406,11 +410,18 @@ fn CreateTrackDetailFeature(onclose: EventHandler<Track>, feature_type: FixtureF
 }
 
 #[component]
-fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
+fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f32>) -> Element {
     let effect_invalidator: Coroutine<EffectInvalidate> = use_coroutine_handle();
+
+
     let effect = current_effect.map(|e| e.as_ref().expect("Should only be called with a valid effect!"));
     let duration_width = use_memo(move || {
-        current_effect().as_ref().unwrap().duration.num_milliseconds() as f64 / 10.0
+        to_scaled_px(&current_effect().as_ref().unwrap().duration, scale())
+    });
+
+    let mut current_duration = use_signal(|| Duration::milliseconds(500));
+    let current_duration_px = use_memo(move || {
+        to_scaled_px(&current_duration(), scale())
     });
 
 
@@ -423,9 +434,9 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
                 class: "headers",
                 div {
                     class: "header top",
-                    "Tracks"
+                    {current_duration().effect_format()}
                 }
-                for (i, track) in effect().tracks.iter().cloned().enumerate() {
+                for (i, _track) in effect().tracks.iter().cloned().enumerate() {
                     div {
                         class: "header",
                         class: if expanded().contains(&i) {"expanded"},
@@ -450,10 +461,23 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
                 style: "--duration-width: {duration_width()}px;",
                 div {
                     class: "track top",
+                    onclick: move |e| {
+                        current_duration.set(from_scaled_px(e.element_coordinates().x.max(0.0), scale()));
+                    },
+                    onmousemove: move |e| {
+                        if e.held_buttons() == MouseButton::Primary {
+                            current_duration.set(from_scaled_px(e.element_coordinates().x.max(0.0), scale()));
+                        }
+                    },
                     for i in 0..effect().duration.num_milliseconds() / 100 {
                         div {
-                            class: "sec"
+                            class: "sec",
+                            style: format!("--time-px: {}px", to_scaled_px_ms(i * 100, scale())),
                         }
+                    }
+                    div {
+                        class: "time-marker",
+                        style: "--duration-px: {current_duration_px()}px;",
                     }
 
                 }
@@ -461,11 +485,16 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
                     div {
                         class: "track",
                         class: if expanded().contains(&i) {"expanded"},
+                        div {
+                            class: "time-marker",
+                            style: "--duration-px: {current_duration_px()}px;",
+                        }
                         match track {
                             Track::FaderTrack(track) => {
                                 rsx! {
                                     FaderTrackBody {
                                         track,
+                                        track_index: i,
                                         current_effect,
                                         invalidate: move |_| {
                                             effect_invalidator.send(EffectInvalidate);
@@ -477,6 +506,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
                                 rsx!{
                                     FeatureTrackBody {
                                         track,
+                                        track_index: i,
                                         current_effect,
                                         invalidate: move |_| {
                                             effect_invalidator.send(EffectInvalidate);
@@ -489,72 +519,29 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>) -> Element {
                 }
             }
         }
-
-        // div {
-        //     class: "tracks",
-        //     style: "--duration-width: {duration_width()}px;",
-        //     for (i, track) in effect().tracks.iter().cloned().enumerate() {
-        //         div {
-        //             class: "header",
-        //             class: if expanded().contains(&i) {"expanded"},
-        //             div {
-        //                 class: "expand-btn",
-        //                 onclick: move |_| {
-        //                     if !expanded.write().remove(&i) {
-        //                         expanded.write().insert(i);
-        //                     }
-        //                 },
-        //                 match expanded().contains(&i) {
-        //                     true => rsx!(icons::ArrowDown {}),
-        //                     false => rsx!(icons::ArrowRight {})
-        //                 }
-        //             },
-        //             "Track"
-        //         }
-        //     }
-        //
-        //     for (i, track) in effect().tracks.iter().cloned().enumerate() {
-        //         div {
-        //             class: "track",
-        //             class: if expanded().contains(&i) {"expanded"},
-        //             match track {
-        //                 Track::FaderTrack(track) => {
-        //                     rsx! {
-        //                         FaderTrackBody {
-        //                             track,
-        //                             current_effect,
-        //                             invalidate: move |_| {
-        //                                 effect_invalidator.send(EffectInvalidate);
-        //                             }
-        //                         }
-        //                     }
-        //                 },
-        //                 Track::FeatureTrack(track) => {
-        //                     rsx!{
-        //                         FeatureTrackBody {
-        //                             track,
-        //                             current_effect,
-        //                             invalidate: move |_| {
-        //                                 effect_invalidator.send(EffectInvalidate);
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 }
 
 #[component]
-fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, invalidate: EventHandler) -> Element {
+fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler) -> Element {
     rsx! {
     }
 }
 
 #[component]
-fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, invalidate: EventHandler) -> Element {
+fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler) -> Element {
     rsx! {
     }
+}
+
+fn to_scaled_px(duration: &Duration, scale: f32) -> f64 {
+    to_scaled_px_ms(duration.num_milliseconds(), scale)
+}
+
+fn to_scaled_px_ms(ms: i64, scale: f32) -> f64 {
+    (ms as f64 / 10.0) * (scale as f64)
+}
+
+fn from_scaled_px(px: f64, scale: f32) -> Duration {
+    Duration::milliseconds(((px / (scale as f64)) * 10.0) as i64)
 }

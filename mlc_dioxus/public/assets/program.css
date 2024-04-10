@@ -326,6 +326,10 @@ p.visualized-effect-name {
             border: 1px solid var(--color-background);
             background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%);
             width: var(--duration-width);
+            position: relative;
+
+
+            --duration-px: 420px;
 
             height: 2rem;
 
@@ -333,84 +337,61 @@ p.visualized-effect-name {
                 height: 5rem;
             }
 
+            .time-marker {
+                position: absolute;
+                left: var(--duration-px);
+                width: 2px;
+                height: 100%;
+                bottom: 0;
+                background-color: var(--color-primary);
+                pointer-events: none;
+                border-top: 2px solid var(--color-primary);
+            }
+
             &.top {
                 background: transparent;
                 display: flex;
                 justify-content: space-between;
+                position: relative;
+                --time-px: 0;
 
                 .sec {
-                    height: 40%;
-                    margin-top: auto;
+                    height: 30%;
                     width: 2px;
+                    position: absolute;
+                    left: var(--time-px);
+                    bottom: 0;
                     background-color: white;
+                    pointer-events: none;
 
-                    &:nth-child(10n) {
-                        height: 60%;
+                    &:nth-child(10n + 1) {
+                        height: 65%;
                     }
 
-                    &:nth-child(600n) {
+                    &:nth-child(600n + 1) {
                         background-color: var(--color-tertiary);
+                    }
+
+                    &:first-child {
+                        height: 60%;
+                        background-color: white;
                     }
                 }
 
 
+                .time-marker {
+                    height: 60%;
+
+                    &::before {
+                        content: " ";
+                        display: block;
+                        width: 6px;
+                        height: 6px;
+                        background-color: var(--color-primary);
+                        transform: translate(-2px, -100%);
+                    }
+                }
             }
         }
     }
 }
-
-/*.effect-timeline .tracks {*/
-/*    width: 100%;*/
-/*    height: 100%;*/
-/*    overflow-y: auto;*/
-/*    margin-top: 1px;*/
-/*    --duration-width: 69px;*/
-/*    overflow-y: auto;*/
-/*    grid-template-columns: 12rem 1fr;*/
-/*    width: var(--duration-width);*/
-
-/*    .header {*/
-/*        border-right: 1px solid var(--color-background);*/
-/*        border-left: 1px solid var(--color-background);*/
-
-/*        display: flex;*/
-/*        gap: 0.25rem;*/
-/*        padding: 0;*/
-/*        position: sticky;*/
-/*        left: 0;*/
-
-/*        height: 2rem;*/
-/*        border: 1px solid var(--color-background);*/
-/*        display: grid;*/
-
-/*        &.expanded {*/
-/*            height: 5rem;*/
-/*        }*/
-
-
-/*        .expand-btn {*/
-/*            * {*/
-/*                margin-top: 0.25rem;*/
-/*                margin-left: 0.25rem;*/
-/*                background-color: var(--color-button);*/
-/*                border-radius: 4px;*/
-/*                cursor: pointer;*/
-
-/*                &:hover {*/
-/*                    color: var(--color-primary);*/
-/*                }*/
-/*            }*/
-/*        }*/
-/*    }*/
-
-/*    .track {*/
-/*        height: 2rem;*/
-/*        border: 1px solid var(--color-background);*/
-
-/*        &.expanded {*/
-/*            height: 5rem;*/
-/*        }*/
-
-/*        background-color: green;*/
-/*    }*/
-/*}*/
