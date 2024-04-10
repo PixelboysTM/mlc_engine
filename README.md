@@ -72,7 +72,7 @@ To run MLC on your local machine the following steps will help you:
         - [ ] Fader Tracks
         - [ ] Feature Tracks
 - [ ] Async Project loading with progress stream and ui
-- [ ] Entec Endpoint
+- [X] Enttec Usb Endpoint
 
 ## Feature requests / Contribution
 

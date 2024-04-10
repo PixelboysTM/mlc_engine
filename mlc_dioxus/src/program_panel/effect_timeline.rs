@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use chrono::Duration;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-use log::log;
 use crate::{icons, utils};
 use mlc_common::effect::{Effect, FaderTrack, FeatureTrack, FeatureTrackDetail, Track};
 use mlc_common::fixture::FaderAddress;
@@ -547,13 +546,13 @@ fn from_scaled_px(px: f64, scale: f32) -> Duration {
     Duration::milliseconds(((px / (scale as f64)) * 10.0) as i64)
 }
 
-fn with_track<F>(mut e: Signal<Option<Effect>>, track_index: usize, closure: F) where F: FnMut(&mut Track) {
+fn with_track<F>(mut e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut Track) {
     let mut r = e.write();
     let t = &mut r.as_mut().expect("Is only allowed to be called when a effect is loaded").tracks[track_index];
     closure(t);
 }
 
-fn with_fader_track<F>(e: Signal<Option<Effect>>, track_index: usize, closure: F) where F: FnMut(&mut FaderTrack) {
+fn with_fader_track<F>(e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut FaderTrack) {
     with_track(e, track_index, |t| {
         match t {
             Track::FaderTrack(f) => { closure(f); }
@@ -562,7 +561,7 @@ fn with_fader_track<F>(e: Signal<Option<Effect>>, track_index: usize, closure: F
     });
 }
 
-fn with_feature_track<F>(e: Signal<Option<Effect>>, track_index: usize, closure: F) where F: FnMut(&mut FeatureTrack) {
+fn with_feature_track<F>(e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut FeatureTrack) {
     with_track(e, track_index, |t| {
         match t {
             Track::FaderTrack(_) => { log::error!("with_feature_track was called but track is a FaderTrack!"); }

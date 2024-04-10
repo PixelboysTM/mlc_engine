@@ -471,8 +471,8 @@
 
                 .endpoint-type {
                     display: grid;
-                    width: 5rem;
-                    grid-template-columns: 1fr 1fr 1fr;
+                    width: 8.5rem;
+                    grid-template-columns: 1fr 1fr 1fr 1fr;
                     border: 1px solid var(--color-primary);
                     --br: 0.6rem;
                     border-radius: var(--br);
@@ -512,6 +512,11 @@
                     grid-template-columns: 1fr 1fr;
                     gap: 0.25rem;
                     margin-bottom: 0.25rem;
+
+                    p {
+                        margin-top: auto;
+                        margin-bottom: auto;
+                    }
                 }
 
                 .delete-btn {

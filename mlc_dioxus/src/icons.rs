@@ -728,3 +728,28 @@ pub fn ArrowDown(props: IconProps) -> Element {
     }
 }
 
+pub fn Usb(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        "viewBox": "0 0 24 24",
+        "stroke-linejoin": "round",
+        width,
+        height,
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke": "currentColor",
+        "stroke-width": "2",
+        "fill": "none",
+        "stroke-linecap": "round",
+        class: "lucide lucide-usb",
+        circle { "cy": "7", "cx": "10", "r": "1" }
+        circle { "r": "1", "cx": "4", "cy": "20" }
+        path { "d": "M4.7 19.3 19 5" }
+        path { "d": "m21 3-3 1 2 2Z" }
+        path { "d": "M9.26 7.68 5 12l2 5" }
+        path { "d": "m10 14 5 2 3.5-3.5" }
+        path { "d": "m18 12 1-1 1 1-1 1Z" }
+    }
+    }
+}
+

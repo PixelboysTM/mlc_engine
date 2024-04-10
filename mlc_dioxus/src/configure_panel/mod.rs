@@ -1025,16 +1025,16 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                 },
                                 div {
                                     class: "endpoints",
-                                    for (i, ep) in eps.iter().cloned().enumerate() {
+                                    for (i, ep) in eps.into_iter().enumerate() {
                                         div {
                                             class: "endpoint",
                                             div {
                                                 class: "endpoint-type",
                                                 div {
                                                     class: "sacn",
-                                                    class: if matches!(ep, EPConfigItem::Sacn {..}) {"sel"},
+                                                    class: if matches!(&ep, EPConfigItem::Sacn {..}) {"sel"},
                                                     title: "sACN",
-                                                    onclick: move |_| {
+                                                    onclick: make_type_closure(ep.clone(), move |_, ep| {
                                                         if !matches!(ep, EPConfigItem::Sacn{..}) {
                                                             let mut w = transformed_config.write();
                                                             let c = w.as_mut().expect("").as_mut().expect("");
@@ -1047,7 +1047,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                                 }
                                                             }
                                                         }
-                                                    },
+                                                    }),
                                                     icons::Wand{
                                                         width: "1rem",
                                                         height: "1rem"
@@ -1055,9 +1055,9 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                 },
                                                 div {
                                                     class: "log",
-                                                    class: if matches!(ep, EPConfigItem::Logger) {"sel"},
+                                                    class: if matches!(&ep, EPConfigItem::Logger) {"sel"},
                                                     title: "Logger",
-                                                    onclick: move |_| {
+                                                    onclick: make_type_closure(ep.clone(), move  |_, ep| {
                                                         if !matches!(ep, EPConfigItem::Logger) {
                                                             let mut w = transformed_config.write();
                                                             let c = w.as_mut().expect("").as_mut().expect("");
@@ -1067,7 +1067,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                                 }
                                                             }
                                                         }
-                                                    },
+                                                    }),
                                                     icons::MessageCircleQuestion{
                                                         width: "1rem",
                                                         height: "1rem"
@@ -1075,9 +1075,9 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                 },
                                                 div {
                                                     class: "artnet",
-                                                    class: if matches!(ep, EPConfigItem::ArtNet) {"sel"},
+                                                    class: if matches!(&ep, EPConfigItem::ArtNet) {"sel"},
                                                     title: "ArtNet",
-                                                    onclick: move |_| {
+                                                    onclick: make_type_closure(ep.clone(), move |_, ep| {
                                                         if !matches!(ep, EPConfigItem::ArtNet) {
                                                             let mut w = transformed_config.write();
                                                             let c = w.as_mut().expect("").as_mut().expect("");
@@ -1087,8 +1087,31 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                                 }
                                                             }
                                                         }
-                                                    },
+                                                    }),
                                                     icons::Palette{
+                                                        width: "1rem",
+                                                        height: "1rem"
+                                                    },
+                                                },
+                                                div {
+                                                    class: "usb",
+                                                    class: if matches!(&ep, EPConfigItem::Usb{..}) {"sel"},
+                                                    title: "Usb",
+                                                    onclick: make_type_closure(ep.clone(), move |_, ep| {
+                                                        if !matches!(ep, EPConfigItem::Usb{..}) {
+                                                            let mut w = transformed_config.write();
+                                                            let c = w.as_mut().expect("").as_mut().expect("");
+                                                            for (uid, conf) in c {
+                                                                if *uid == u {
+                                                                    conf[i] = EPConfigItem::Usb {
+                                                                        port: "COM1".to_string(),
+                                                                        speed: Speed::Medium,
+                                                                    };
+                                                                }
+                                                            }
+                                                        }
+                                                    }),
+                                                    icons::Usb{
                                                         width: "1rem",
                                                         height: "1rem"
                                                     },
@@ -1175,6 +1198,73 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                                             }
                                                         }
                                                     }
+                                                    EPConfigItem::Usb{ ref port, speed } => {
+                                                        rsx! {
+                                                            p {
+                                                                "sACN",
+                                                            },
+                                                            div {
+                                                                class: "property",
+                                                                p {
+                                                                    "Port:",
+                                                                },
+                                                                input {
+                                                                    r#type: "text",
+                                                                    value: port.clone(),
+                                                                    oninput: move |e| {
+                                                                        let mut w = transformed_config.write();
+                                                                        let c = w.as_mut().expect("").as_mut().expect("");
+                                                                        for (uid, conf) in c {
+                                                                            if *uid == u {
+                                                                                let item = conf.get_mut(i).expect("");
+                                                                                if let EPConfigItem::Usb{ port, ..} = item {
+                                                                                    *port = e.value();
+                                                                                    needs_update();
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                }
+                                                            },
+                                                            div {
+                                                                class: "property",
+                                                                p {
+                                                                    "Speed:",
+                                                                },
+                                                                select {
+                                                                    value: format!("\"{:?}\"", speed),
+                                                                    onchange: move |e| {
+                                                                        let mut w = transformed_config.write();
+                                                                        let c = w.as_mut().expect("").as_mut().expect("");
+                                                                        for (uid, conf) in c {
+                                                                            if *uid == u {
+                                                                                let item = conf.get_mut(i).expect("");
+                                                                                if let EPConfigItem::Usb{ speed, ..} = item {
+                                                                                    *speed = serde_json::from_str(&e.value()).unwrap_or(Speed::Medium);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Fast\"",
+                                                                        "Fast"
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Medium\"",
+                                                                        "Medium"
+                                                                    },
+                                                                    option {
+                                                                        value: "\"Slow\"",
+                                                                        "Slow"
+                                                                    },
+                                                                    option {
+                                                                        value: "\"SuperFast\"",
+                                                                        "Super Fast"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                 }}
                                             },
                                             button {
@@ -1255,5 +1345,11 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                 }
             }
         }
+    }
+}
+
+fn make_type_closure<F, E, T>(ep: EPConfigItem, mut closure: F) -> impl FnMut(Event<MouseData>) -> E + 'static where E: EventReturn<T>, F: FnMut(Event<MouseData>, EPConfigItem) -> E + 'static {
+    move |data| {
+        closure(data, ep.clone())
     }
 }
