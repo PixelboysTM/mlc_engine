@@ -744,15 +744,13 @@ select:hover {
 }
 
 
-.context-menu-wrapper {
-    position: relative;
+.context-menu {
     --cm-p-x: 50%;
     --cm-p-y: 50%;
     --cm-cc: 2rem;
     --cm-mi-h: 1.25rem;
-
-    .context-menu {
-        position: fixed;
+    position: fixed;
+    width: auto;
         background-color: var(--color-panel);
         border-radius: var(--number-border-radius);
         border: 1px solid var(--color-disabled);
@@ -761,7 +759,7 @@ select:hover {
         margin: 0.25rem;
         z-index: 50;
 
-        &:focus-visible {
+    &:focus-visible {
             outline: none;
         }
 
@@ -770,6 +768,7 @@ select:hover {
         .menu-item {
             height: var(--cm-mi-h);
             padding: 0.25rem 0.25rem 0.25rem 0.1rem;
+            cursor: pointer;
 
             p {
                 margin: 0;
@@ -784,8 +783,8 @@ select:hover {
             }
         }
 
-    }
 }
+
 
 .toggle-ele {
     width: 2.2em;

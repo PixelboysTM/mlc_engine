@@ -1,6 +1,7 @@
 use ::serde_with::{DurationSecondsWithFrac, formats::Flexible, formats::PreferOne, OneOrMany};
 use chrono::Duration;
 use serde_with::serde_as;
+use crate::easing::{Easing, EasingType};
 use crate::effect::D2RotationKey;
 
 use crate::effect::track_key::{D3PercentageKey, PercentageKey, RotationKey};
@@ -17,6 +18,53 @@ pub struct FeatureTrack {
     pub detail: FeatureTrackDetail,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
     pub resolution: Duration,
+}
+
+impl FeatureTrack {
+    pub fn insert_default_key(&mut self, time: Duration) {
+        match &mut self.detail {
+            FeatureTrackDetail::SinglePercent(t) => {
+                t.values.push(PercentageKey {
+                    start_time: time,
+                    value: 0.0,
+                    easing: Easing::new(EasingType::Linear, EasingType::Linear),
+                })
+            }
+            FeatureTrackDetail::SingleRotation(t) => {
+                t.values.push(RotationKey {
+                    start_time: time,
+                    value: 0.0,
+                    easing: Easing::new(EasingType::Linear, EasingType::Linear),
+                })
+            }
+            FeatureTrackDetail::D3Percent(t) => {
+                t.values.push(D3PercentageKey {
+                    start_time: time,
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    easing: Easing::new(EasingType::Linear, EasingType::Linear),
+                })
+            }
+            FeatureTrackDetail::D2Rotation(t) => {
+                t.values.push(D2RotationKey {
+                    start_time: time,
+                    x: 0.0,
+                    y: 0.0,
+                    easing: Easing::new(EasingType::Linear, EasingType::Linear),
+                })
+            }
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match &self.detail {
+            FeatureTrackDetail::SinglePercent(t) => { t.values.is_empty() }
+            FeatureTrackDetail::SingleRotation(t) => { t.values.is_empty() }
+            FeatureTrackDetail::D3Percent(t) => { t.values.is_empty() }
+            FeatureTrackDetail::D2Rotation(t) => { t.values.is_empty() }
+        }
+    }
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]

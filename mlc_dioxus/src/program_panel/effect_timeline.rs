@@ -2,13 +2,15 @@ use std::collections::HashSet;
 use chrono::Duration;
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
+use dioxus::web::WebEventExt;
 use crate::{icons, utils};
-use mlc_common::effect::{Effect, FaderTrack, FeatureTrack, FeatureTrackDetail, Track};
+use mlc_common::effect::{Effect, FaderKey, FaderTrack, FeatureTrack, FeatureTrackDetail, Track};
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::{FixtureId, UniverseAddress, UniverseId};
 use mlc_common::patched::feature::FixtureFeatureType;
 use mlc_common::utils::{FormatEffectDuration, IntRange};
 use crate::program_panel::EffectInvalidate;
+use crate::utils::context_menu::ContextMenu;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -434,10 +436,20 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
         to_scaled_px(&current_duration(), scale())
     });
 
+    let mut track_context = use_signal(|| None);
+
 
     let mut expanded = use_signal(|| HashSet::<usize>::new());
 
     rsx! {
+        if let Some(menu) = track_context() {
+                utils::context_menu::ContextMenu {
+                    menu,
+                    onclose: move |_| {
+                        track_context.set(None);
+                    }
+                }
+            }
         div {
             class: "track-container",
             div {
@@ -495,6 +507,48 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                     div {
                         class: "track",
                         class: if expanded().contains(&i) {"expanded"},
+                        oncontextmenu: move |e| {
+                            if e.trigger_button() == Some(MouseButton::Secondary) {
+                                let x_pos = e.element_coordinates().x;
+                                track_context.set(Some(
+                                    ContextMenu::new(e.client_coordinates().x, e.client_coordinates().y)
+                                    .add("Insert Keyframe here", move |_| {
+                                        log::info!("Insert keyframe");
+                                        with_track(current_effect, i, effect_invalidator , move |t, d, _| {
+                                            let time = from_scaled_px(x_pos, scale());
+                                            match t {
+                                                Track::FaderTrack(ft) => {
+                                                    if ft.values.is_empty() {
+                                                        ft.values.push(FaderKey {
+                                                            value: 0,
+                                                            start_time: Duration::milliseconds(0),
+                                                        });
+                                                        ft.values.push(FaderKey {
+                                                            value: 0,
+                                                            start_time: d.clone(),
+                                                        });
+                                                    }
+                                                    ft.values.push(FaderKey {
+                                                        value: 0,
+                                                        start_time: time,
+                                                    });
+                                                }
+                                                Track::FeatureTrack(ft) => {
+                                                    if ft.is_empty() {
+                                                        ft.insert_default_key(Duration::milliseconds(0));
+                                                        ft.insert_default_key(d.clone());
+                                                    }
+                                                    ft.insert_default_key(time);
+                                                }
+                                            }
+                                        });
+                                        true
+                                    })
+                                ));
+                            }
+                            e.web_event().prevent_default();
+                            e.stop_propagation();
+                        },
                         div {
                             class: "time-marker",
                             style: "--duration-px: {current_duration_px()}px;",
@@ -504,6 +558,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                                 rsx! {
                                     FaderTrackBody {
                                         track,
+                                        scale,
                                         track_index: i,
                                         current_effect,
                                         invalidate: move |_| {
@@ -516,6 +571,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                                 rsx!{
                                     FeatureTrackBody {
                                         track,
+                                        scale,
                                         track_index: i,
                                         current_effect,
                                         invalidate: move |_| {
@@ -533,13 +589,29 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
 }
 
 #[component]
-fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler) -> Element {
+fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler, scale: ReadOnlySignal<f32>) -> Element {
     rsx! {
+        for key in track.values.into_iter() {
+            div {
+                class: "key",
+                style: format!("--kp-x: {}px; --k-vp: {}%;", to_scaled_px(&key.start_time, *scale.read()), key.value as f32 / 255.0),
+                onclick: move |_| {
+                    log::info!("Context");
+                },
+                oncontextmenu: move |e| {
+                    e.stop_propagation();
+                },
+                icons::DiamondFilled {
+                    width: "1rem",
+                    height: "1rem"
+                }
+            }
+        }
     }
 }
 
 #[component]
-fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler) -> Element {
+fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler, scale: ReadOnlySignal<f32>) -> Element {
     rsx! {
     }
 }
@@ -556,26 +628,28 @@ fn from_scaled_px(px: f64, scale: f32) -> Duration {
     Duration::milliseconds(((px / (scale as f64)) * 10.0) as i64)
 }
 
-fn with_track<F>(mut e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut Track) {
+fn with_track<F>(mut e: Signal<Option<Effect>>, track_index: usize, invalidator: Coroutine<EffectInvalidate>, mut closure: F) where F: FnMut(&mut Track, &Duration, &bool) {
     let mut r = e.write();
-    let t = &mut r.as_mut().expect("Is only allowed to be called when a effect is loaded").tracks[track_index];
-    closure(t);
+    let e = r.as_mut().expect("Is only allowed to be called when a effect is loaded");
+    let t = &mut e.tracks[track_index];
+    closure(t, &e.duration, &e.looping);
+    invalidator.send(EffectInvalidate);
 }
 
-fn with_fader_track<F>(e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut FaderTrack) {
-    with_track(e, track_index, |t| {
+fn with_fader_track<F>(e: Signal<Option<Effect>>, track_index: usize, invalidator: Coroutine<EffectInvalidate>, mut closure: F) where F: FnMut(&mut FaderTrack, &Duration, &bool) {
+    with_track(e, track_index, invalidator, |t, d, l| {
         match t {
-            Track::FaderTrack(f) => { closure(f); }
+            Track::FaderTrack(f) => { closure(f, d, l); }
             Track::FeatureTrack(_) => { log::error!("with_fader_track was called but track is a FeatureTrack!"); }
         }
     });
 }
 
-fn with_feature_track<F>(e: Signal<Option<Effect>>, track_index: usize, mut closure: F) where F: FnMut(&mut FeatureTrack) {
-    with_track(e, track_index, |t| {
+fn with_feature_track<F>(e: Signal<Option<Effect>>, track_index: usize, invalidator: Coroutine<EffectInvalidate>, mut closure: F) where F: FnMut(&mut FeatureTrack, &Duration, &bool) {
+    with_track(e, track_index, invalidator, |t, d, l| {
         match t {
             Track::FaderTrack(_) => { log::error!("with_feature_track was called but track is a FaderTrack!"); }
-            Track::FeatureTrack(f) => { closure(f); }
+            Track::FeatureTrack(f) => { closure(f, d, l); }
         }
     });
 }

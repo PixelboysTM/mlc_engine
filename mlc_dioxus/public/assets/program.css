@@ -326,7 +326,8 @@ p.visualized-effect-name {
 
         .track {
             border: 1px solid var(--color-background);
-            background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%);
+            /*background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%);*/
+            background-color: var(--color-button);
             width: var(--duration-width);
             position: relative;
 
@@ -393,6 +394,19 @@ p.visualized-effect-name {
                         transform: translate(-2px, -100%);
                     }
                 }
+            }
+
+            --kp-x: 42px;
+
+            .key {
+                position: absolute;
+                left: var(--kp-x);
+                transform: translateX(-50%);
+                height: 100%;
+                display: grid;
+                align-items: center;
+                color: var(--color-tertiary);
+                cursor: pointer;
             }
         }
     }

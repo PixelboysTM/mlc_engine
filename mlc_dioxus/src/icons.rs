@@ -753,3 +753,41 @@ pub fn Usb(props: IconProps) -> Element {
     }
 }
 
+pub fn Diamond(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke": "currentColor",
+        "viewBox": "0 0 24 24",
+        "fill": "none",
+        "stroke-linejoin": "round",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        class: "lucide lucide-diamond",
+        path { "d": "M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" }
+    }
+    }
+}
+
+pub fn DiamondFilled(props: IconProps) -> Element {
+    let width = props.width.unwrap_or("1.25rem".to_string());
+    let height = props.height.unwrap_or("1.25rem".to_string());
+    rsx! { svg {
+        width,
+        height,
+        "xmlns": "http://www.w3.org/2000/svg",
+        "stroke": "currentColor",
+        "viewBox": "0 0 24 24",
+        "fill": "currentColor",
+        "stroke-linejoin": "round",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        class: "lucide lucide-diamond",
+        path { "d": "M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" }
+    }
+    }
+}
+

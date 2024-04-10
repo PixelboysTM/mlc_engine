@@ -44,8 +44,6 @@ impl PartialEq for ContextMenuItem {
 pub fn ContextMenu(mut menu: ContextMenu, onclose: EventHandler) -> Element {
     let child_count = menu.items.len();
     rsx! {
-        div {
-            class: "context-menu-wrapper",
             div {
                 class: "context-menu",
                 style: "--cm-p-x: {menu.x_pos}px; --cm-p-y: {menu.y_pos}px; --cm-cc: {child_count};",
@@ -74,6 +72,6 @@ pub fn ContextMenu(mut menu: ContextMenu, onclose: EventHandler) -> Element {
                     }
                 }
             }
-        }
+
     }
 }
