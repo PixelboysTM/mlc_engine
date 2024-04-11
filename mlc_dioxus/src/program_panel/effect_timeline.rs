@@ -4,7 +4,7 @@ use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use dioxus::web::WebEventExt;
 use crate::{icons, utils};
-use mlc_common::effect::{Effect, FaderKey, FaderTrack, FeatureTrack, FeatureTrackDetail, Track};
+use mlc_common::effect::{Effect, FaderKey, FaderTrack, FeatureTrack, FeatureTrackDetail, Key, Track};
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::{FixtureId, UniverseAddress, UniverseId};
 use mlc_common::patched::feature::FixtureFeatureType;
@@ -474,7 +474,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                                 false => rsx!(icons::ArrowRight {})
                             }
                         },
-                        "Track"
+                        {format!("Track #{}", i)}
                     }
                 }
             },
@@ -593,8 +593,8 @@ fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, tra
     rsx! {
         for key in track.values.into_iter() {
             div {
-                class: "key",
-                style: format!("--kp-x: {}px; --k-vp: {}%;", to_scaled_px(&key.start_time, *scale.read()), key.value as f32 / 255.0),
+                class: "key fader",
+                style: format!("--kp-x: {}px; --k-vp: {}%;", to_scaled_px(&key.start_time, *scale.read()), (key.value as f32 / 255.0) * 100.0),
                 onclick: move |_| {
                     log::info!("Context");
                 },
@@ -612,7 +612,48 @@ fn FaderTrackBody(track: FaderTrack, current_effect: Signal<Option<Effect>>, tra
 
 #[component]
 fn FeatureTrackBody(track: FeatureTrack, current_effect: Signal<Option<Effect>>, track_index: usize, invalidate: EventHandler, scale: ReadOnlySignal<f32>) -> Element {
+    match track.detail {
+        FeatureTrackDetail::SinglePercent(t) => draw_generic_keys(&t.values, scale, |v| {
+            let val = (v * 255.0) as u8;
+            (val, val, val)
+        }),
+        FeatureTrackDetail::SingleRotation(t) => draw_generic_keys(&t.values, scale, |v| {
+            let val = ((v / 2.0 + 0.5) * 255.0) as u8;
+            (val, val, val)
+        }),
+        FeatureTrackDetail::D3Percent(t) => draw_generic_keys(&t.values, scale, |v| {
+            let r = (v.0 * 255.0) as u8;
+            let g = (v.1 * 255.0) as u8;
+            let b = (v.2 * 255.0) as u8;
+            (r, g, b)
+        }),
+        FeatureTrackDetail::D2Rotation(t) => draw_generic_keys(&t.values, scale, |v| {
+            let u = (v.0 * 255.0) as u8;
+            let v = (v.1 * 255.0) as u8;
+            (u, v, 0)
+        }),
+    }
+}
+
+
+fn draw_generic_keys<K: Key, F>(keys: &[K], scale: ReadOnlySignal<f32>, color_fn: F) -> Element where F: Fn(K::Value) -> (u8, u8, u8) {
     rsx! {
+        for key in keys {
+            div {
+                class: "key feature",
+                style: format!("--kp-x: {}px; --k-vc: {};", to_scaled_px(&key.time(), *scale.read()), format!("rgb{:?}", color_fn(key.value()))),
+                onclick: move |_| {
+                    log::info!("Context");
+                },
+                oncontextmenu: move |e| {
+                    e.stop_propagation();
+                },
+                icons::DiamondFilled {
+                    width: "1rem",
+                    height: "1rem"
+                }
+            }
+        }
     }
 }
 

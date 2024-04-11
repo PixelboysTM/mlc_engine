@@ -405,8 +405,17 @@ p.visualized-effect-name {
                 height: 100%;
                 display: grid;
                 align-items: center;
-                color: var(--color-tertiary);
                 cursor: pointer;
+                --k-vp: 100%;
+                --k-vc: var(--color-secondary);
+
+                &.fader {
+                    color: color-mix(in srgb, var(--color-tertiary) /*var(--k-vp)*/ 100%, var(--color-text));
+                }
+
+                &.feature {
+                    color: var(--k-vc);
+                }
             }
         }
     }
