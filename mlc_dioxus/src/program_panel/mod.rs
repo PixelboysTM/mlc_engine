@@ -9,20 +9,22 @@ use gloo_net::websocket::Message;
 use gloo_storage::Storage;
 use log::{info, warn};
 
-use mlc_common::effect::Effect;
 use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
-use mlc_common::Info;
+use mlc_common::effect::Effect;
 use mlc_common::utils::FormatEffectDuration;
 use mlc_common::uuid::Uuid;
+use mlc_common::Info;
 
-use crate::{icons, utils};
 use crate::program_panel::effect_timeline::EffectTimeline;
 use crate::utils::popover::Popover;
 use crate::utils::toaster::{Toaster, ToasterWriter};
 use crate::utils::ToWebSocketMessage;
+use crate::{icons, utils};
 
 mod effect_timeline;
+mod key_editor;
 
+#[derive(Debug, PartialEq)]
 struct EffectInvalidate;
 
 #[component]
@@ -128,15 +130,17 @@ pub fn ProgramPanel() -> Element {
         }
     });
 
-    let _effect_invalidator = use_coroutine(move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
-        while let Some(_) = rx.next().await {
-            if let Some(e) = &*current_effect.peek() {
-                effect_handler.send(EHRequest::UpdateEffect(e.clone()));
-            } else {
-                warn!("Why needs update when no effect is loaded?");
+    let _effect_invalidator = use_coroutine(
+        move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
+            while let Some(_) = rx.next().await {
+                if let Some(e) = &*current_effect.peek() {
+                    effect_handler.send(EHRequest::UpdateEffect(e.clone()));
+                } else {
+                    warn!("Why needs update when no effect is loaded?");
+                }
             }
-        }
-    });
+        },
+    );
 
     let mut effect_browser_out = use_signal(|| true);
 
@@ -170,11 +174,8 @@ pub fn ProgramPanel() -> Element {
                 }
             }
 
-            div {
-                class: "panel effect-info",
-                h3 { class: "header",
-                    "Effect Info",
-                }
+            div { class: "panel effect-info",
+                h3 { class: "header", "Effect Info" }
                 EffectInfo {}
             }
             div { class: "panel timeline", EffectTimeline {} }
@@ -212,7 +213,6 @@ fn EffectBrowser() -> Element {
 
     let effect_handler: Coroutine<EHRequest> = use_coroutine_handle();
 
-
     let info = use_context::<Signal<Info>>();
 
     use_effect(move || {
@@ -232,15 +232,15 @@ fn EffectBrowser() -> Element {
                     on_open_effect: move |id| {
                         effect_handler.send(EHRequest::OpenEffect(id));
                     }
-                },
+                }
                 button {
                     class: "icon create-effect",
                     title: "Create New Effect",
                     onclick: move |_| {
-                      new_effect.set(true);
+                        new_effect.set(true);
                     },
                     icons::Plus {}
-                },
+                }
 
                 if new_effect() {
                     utils::Overlay {
@@ -260,7 +260,7 @@ fn EffectBrowser() -> Element {
                                     effect_handler.send(EHRequest::CreateEffect(name.to_string()));
                                     new_effect.set(false);
                                 }
-                            },
+                            }
                         }
                     }
                 }
@@ -318,7 +318,7 @@ fn DrawEffectTree(
                 
                                     w.insert(path.clone(), new_val);
                                 },
-
+                
                                 match *browser_register().get(&path as &str).unwrap_or(&true) {
                                     true => {
                                         rsx! {
@@ -412,7 +412,11 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
     trees
 }
 
-fn find_parent(children: &mut Vec<Rc<RefCell<Tree>>>, paths: &[&str], full_path: &str) -> Rc<RefCell<Tree>> {
+fn find_parent(
+    children: &mut Vec<Rc<RefCell<Tree>>>,
+    paths: &[&str],
+    full_path: &str,
+) -> Rc<RefCell<Tree>> {
     let (path, rest) = match paths {
         [path, rest @ ..] => (path, rest),
         [] => unreachable!(),
@@ -591,28 +595,16 @@ fn to_visualized_effect_name(name: String) -> Element {
         let r: &[String] = &paths;
         match r {
             [] => unreachable!(),
-            [rest @ .., name] => (rest.to_vec(), name.clone())
+            [rest @ .., name] => (rest.to_vec(), name.clone()),
         }
     }));
     rsx! {
-        p {
-            class: "visualized-effect-name",
+        p { class: "visualized-effect-name",
             for r in paths().0 {
-                span {
-                    class: "folder",
-                    {r},
-                }
-                span {
-                    class: "divider",
-                    "/"
-                }
+                span { class: "folder", {r} }
+                span { class: "divider", "/" }
             }
-            span {
-                class: "name",
-                {paths().1},
-            }
+            span { class: "name", {paths().1} }
         }
     }
 }
-
-

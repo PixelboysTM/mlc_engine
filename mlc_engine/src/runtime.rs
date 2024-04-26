@@ -33,7 +33,7 @@ use mlc_common::{FaderUpdateRequest, Info, RuntimeUpdate};
 
 use crate::fixture::feature::ApplyFeature;
 use crate::runtime::endpoints::CreateEndpoints;
-use crate::{data_serving::ProjectGuard, module::Module, project::Project, send};
+use crate::{data_serving::ProjectGuard, module::Module, project::ProjectHandle, send};
 
 use self::{effects::EffectModule, endpoints::EndpointData};
 
@@ -63,7 +63,7 @@ impl RuntimeData {
             })),
         }
     }
-    pub async fn adapt(&self, project: &Project, clear: bool) {
+    pub async fn adapt(&self, project: &ProjectHandle, clear: bool) {
         let mut data = self.inner.lock().await;
 
         {
@@ -381,7 +381,10 @@ async fn set_value(
 /// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Runtime")]
 #[get("/endpoints/get")]
-async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json<EndPointConfig> {
+async fn get_endpoint_config(
+    project: &State<ProjectHandle>,
+    _g: ProjectGuard,
+) -> Json<EndPointConfig> {
     let config = project.get_endpoint_config().await;
     Json(config)
 }
@@ -393,7 +396,7 @@ async fn get_endpoint_config(project: &State<Project>, _g: ProjectGuard) -> Json
 #[openapi(tag = "Runtime")]
 #[post("/endpoints/set", data = "<data>")]
 async fn set_endpoint_config(
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     data: Json<EndPointConfig>,
     runtime: &State<RuntimeData>,
     tx: &State<Sender<Info>>,
@@ -418,12 +421,12 @@ async fn set_feature<'a>(
     mut shutdown: Shutdown,
     fix_id: &'a str,
     runtime: &'a State<RuntimeData>,
-    project: &'a State<Project>,
+    project: &'a State<ProjectHandle>,
     _g: ProjectGuard,
 ) -> rocket_ws::Channel<'a> {
     let id = uuid::Uuid::from_str(fix_id);
 
-    async fn get_features(id: uuid::Uuid, project: &Project) -> Option<Vec<FixtureFeature>> {
+    async fn get_features(id: uuid::Uuid, project: &ProjectHandle) -> Option<Vec<FixtureFeature>> {
         let universes = project.get_universes().await;
         for universe in universes {
             let u = project.get_universe(&universe).await.expect("Queried");

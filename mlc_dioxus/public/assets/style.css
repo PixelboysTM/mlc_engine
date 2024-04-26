@@ -64,7 +64,7 @@ button:hover {
     border-color: var(--color-accent);
 }
 
-input[type=text] {
+input[type="text"] {
     border-radius: 8px;
     border: 1px solid transparent;
     padding: 0.6em 1.2em;
@@ -77,16 +77,16 @@ input[type=text] {
     min-width: 2rem;
 }
 
-input[type=text]:hover {
+input[type="text"]:hover {
     border-color: var(--color-accent);
 }
 
-input[type=text]:focus-visible {
+input[type="text"]:focus-visible {
     border-color: var(--color-accent);
     outline: none;
 }
 
-input[type=number] {
+input[type="number"] {
     border-radius: 8px;
     border: 1px solid transparent;
     padding: 0.3em 0.6em;
@@ -99,11 +99,11 @@ input[type=number] {
     transition: border-color 0.25s;
 }
 
-input[type=number]:hover {
+input[type="number"]:hover {
     border-color: var(--color-accent);
 }
 
-input[type=number]:focus-visible {
+input[type="number"]:focus-visible {
     border-color: var(--color-accent);
     outline: none;
 }
@@ -189,6 +189,7 @@ select:hover {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -247,7 +248,6 @@ select:hover {
                 width: 1.5rem;
                 height: 1.5rem;
                 margin: auto 0.25rem auto auto;
-
             }
 
             .close-btn:hover {
@@ -266,7 +266,6 @@ select:hover {
             padding: 1rem;
             overflow: auto;
         }
-
     }
 }
 
@@ -274,6 +273,7 @@ select:hover {
     from {
         scale: 0;
     }
+
     to {
         scale: 100%;
     }
@@ -283,6 +283,7 @@ select:hover {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 100%;
     }
@@ -292,14 +293,17 @@ select:hover {
     0% {
         color: var(--color-accent);
     }
+
     33% {
         color: var(--color-secondary);
     }
+
     66% {
         color: var(--color-tertiary);
     }
+
     100% {
-        color: var(--color-accent)
+        color: var(--color-accent);
     }
 }
 
@@ -355,7 +359,9 @@ select:hover {
             font-size: 2rem;
             text-align: center;
             /*background-image: linear-gradient(90deg, rgba(255, 0, 0, 1) 0%, rgba(0, 255, 0, 1) 33%, rgba(0, 0, 255, 1) 66%, rgba(255, 0, 0, 1) 100%);;*/
-            background-image: linear-gradient(90deg, #007f46 0%, var(--color-accent) 100%);
+            background-image: linear-gradient(90deg,
+                    #007f46 0%,
+                    var(--color-accent) 100%);
             background-clip: text;
             -webkit-text-fill-color: transparent;
             user-select: none;
@@ -374,7 +380,6 @@ select:hover {
         color: var(--color-tertiary);
     }
 }
-
 
 .rgb-widget {
     width: 100%;
@@ -403,7 +408,8 @@ select:hover {
         grid-column: 1 / 1;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, var(--rgb-hue), white), linear-gradient(0deg, black, white);
+        background: linear-gradient(90deg, var(--rgb-hue), white),
+            linear-gradient(0deg, black, white);
         background-blend-mode: multiply;
         border-radius: var(--number-radius);
 
@@ -424,7 +430,14 @@ select:hover {
         grid-column: 2 / 2;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to bottom, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+        background: linear-gradient(to bottom,
+                #ff0000 0%,
+                #ffff00 17%,
+                #00ff00 33%,
+                #00ffff 50%,
+                #0000ff 67%,
+                #ff00ff 83%,
+                #ff0000 100%);
         border-radius: var(--number-radius);
         cursor: pointer;
 
@@ -507,14 +520,16 @@ select:hover {
         aspect-ratio: 1/1;
 
         --line-color: var(--color-panel);
-        background: linear-gradient(0deg, var(--color-background) 0%, var(--color-background) 100%),
-        linear-gradient(90deg,
+        background: linear-gradient(0deg,
+                var(--color-background) 0%,
+                var(--color-background) 100%),
+            linear-gradient(90deg,
                 transparent 0%,
                 transparent calc(var(--line-x) - 1%),
                 var(--line-color) var(--line-x),
                 transparent calc(var(--line-x) + 1%),
                 transparent 100%),
-        linear-gradient(0deg,
+            linear-gradient(0deg,
                 transparent 0%,
                 transparent calc(var(--line-y) - 1%),
                 var(--line-color) var(--line-y),
@@ -527,7 +542,6 @@ select:hover {
         &:focus {
             --line-color: var(--color-accent);
         }
-
     }
 
     .val-pan {
@@ -536,13 +550,13 @@ select:hover {
         width: 100%;
         height: 100%;
         background: linear-gradient(90deg,
-        var(--color-background) 0%,
-        var(--color-background) 30%,
-        var(--color-accent) 30%,
-        var(--color-accent) 50%,
-        var(--color-accent) 70%,
-        var(--color-background) 70%,
-        var(--color-background) 100%);
+                var(--color-background) 0%,
+                var(--color-background) 30%,
+                var(--color-accent) 30%,
+                var(--color-accent) 50%,
+                var(--color-accent) 70%,
+                var(--color-background) 70%,
+                var(--color-background) 100%);
         cursor: pointer;
         border-radius: var(--number-radius);
 
@@ -566,13 +580,13 @@ select:hover {
         width: 100%;
         height: 100%;
         background: linear-gradient(0deg,
-        var(--color-background) 0%,
-        var(--color-background) 30%,
-        var(--color-accent) 30%,
-        var(--color-accent) 50%,
-        var(--color-accent) 70%,
-        var(--color-background) 70%,
-        var(--color-background) 100%);
+                var(--color-background) 0%,
+                var(--color-background) 30%,
+                var(--color-accent) 30%,
+                var(--color-accent) 50%,
+                var(--color-accent) 70%,
+                var(--color-background) 70%,
+                var(--color-background) 100%);
 
         cursor: pointer;
         border-radius: var(--number-radius);
@@ -614,18 +628,18 @@ select:hover {
 .slider-widget {
     width: 2rem;
     height: 100%;
+    min-height: 6rem;
     margin: 0.25rem;
     background: linear-gradient(90deg,
-    var(--color-background) 0%,
-    var(--color-background) 40%,
-    var(--color-accent) 40%,
-    var(--color-accent) 50%,
-    var(--color-accent) 60%,
-    var(--color-background) 60%,
-    var(--color-background) 100%);
+            var(--color-background) 0%,
+            var(--color-background) 40%,
+            var(--color-accent) 40%,
+            var(--color-accent) 50%,
+            var(--color-accent) 60%,
+            var(--color-background) 60%,
+            var(--color-background) 100%);
     cursor: pointer;
     border-radius: var(--number-border-radius);
-
 
     .knob {
         position: relative;
@@ -704,7 +718,7 @@ select:hover {
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            font-size: 1.0rem;
+            font-size: 1rem;
 
             .dot {
                 display: inline-block;
@@ -738,11 +752,11 @@ select:hover {
     0% {
         opacity: 0;
     }
+
     100% {
         opacity: 1;
     }
 }
-
 
 .context-menu {
     --cm-p-x: 50%;
@@ -751,40 +765,38 @@ select:hover {
     --cm-mi-h: 1.25rem;
     position: fixed;
     width: auto;
-        background-color: var(--color-panel);
-        border-radius: var(--number-border-radius);
-        border: 1px solid var(--color-disabled);
-        top: var(--cm-p-y);
-        left: var(--cm-p-x);
-        margin: 0.25rem;
-        z-index: 50;
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
+    border: 1px solid var(--color-disabled);
+    top: var(--cm-p-y);
+    left: var(--cm-p-x);
+    margin: 0.25rem;
+    z-index: 50;
 
     &:focus-visible {
-            outline: none;
+        outline: none;
+    }
+
+    /*bottom: calc(-0.25rem - (var(--cm-cc) * var(--cm-mi-h)));*/
+
+    .menu-item {
+        height: var(--cm-mi-h);
+        padding: 0.25rem 0.25rem 0.25rem 0.1rem;
+        cursor: pointer;
+
+        p {
+            margin: 0;
+            padding: 0;
+            font-size: calc(var(--cm-mi-h) * 0.8);
+            text-align: left;
+            user-select: none;
         }
 
-        /*bottom: calc(-0.25rem - (var(--cm-cc) * var(--cm-mi-h)));*/
-
-        .menu-item {
-            height: var(--cm-mi-h);
-            padding: 0.25rem 0.25rem 0.25rem 0.1rem;
-            cursor: pointer;
-
-            p {
-                margin: 0;
-                padding: 0;
-                font-size: calc(var(--cm-mi-h) * 0.8);
-                text-align: left;
-                user-select: none;
-            }
-
-            &:hover {
-                background-color: var(--color-accent);
-            }
+        &:hover {
+            background-color: var(--color-accent);
         }
-
+    }
 }
-
 
 .toggle-ele {
     width: 2.2em;
@@ -830,7 +842,6 @@ select:hover {
         &:focus-visible {
             outline: none;
         }
-
     }
 
     &::before {
@@ -843,11 +854,8 @@ select:hover {
         width: 1.5rem;
         height: var(--height);
         transform: translateX(-50%);
-        clip-path: polygon(
-                0 100%, 50% 0, 100% 100%
-        );
+        clip-path: polygon(0 100%, 50% 0, 100% 100%);
     }
-
 }
 
 *:has(> .popover-container) {
@@ -867,8 +875,8 @@ select:hover {
         background-color: var(--color-button);
         outline: none;
         opacity: 0.7;
-        -webkit-transition: .2s;
-        transition: opacity .2s;
+        -webkit-transition: 0.2s;
+        transition: opacity 0.2s;
 
         &:hover {
             opacity: 1;

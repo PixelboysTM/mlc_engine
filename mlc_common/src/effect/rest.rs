@@ -1,5 +1,5 @@
 use chrono::Duration;
-use serde_with::{DurationSecondsWithFrac, formats::Flexible, serde_as};
+use serde_with::{formats::Flexible, serde_as, DurationSecondsWithFrac};
 
 use crate::effect::{Effect, Track};
 
@@ -25,9 +25,6 @@ pub enum EffectHandlerRequest {
         looping: bool,
         #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]
         duration: Duration,
-    },
-    Toggle {
-        id: uuid::Uuid,
     },
     Get {
         id: uuid::Uuid,

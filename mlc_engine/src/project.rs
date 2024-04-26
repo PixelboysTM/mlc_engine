@@ -1,3 +1,4 @@
+use rocket::futures::SinkExt;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Local};
@@ -6,22 +7,16 @@ use rocket::{
     tokio::sync::broadcast::Sender,
 };
 
-use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 use mlc_common::config::FixtureType;
 use mlc_common::effect::Effect;
 use mlc_common::endpoints::EndPointConfig;
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{Info, ProjectDefinition, ProjectSettings};
 
-use crate::{
-    runtime::{
-        effects::EffectPlayerAction,
-        RuntimeData,
-    },
-    send,
-};
-use crate::fixture::universe as u;
 pub use crate::project::byte_provider::Provider;
+use crate::{fixture::universe as u, runtime::effects::player::EffectPlayerCmd};
+use crate::{runtime::RuntimeData, send};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct ProjectI {
@@ -49,11 +44,11 @@ pub(crate) struct ProjectI {
 }
 
 #[derive(Debug, Clone)]
-pub struct Project {
+pub struct ProjectHandle {
     project: Arc<Mutex<ProjectI>>,
 }
 
-impl Project {
+impl ProjectHandle {
     pub async fn save(&self, info: &Sender<Info>) -> Result<(), &'static str> {
         self.save_(None, info).await
     }
@@ -113,7 +108,7 @@ impl Project {
         name: &str,
         info: &Sender<Info>,
         runtime: &RuntimeData,
-        effect_handler: &Sender<EffectPlayerAction>,
+        effect_handler: &mut rocket::futures::channel::mpsc::Sender<EffectPlayerCmd>,
     ) -> Result<(), &str> {
         let possible_loaders: Vec<(&str, Provider)> = Provider::valid_extensions();
 
@@ -162,7 +157,7 @@ impl Project {
         }
 
         runtime.adapt(self, true).await;
-        send!(effect_handler, EffectPlayerAction::Rebake);
+        let _ = effect_handler.send(EffectPlayerCmd::EffectsChanged).await;
         send!(info, Info::ProjectLoaded);
 
         Ok(())
@@ -308,7 +303,7 @@ impl Project {
     }
 }
 
-impl Default for Project {
+impl Default for ProjectHandle {
     fn default() -> Self {
         Self {
             project: Arc::new(Mutex::new(ProjectI::default())),
@@ -392,8 +387,8 @@ mod byte_provider {
         }
 
         fn parse<T>(&self, b: &Vec<u8>) -> Result<T, String>
-            where
-                T: DeserializeOwned,
+        where
+            T: DeserializeOwned,
         {
             match self {
                 Provider::Json => serde_json::from_slice(b).map_err(|e| format!("{e:?}")),

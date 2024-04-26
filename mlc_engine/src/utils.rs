@@ -1,5 +1,5 @@
-use rocket::{Data, Request};
 use rocket::fairing::{Fairing, Info, Kind};
+use rocket::{Data, Request};
 
 #[macro_export]
 macro_rules! send {
@@ -27,4 +27,3 @@ impl Fairing for BrowserGuard {
         }
     }
 }
-

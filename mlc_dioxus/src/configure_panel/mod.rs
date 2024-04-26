@@ -8,16 +8,16 @@ use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 
 use fixture_tester::FixtureTester;
+use mlc_common::endpoints::{EPConfigItem, EndPointConfig, Speed};
+use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
+use mlc_common::universe::FixtureUniverse;
 use mlc_common::{
     FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate,
 };
-use mlc_common::endpoints::{EndPointConfig, EPConfigItem, Speed};
-use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
-use mlc_common::universe::FixtureUniverse;
 
-use crate::{icons, utils};
-use crate::utils::{CheckboxState, Loading};
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::utils::{CheckboxState, Loading};
+use crate::{icons, utils};
 
 mod fixture_tester;
 
@@ -363,16 +363,16 @@ fn FaderPanel() -> Element {
 }
 
 #[component]
-fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
+pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
     let mut val = use_signal(|| value);
-    use_effect(use_reactive((&value, ), move |(v, )| val.set(v)));
+    use_effect(use_reactive((&value,), move |(v,)| val.set(v)));
 
     let mut size_e = use_signal(|| None);
     rsx! {
         div {
             class: "fader-container",
             div {
-               class: "name",
+                class: "name",
                 {id}
             },
 
@@ -382,7 +382,6 @@ fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
                 onmounted: move |e| {
                     size_e.set(Some(e.data));
                 },
-
                 onmousemove: move |e| {
                     async move {
                         if e.held_buttons() == MouseButton::Primary {
@@ -809,7 +808,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                 manufacturersQuery: [],
             },
         )
-            .await;
+        .await;
 
         let result = r
             .map_err(|e| log::error!("Error fetching available fixtures: {:?}", e))
@@ -1348,8 +1347,13 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
     }
 }
 
-fn make_type_closure<F, E, T>(ep: EPConfigItem, mut closure: F) -> impl FnMut(Event<MouseData>) -> E + 'static where E: EventReturn<T>, F: FnMut(Event<MouseData>, EPConfigItem) -> E + 'static {
-    move |data| {
-        closure(data, ep.clone())
-    }
+fn make_type_closure<F, E, T>(
+    ep: EPConfigItem,
+    mut closure: F,
+) -> impl FnMut(Event<MouseData>) -> E + 'static
+where
+    E: EventReturn<T>,
+    F: FnMut(Event<MouseData>, EPConfigItem) -> E + 'static,
+{
+    move |data| closure(data, ep.clone())
 }

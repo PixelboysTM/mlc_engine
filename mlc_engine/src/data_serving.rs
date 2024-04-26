@@ -1,40 +1,38 @@
 use std::str::FromStr;
 
 use rocket::{
-    Data
-    ,
     data::ToByteUnit,
     futures::SinkExt,
     get,
     http::Status,
     post,
-    request::{self, FromRequest}
-    ,
-    Request,
-    Responder,
-    response::status::{BadRequest, Custom}, Route, serde::json::Json, State, tokio::{select, sync::broadcast::Sender},
+    request::{self, FromRequest},
+    response::status::{BadRequest, Custom},
+    serde::json::Json,
+    tokio::{select, sync::broadcast::Sender},
+    Data, Request, Responder, Route, State,
 };
-use rocket_okapi::{JsonSchema, openapi, openapi_get_routes_spec, OpenApiFromRequest};
 use rocket_okapi::gen::OpenApiGenerator;
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
 use rocket_okapi::response::OpenApiResponderInner;
 use rocket_okapi::util::add_default_response_schema;
+use rocket_okapi::{openapi, openapi_get_routes_spec, JsonSchema, OpenApiFromRequest};
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
-use mlc_common::{FixtureInfo, Info};
 use mlc_common::patched::feature::{FixtureFeatureType, HasFixtureFeature};
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{FixtureInfo, Info};
 
+use crate::fixture::UniverseIdParam;
 use crate::{
     fixture::{self},
     module::Module,
-    project::Project,
+    project::ProjectHandle,
 };
 use crate::{runtime::RuntimeData, ui_serving::ProjectSelection};
-use crate::fixture::UniverseIdParam;
 
 /// # Info
 /// Upgrades to a WebSocket on which general Information can be received.
@@ -78,7 +76,10 @@ pub async fn gen_info(
 /// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/get/fixture-types")]
-async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<FixtureInfo>> {
+async fn get_fixture_types(
+    project: &State<ProjectHandle>,
+    _g: ProjectGuard,
+) -> Json<Vec<FixtureInfo>> {
     Json(
         project
             .inner()
@@ -107,7 +108,7 @@ async fn get_fixture_types(project: &State<Project>, _g: ProjectGuard) -> Json<V
 #[openapi(tag = "Data Serving")]
 #[get("/add/fixture-ofl/<manufacturer>/<name>")]
 async fn add_fixture_ofl(
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     info: &State<Sender<Info>>,
     manufacturer: &str,
     name: &str,
@@ -117,8 +118,8 @@ async fn add_fixture_ofl(
         "https://open-fixture-library.org/{}/{}.json",
         manufacturer, name
     ))
-        .await
-        .map_err(|e| BadRequest(e.to_string()))?;
+    .await
+    .map_err(|e| BadRequest(e.to_string()))?;
     let json = data.text().await.map_err(|e| BadRequest(e.to_string()))?;
     let fix = fixture::parse_fixture(&json).map_err(|e| BadRequest(e.to_string()))?;
     for fixture in fix {
@@ -139,7 +140,7 @@ async fn add_fixture_ofl(
 #[post("/add/fixture", data = "<data>")]
 async fn add_fixture(
     data: Data<'_>,
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     info: &State<Sender<Info>>,
     _g: ProjectGuard,
 ) -> Result<(), BadRequest<String>> {
@@ -166,7 +167,7 @@ async fn add_fixture(
 /// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/universes")]
-async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<UniverseId>> {
+async fn get_universes(project: &State<ProjectHandle>, _g: ProjectGuard) -> Json<Vec<UniverseId>> {
     let mut data = project.get_universes().await;
     data.sort();
     Json(data)
@@ -182,7 +183,7 @@ async fn get_universes(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<U
 #[get("/universes/<id>")]
 async fn get_universe(
     id: UniverseIdParam,
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     _g: ProjectGuard,
 ) -> Json<Option<FixtureUniverse>> {
     let data = project.get_universe(&id).await;
@@ -200,7 +201,7 @@ async fn get_universe(
 #[openapi(tag = "Data Serving")]
 #[get("/save")]
 async fn save_project(
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     info: &State<Sender<Info>>,
     _g: ProjectGuard,
 ) -> Result<(), Custom<&'static str>> {
@@ -240,7 +241,7 @@ impl OpenApiResponderInner for PatchResult {
 #[openapi(tag = "Data Serving")]
 #[get("/patch/<id>/<mode>?<create>")]
 fn patch_fixture(
-    project: &State<Project>,
+    project: &State<ProjectHandle>,
     info: &State<Sender<Info>>,
     runtime: &State<RuntimeData>,
     id: &str,
@@ -288,12 +289,24 @@ fn patch_fixture(
 /// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/all_features")]
-async fn get_features_by_fixtures(project: &State<Project>, _g: ProjectGuard) -> Json<Vec<(uuid::Uuid, Vec<FixtureFeatureType>)>> {
+async fn get_features_by_fixtures(
+    project: &State<ProjectHandle>,
+    _g: ProjectGuard,
+) -> Json<Vec<(uuid::Uuid, Vec<FixtureFeatureType>)>> {
     let us = project.get_universes().await;
     let mut result = vec![];
     for u in us {
         let universe = project.get_universe(&u).await.unwrap();
-        let mut fixtures = universe.fixtures.iter().map(|i| (i.id, i.features.iter().map(|f| f.name()).collect::<Vec<_>>())).collect::<Vec<_>>();
+        let mut fixtures = universe
+            .fixtures
+            .iter()
+            .map(|i| {
+                (
+                    i.id,
+                    i.features.iter().map(|f| f.name()).collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>();
         result.append(&mut fixtures);
     }
 
@@ -306,13 +319,22 @@ async fn get_features_by_fixtures(project: &State<Project>, _g: ProjectGuard) ->
 /// [Guarded][`ProjectGuard`]
 #[openapi(tag = "Data Serving")]
 #[get("/all_with_feature/<feature_name>")]
-async fn all_with_feature(project: &State<Project>, _g: ProjectGuard, feature_name: String) -> Result<Json<Vec<(Uuid, String)>>, String> {
+async fn all_with_feature(
+    project: &State<ProjectHandle>,
+    _g: ProjectGuard,
+    feature_name: String,
+) -> Result<Json<Vec<(Uuid, String)>>, String> {
     let feature_name = feature_name.parse::<FixtureFeatureType>()?;
     let us = project.get_universes().await;
     let mut result = vec![];
     for u in us {
         let universe = project.get_universe(&u).await.unwrap();
-        let mut fixtures = universe.fixtures.iter().filter(|f| f.features.has(&feature_name)).map(|f| (f.id, f.name.clone())).collect::<Vec<_>>();
+        let mut fixtures = universe
+            .fixtures
+            .iter()
+            .filter(|f| f.features.has(&feature_name))
+            .map(|f| (f.id, f.name.clone()))
+            .collect::<Vec<_>>();
         result.append(&mut fixtures);
     }
 

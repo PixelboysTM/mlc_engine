@@ -1,20 +1,20 @@
 use std::net::{IpAddr, Ipv4Addr};
 
 use rocket::{
-    catch, catchers, Config, config::Ident, get, launch, serde::json::Json,
-    State, tokio::sync::broadcast::Sender,
+    catch, catchers, config::Ident, get, launch, serde::json::Json, tokio::sync::broadcast::Sender,
+    Config, State,
 };
-use rocket_okapi::{openapi, openapi_get_routes_spec};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_okapi::rapidoc::{GeneralConfig, HideShowConfig, RapiDocConfig};
 use rocket_okapi::settings::UrlObject;
 use rocket_okapi::swagger_ui::SwaggerUIConfig;
+use rocket_okapi::{openapi, openapi_get_routes_spec};
 
 use data_serving::DataServingModule;
 use mlc_common::Info;
 use module::{Application, Module};
-use project::Project;
+use project::ProjectHandle;
 use runtime::RuntimeModule;
 use settings::SettingsModule;
 use ui_serving::UiServingModule;
@@ -72,7 +72,7 @@ impl Module for MainModule {
         merge_specs(spec, &"/util".to_string(), &s).expect("Merging OpenApi spec failed");
 
         let p = pollster::block_on(async {
-            let p = Project::default();
+            let p = ProjectHandle::default();
             {
                 let mut m = p.lock().await;
                 m.settings.save_on_quit = false;
@@ -124,6 +124,6 @@ fn catch_404() -> &'static str {
 #[openapi(tag = "Util")]
 #[get("/dCreate/<name>")]
 async fn create_empty(name: &str, info: &State<Sender<Info>>) {
-    let project = Project::default();
+    let project = ProjectHandle::default();
     project.save_as(name, name, info).await.unwrap();
 }

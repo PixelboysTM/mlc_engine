@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 use std::slice::Iter;
+use std::time::Instant;
 
 use chrono::Duration;
+use rocket::futures::channel::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use rocket::futures::{SinkExt, StreamExt};
+use rocket::tokio::task::JoinHandle;
 use tap::Tap;
 
 use feature_tile_to_raw as to_raw;
@@ -16,27 +20,53 @@ use crate::fixture::feature::feature_tile_to_raw;
 pub type BakedEffectCue = Vec<(Duration, u8)>;
 pub type BakedFixtureData = Vec<PatchedFixture>;
 
-#[derive(Debug)]
-pub struct BakedEffect {
-    pub(super) faders: HashMap<FaderAddress, Vec<(Duration, u8)>>,
-    pub(super) current_time: Duration,
-    pub(super) max_time: Duration,
-    pub(super) running: bool,
-    pub(super) looping: bool,
+pub enum BakingRequest {
+    Bake(Effect),
+    Fixtures(BakedFixtureData),
+    Shutdown,
 }
 
-impl BakedEffect {
-    pub(super) fn toggle(&mut self) {
-        if self.running {
-            self.running = false;
-        } else {
-            self.current_time = Duration::milliseconds(0);
-            self.running = true;
+pub struct EffectBaker {
+    pub task_sender: UnboundedSender<BakingRequest>,
+    pub effect_recv: UnboundedReceiver<(EffectId, BakedEffect)>,
+    pub join_handle: JoinHandle<()>,
+}
+
+pub fn startup_effect_baker(patched_fixtures: Vec<PatchedFixture>) -> EffectBaker {
+    let (task_sender, mut task_receiver) = mpsc::unbounded::<BakingRequest>();
+    let (mut effect_sender, effect_recv) = mpsc::unbounded::<(EffectId, BakedEffect)>();
+
+    let handle = rocket::tokio::task::spawn(async move {
+        let mut fixtures = patched_fixtures;
+        while let Some(task) = task_receiver.next().await {
+            match task {
+                BakingRequest::Fixtures(fs) => fixtures = fs,
+                BakingRequest::Bake(effect) => {
+                    let time = Instant::now();
+                    let backed = bake(&effect, &fixtures).await;
+                    let _ = effect_sender.send((effect.id, backed)).await;
+                    println!("Baked effect {} in {:?}", effect.id, time.elapsed())
+                }
+                BakingRequest::Shutdown => break,
+            }
         }
+    });
+
+    EffectBaker {
+        task_sender,
+        effect_recv,
+        join_handle: handle,
     }
 }
 
-pub(crate) async fn bake(effect: &Effect, patched_fixtures: BakedFixtureData) -> BakedEffect {
+#[derive(Debug)]
+pub struct BakedEffect {
+    pub(super) faders: HashMap<FaderAddress, Vec<(Duration, u8)>>,
+    pub(super) max_time: Duration,
+    pub(super) looping: bool,
+}
+
+pub(crate) async fn bake(effect: &Effect, patched_fixtures: &BakedFixtureData) -> BakedEffect {
     let mut faders = HashMap::new();
 
     for track in &effect.tracks {
@@ -59,8 +89,6 @@ pub(crate) async fn bake(effect: &Effect, patched_fixtures: BakedFixtureData) ->
     BakedEffect {
         faders,
         max_time: effect.duration,
-        current_time: Duration::milliseconds(0),
-        running: false,
         looping: effect.looping,
     }
 }
@@ -111,9 +139,14 @@ async fn bake_feature_track(
                     }
                 }
             } else {
+                println!(
+                    "Couldn't find feature for baking: {:?}, {:?}",
+                    track.feature, fixture.features
+                );
                 vec![]
             }
         } else {
+            println!("Fixture not found for baking");
             vec![]
         };
         baked_tracks.append(&mut cues);
@@ -201,16 +234,18 @@ async fn bake_feature_track_d2_rotation(
 
     let vals = get_valid_keys_sorted(t.values.iter(), max_time);
 
-    let time_steps = build_time_steps(resolution, max_time, &vals, (0.0, 0.0), (0.0, 0.0), |(in_x, in_y), (out_x, out_y), val| {
-        (
-            in_x + (out_x - in_x) * val,
-            in_y + (out_y - in_y) * val
-        )
-    });
+    let time_steps = build_time_steps(
+        resolution,
+        max_time,
+        &vals,
+        (0.0, 0.0),
+        (0.0, 0.0),
+        |(in_x, in_y), (out_x, out_y), val| {
+            (in_x + (out_x - in_x) * val, in_y + (out_y - in_y) * val)
+        },
+    );
 
-    convert_to_cues::<D2RotationKey, _, 2>(&time_steps, |v| {
-        [to_raw(pan, &v.0), to_raw(tilt, &v.1)]
-    })
+    convert_to_cues::<D2RotationKey, _, 2>(&time_steps, |v| [to_raw(pan, &v.0), to_raw(tilt, &v.1)])
 }
 
 async fn bake_feature_track_three_percent(
@@ -255,13 +290,6 @@ async fn bake_feature_track_three_percent(
 fn out_time_filter<F: Key>(max_time: &Duration) -> Box<dyn Fn(&&F) -> bool + '_> {
     let zero = Duration::milliseconds(0);
     Box::new(move |k: &&F| &k.time() <= &max_time && k.time() >= zero)
-}
-
-#[derive(Clone, serde::Serialize)]
-pub enum BakingNotification {
-    Started(String),
-    Finished(String),
-    Misc(String),
 }
 
 fn make_resolution_times(resolution: &Duration, max: &Duration) -> ResolutionTimeIter {
@@ -335,7 +363,9 @@ fn convert_to_cues<K, F, const N: usize>(
     time_steps: &[(Duration, K::Value)],
     to_raw_val_fun: F,
 ) -> Vec<(FaderAddress, Vec<(Duration, u8)>)>
-    where K: Key, F: Fn(&K::Value) -> [Vec<(FaderAddress, u8)>; N]
+where
+    K: Key,
+    F: Fn(&K::Value) -> [Vec<(FaderAddress, u8)>; N],
 {
     if time_steps.is_empty() {
         return vec![];
@@ -343,7 +373,16 @@ fn convert_to_cues<K, F, const N: usize>(
 
     let steps = time_steps
         .iter()
-        .map(|(t, v)| (t, to_raw_val_fun(v).iter().flatten().copied().collect::<Vec<_>>()))
+        .map(|(t, v)| {
+            (
+                t,
+                to_raw_val_fun(v)
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .collect::<Vec<_>>(),
+            )
+        })
         .collect::<Vec<_>>();
 
     let mut faders = steps[0]
@@ -369,8 +408,8 @@ fn build_time_steps<K: Key, F>(
     out_default: K::Value,
     value_producer_fn: F,
 ) -> Vec<(Duration, K::Value)>
-    where
-        F: Fn(K::Value, K::Value, f32) -> K::Value,
+where
+    F: Fn(K::Value, K::Value, f32) -> K::Value,
 {
     let mut time_steps = Vec::new();
 

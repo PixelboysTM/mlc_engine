@@ -1,21 +1,22 @@
 use chrono::Duration;
-use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
+use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
 pub use feature_track::*;
 pub use track_key::*;
 
 use crate::fixture::FaderAddress;
 
-mod track_key;
 mod feature_track;
 pub mod rest;
+mod track_key;
 
+pub type EffectId = uuid::Uuid;
 
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct Effect {
-    pub id: uuid::Uuid,
+    pub id: EffectId,
     pub name: String,
     pub looping: bool,
     #[serde_as(as = "DurationSecondsWithFrac<f64, Flexible>")]

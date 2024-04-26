@@ -124,7 +124,6 @@
     }
 
     .effect-info {
-
         .property-container {
             width: 100%;
             padding: 0.25rem;
@@ -147,7 +146,6 @@
             }
         }
     }
-
 }
 
 p.visualized-effect-name {
@@ -171,7 +169,7 @@ p.visualized-effect-name {
     gap: 0.25rem;
     color: var(--color-text);
 
-    input[type=number] {
+    input[type="number"] {
         width: 3rem;
 
         &.milliseconds {
@@ -220,7 +218,6 @@ p.visualized-effect-name {
                 * {
                     margin: auto;
                 }
-
             }
         }
     }
@@ -281,7 +278,6 @@ p.visualized-effect-name {
     }
 }
 
-
 .effect-timeline .track-container {
     overflow-y: auto;
     padding-top: 1px;
@@ -326,11 +322,10 @@ p.visualized-effect-name {
 
         .track {
             border: 1px solid var(--color-background);
-            /*background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%);*/
+            /* background: linear-gradient(90deg, rgba(0, 37, 255, 1) 0%, rgba(80, 255, 62, 1) 100%); */
             background-color: var(--color-button);
             width: var(--duration-width);
             position: relative;
-
 
             --duration-px: 420px;
 
@@ -381,7 +376,6 @@ p.visualized-effect-name {
                     }
                 }
 
-
                 .time-marker {
                     height: 60%;
 
@@ -410,7 +404,10 @@ p.visualized-effect-name {
                 --k-vc: var(--color-secondary);
 
                 &.fader {
-                    color: color-mix(in srgb, var(--color-tertiary) /*var(--k-vp)*/ 100%, var(--color-text));
+                    color: color-mix(in srgb,
+                            var(--color-tertiary) var(--k-vp),
+                            /* 100%, */
+                            var(--color-text));
                 }
 
                 &.feature {
@@ -418,5 +415,26 @@ p.visualized-effect-name {
                 }
             }
         }
+    }
+}
+
+.key-edit {
+    position: fixed;
+    left: var(--px);
+    top: var(--py);
+    padding: 0.25rem;
+    background-color: var(--color-panel);
+    border-radius: var(--number-border-radius);
+    border: 1px solid var(--color-primary);
+    z-index: 25;
+    transform: translate(-50%, -100%);
+    display: grid;
+
+    &:focus {
+        outline: none;
+    }
+
+    .fader-container {
+        height: 10rem;
     }
 }
