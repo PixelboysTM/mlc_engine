@@ -95,8 +95,10 @@ async fn projects(project_selection: &State<ProjectSelection>) -> UiResponse {
 /// Otherwise, returns an Error page.
 #[openapi(tag = "UI Serving")]
 #[get("/viewer")]
-async fn viewer3d(project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
-    NamedFile::open(Path::new(OUT_PATH).join("index.html")).await.ok()
+async fn viewer3d(_project_selection: &State<ProjectSelection>) -> Option<NamedFile> {
+    NamedFile::open(Path::new(OUT_PATH).join("index.html"))
+        .await
+        .ok()
     // if project_selection.inner().0.lock().await.is_some() {
     //     NamedFile::open(Path::new(OUT_PATH).join("viewer.html"))
     //         .await

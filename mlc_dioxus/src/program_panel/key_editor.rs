@@ -20,13 +20,11 @@ pub fn KeyEditor(px: f64, py: f64, children: Element, onclose: EventHandler) -> 
                 let we = e.web_event();
                 if let Some(current_target) = we
                     .current_target()
-                    .map(|c| c.dyn_ref::<HtmlElement>().map(|c| c.clone()))
-                    .flatten()
+                    .and_then(|c| c.dyn_ref::<HtmlElement>().cloned())
                 {
                     if let Some(related_target) = we
                         .related_target()
-                        .map(|c| c.dyn_ref::<HtmlElement>().map(|c| c.clone()))
-                        .flatten()
+                        .and_then(|c| c.dyn_ref::<HtmlElement>().cloned())
                     {
                         let c = current_target.contains(Some(&related_target));
                         if c {
@@ -108,10 +106,10 @@ impl DrawKeyWidget<<D2RotationKey as mlc_common::effect::Key>::Value> for D2Rota
 }
 
 impl DrawKeyWidget<<RotationKey as mlc_common::effect::Key>::Value> for RotationKey {
-    fn draw_widget<F>(&self, mut onchange: F) -> Element
+    fn draw_widget<F>(&self, _onchange: F) -> Element
     where
         F: FnMut(<RotationKey as mlc_common::effect::Key>::Value) + 'static,
     {
-        rsx! {"Unimplemented"}
+        rsx! { "Unimplemented" }
     }
 }

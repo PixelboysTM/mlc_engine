@@ -126,7 +126,8 @@ impl EffectPlayer {
         let _ = self
             .effect_baker
             .task_sender
-            .send(baking::BakingRequest::Shutdown);
+            .send(baking::BakingRequest::Shutdown)
+            .await;
         let _ = self.effect_baker.join_handle.into_future().await;
     }
 
@@ -140,7 +141,7 @@ impl EffectPlayer {
         let mut marked_for_stopping = vec![];
 
         for (id, time) in &mut self.playing_effects {
-            let status = self.baking_map.get(&id);
+            let status = self.baking_map.get(id);
             match status {
                 Some(BakingStatus::Baked) => {}
                 Some(BakingStatus::InProgress) => {
@@ -158,7 +159,7 @@ impl EffectPlayer {
                         .effects
                         .iter()
                         .find(|e| e.id == *id)
-                        .map(|e| e.clone())
+                        .cloned()
                         .unwrap();
                     let _ = self
                         .effect_baker
@@ -174,7 +175,7 @@ impl EffectPlayer {
                 }
             }
 
-            let effect = self.baked_effects.get(&id).unwrap();
+            let effect = self.baked_effects.get(id).unwrap();
 
             *time += elapsed;
 
@@ -225,7 +226,6 @@ impl EffectPlayer {
     }
 
     async fn handle_baked_effect(&mut self, (id, baked): (EffectId, BakedEffect)) {
-        println!("Effect finished baking! ============================================");
         self.baked_effects.insert(id, baked);
         if let Some(status) = self.baking_map.get_mut(&id) {
             if *status != BakingStatus::Changed {
@@ -237,9 +237,9 @@ impl EffectPlayer {
     async fn handle_cmd(&mut self, cmd: EffectPlayerCmd, should_exit: &mut bool) {
         match cmd {
             EffectPlayerCmd::Play { id } => {
-                if !self.playing_effects.contains_key(&id) {
-                    self.playing_effects.insert(id, Duration::zero());
-                }
+                self.playing_effects
+                    .entry(id)
+                    .or_insert_with(Duration::zero);
                 let _ = self.update_sender.send(EffectPlayerUpdate::PlayingEffects(
                     self.playing_effects.keys().cloned().collect::<Vec<_>>(),
                 ));
@@ -260,7 +260,7 @@ impl EffectPlayer {
                             .effects
                             .iter()
                             .find(|e| e.id == id)
-                            .map(|e| e.clone());
+                            .cloned();
                         if let Some(effect) = effect {
                             let _ = self
                                 .effect_baker
@@ -302,8 +302,7 @@ impl EffectPlayer {
             .send(baking::BakingRequest::Fixtures(
                 p.universes
                     .iter()
-                    .map(|u| u.1.fixtures.clone())
-                    .flatten()
+                    .flat_map(|u| u.1.fixtures.clone())
                     .collect::<Vec<_>>(),
             ))
             .await;

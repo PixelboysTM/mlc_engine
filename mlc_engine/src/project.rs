@@ -77,7 +77,7 @@ impl ProjectHandle {
 
         let name_provider = Provider::from_filename(&data.file_name);
 
-        let provider: Provider = name_provider.unwrap_or_else(|| {
+        let provider: Provider = name_provider.unwrap_or({
             if cfg!(debug_assertions) {
                 Provider::Json
             } else {
@@ -186,7 +186,7 @@ impl ProjectHandle {
         data.universes
             .get(id)
             .ok_or("Universe Id not found")
-            .map(|s| s.clone())
+            .cloned()
     }
 
     pub async fn try_patch(

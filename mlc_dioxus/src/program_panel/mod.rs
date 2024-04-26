@@ -44,12 +44,12 @@ pub fn ProgramPanel() -> Element {
                             if let Some(msg) = msg {
                                 let msg: EHRequest = msg;
                                 match msg {
-                                    EHRequest::OpenEffect(id) => {
+                                    EHRequest::Open(id) => {
                                         let _ = ws.send(EffectHandlerRequest::Get {
                                             id,
                                         }.to_msg().unwrap()).await;
                                     }
-                                    EHRequest::UpdateEffect(effect) => {
+                                    EHRequest::Update(effect) => {
                                         let _ = ws.send(EffectHandlerRequest::Update {
                                             id: effect.id,
                                             looping: effect.looping,
@@ -57,7 +57,7 @@ pub fn ProgramPanel() -> Element {
                                             tracks: effect.tracks,
                                         }.to_msg().unwrap()).await;
                                     }
-                                    EHRequest::CreateEffect(name) => {
+                                    EHRequest::Create(name) => {
                                         let _ = ws.send(EffectHandlerRequest::Create {
                                             name,
                                         }.to_msg().unwrap()).await;
@@ -132,9 +132,9 @@ pub fn ProgramPanel() -> Element {
 
     let _effect_invalidator = use_coroutine(
         move |mut rx: UnboundedReceiver<EffectInvalidate>| async move {
-            while let Some(_) = rx.next().await {
+            while (rx.next().await).is_some() {
                 if let Some(e) = &*current_effect.peek() {
-                    effect_handler.send(EHRequest::UpdateEffect(e.clone()));
+                    effect_handler.send(EHRequest::Update(e.clone()));
                 } else {
                     warn!("Why needs update when no effect is loaded?");
                 }
@@ -186,9 +186,9 @@ pub fn ProgramPanel() -> Element {
 
 #[derive(Debug, Clone)]
 enum EHRequest {
-    OpenEffect(Uuid),
-    UpdateEffect(Effect),
-    CreateEffect(String),
+    Open(Uuid),
+    Update(Effect),
+    Create(String),
 }
 
 #[component]
@@ -230,7 +230,7 @@ fn EffectBrowser() -> Element {
                     tree: effects.clone(),
                     browser_register,
                     on_open_effect: move |id| {
-                        effect_handler.send(EHRequest::OpenEffect(id));
+                        effect_handler.send(EHRequest::Open(id));
                     }
                 }
                 button {
@@ -246,7 +246,9 @@ fn EffectBrowser() -> Element {
                     utils::Overlay {
                         title: "Create new Effect",
                         class: "create-effect-overlay",
-                        icon: rsx!(icons::Sparkles {}),
+                        icon: rsx! {
+                            icons::Sparkles {}
+                        },
                         onclose: move |_| {
                             new_effect.set(false);
                         },
@@ -257,7 +259,7 @@ fn EffectBrowser() -> Element {
                                 let v = e.value();
                                 let name = v.trim();
                                 if !name.is_empty() {
-                                    effect_handler.send(EHRequest::CreateEffect(name.to_string()));
+                                    effect_handler.send(EHRequest::Create(name.to_string()));
                                     new_effect.set(false);
                                 }
                             }
@@ -267,10 +269,12 @@ fn EffectBrowser() -> Element {
             }
         }
         Some(Err(_)) => {
-            rsx! {"Error loading effect library"}
+            rsx! { "Error loading effect library" }
         }
         None => {
-            rsx! { utils::Loading {} }
+            rsx! {
+                utils::Loading {}
+            }
         }
     }
 }
@@ -315,10 +319,10 @@ fn DrawEffectTree(
                                     } else {
                                         false
                                     };
-                
+
                                     w.insert(path.clone(), new_val);
                                 },
-                
+
                                 match *browser_register().get(&path as &str).unwrap_or(&true) {
                                     true => {
                                         rsx! {
@@ -385,7 +389,7 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
 
         let (path, name) = match split_ref {
             [n] => (vec![], *n),
-            [p @ .., n] => (p.iter().cloned().collect::<Vec<_>>(), *n),
+            [p @ .., n] => (p.to_vec(), *n),
             [] => unreachable!("Why does split return an empty list!"),
         };
 
@@ -400,7 +404,7 @@ fn build_effect_tree(effects: &[(String, Uuid)]) -> Vec<Rc<RefCell<Tree>>> {
             }))
         }
 
-        let new_effect = create_effect(raw_name.to_string(), name.to_string(), id.clone());
+        let new_effect = create_effect(raw_name.to_string(), name.to_string(), *id);
 
         if path.is_empty() {
             trees.push(new_effect);

@@ -7,32 +7,42 @@ use schemars::JsonSchema;
 use crate::config::DmxRange;
 use crate::fixture::FaderAddress;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub struct Dimmer {
     pub dimmer: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub struct Rgb {
     pub red: FeatureTile,
     pub green: FeatureTile,
     pub blue: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub struct Rotation {
     pub cw: FeatureTile,
     pub ccw: FeatureTile,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub struct PanTilt {
     pub pan: FeatureTile,
     pub tilt: FeatureTile,
 }
 
 // Indexes are offsets from the start_index of the Fixture
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub enum FixtureFeature {
     Dimmer(Dimmer),
     White(Dimmer),
@@ -42,7 +52,16 @@ pub enum FixtureFeature {
     PanTilt(PanTilt),
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, get_size::GetSize, JsonSchema)]
+#[derive(
+    Debug,
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Copy,
+    PartialEq,
+    get_size::GetSize,
+    JsonSchema,
+)]
 pub enum FixtureFeatureType {
     Dimmer,
     White,
@@ -76,7 +95,7 @@ impl FromStr for FixtureFeatureType {
             "Rotation" => Ok(FixtureFeatureType::Rotation),
             "PanTilt" => Ok(FixtureFeatureType::PanTilt),
             "Amber" => Ok(FixtureFeatureType::Amber),
-            s => Err(format!("Unknown FixtureFeatureType String: {s}"))
+            s => Err(format!("Unknown FixtureFeatureType String: {s}")),
         }
     }
 }
@@ -106,17 +125,19 @@ impl HasFixtureFeature for Vec<FixtureFeature> {
             }
         }
 
-        return false;
+        false
     }
 }
 
 impl HasFixtureFeature for Vec<FixtureFeatureType> {
     fn has(&self, feature: &FixtureFeatureType) -> bool {
-        self.contains(&feature)
+        self.contains(feature)
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub enum FeatureTile {
     Single {
         channel: FeatureChannel,
@@ -158,8 +179,8 @@ pub enum FeatureSetRequest {
     GetAvailableFeatures,
 }
 
-
 /// The Offset of channelss from the start of the Fixture Fader = start_index + self
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq)]
+#[derive(
+    Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
+)]
 pub struct FeatureChannel(pub usize);
-

@@ -26,15 +26,10 @@ pub fn ConfigurePanel() -> Element {
     let project_info = use_resource(|| utils::fetch::<ProjectDefinition>("/projects/current"));
 
     rsx! {
-        div {
-            class: "configure-panel",
-            div {
-                class: "panel info",
+        div { class: "configure-panel",
+            div { class: "panel info",
 
-                h3 {
-                    class: "header",
-                    "Project Info",
-                },
+                h3 { class: "header", "Project Info" }
                 match &*project_info.read_unchecked() {
                     Some(Ok(d)) => {rsx!{
                         div {
@@ -75,23 +70,11 @@ pub fn ConfigurePanel() -> Element {
                     Some(Err(_e)) => {rsx!{"Error Loading Project Info"}},
                     None => {Loading()}
                 }
-            },
-            div {
-                class: "panel fixture-types",
-                FixtureTypeExplorer {}
-            },
-            div {
-                class: "panel universe-explorer",
-                UniverseExplorer {}
-            },
-            div {
-                class: "panel project-settings",
-                ProjectSettings {}
-            },
-            div {
-                class: "panel fader-browser",
-                FaderPanel {}
-            },
+            }
+            div { class: "panel fixture-types", FixtureTypeExplorer {} }
+            div { class: "panel universe-explorer", UniverseExplorer {} }
+            div { class: "panel project-settings", ProjectSettings {} }
+            div { class: "panel fader-browser", FaderPanel {} }
         }
     }
 }
@@ -103,30 +86,20 @@ fn ProjectSettings() -> Element {
     let mut changed_settings = use_signal(|| None);
     rsx! {
         if endpoint_mapping() {
-                EndPointMapping {
-                    onclose: move |_| {
-                        endpoint_mapping.set(false);
+            EndPointMapping {
+                onclose: move |_| {
+                    endpoint_mapping.set(false);
+                }
+            }
+        }
+        div { class: "project-settings-panel",
+            h3 { class: "header", "Project Settings" }
+            div { class: "settings",
+                if changed_settings().is_some() {
+                    div { class: "unsaved",
+                        p { "Unsaved changes press Update to Confirm." }
                     }
                 }
-
-        },
-        div {
-            class: "project-settings-panel",
-            h3 {
-                class: "header",
-                "Project Settings"
-            },
-            div {
-                class: "settings",
-                if changed_settings().is_some() {
-                        div {
-                            class: "unsaved",
-                            p {
-                                "Unsaved changes press Update to Confirm."
-                            }
-                        }
-
-                },
 
                 match &*settings.read_unchecked() {
                     Some(Ok(s)) => {
@@ -159,19 +132,15 @@ fn ProjectSettings() -> Element {
                     Some(Err(_s)) => {rsx!("Error Fetching settings")}
                     None => {utils::Loading()}
                 }
-            },
-            div {
-                class: "btns",
+            }
+            div { class: "btns",
                 button {
                     title: "Endpoints",
                     onclick: move |_| {
                         endpoint_mapping.set(true);
                     },
-                    icons::Cable {
-                        width: "1rem",
-                        height: "1rem",
-                    },
-                },
+                    icons::Cable { width: "1rem", height: "1rem" }
+                }
                 button {
                     onclick: move |_| {
                         async move {
@@ -179,7 +148,6 @@ fn ProjectSettings() -> Element {
                                 let s = utils::fetch_post::<String, _>("/settings/update", s).await;
                                 if s.is_ok() {
                                     changed_settings.set(None);
-
                                 } else {
                                     log::error!("{:?}", s);
                                 }
@@ -187,8 +155,7 @@ fn ProjectSettings() -> Element {
                         }
                     },
                     "Update"
-                },
-
+                }
             }
         }
     }
@@ -205,11 +172,10 @@ fn FaderPanel() -> Element {
         }
     });
     let info = use_context::<Signal<Info>>();
-    use_effect(move || match info() {
-        Info::UniversesUpdated => {
+    use_effect(move || {
+        if info() == Info::UniversesUpdated {
             universes.restart();
         }
-        _ => {}
     });
 
     let mut current_values = use_signal(|| [0_u8; 512]);
@@ -316,10 +282,8 @@ fn FaderPanel() -> Element {
         }
     });
     rsx! {
-        div {
-            class: "slider-panel",
-            div {
-                class: "universe-list",
+        div { class: "slider-panel",
+            div { class: "universe-list",
                 match universes.read_unchecked().as_ref().cloned() {
                     Some(us) => {
                         rsx!{
@@ -336,12 +300,9 @@ fn FaderPanel() -> Element {
                         }
                     }
                     None => {rsx!(Loading{})}
-                },
-
-
-            },
-            div {
-                class: "faders",
+                }
+            }
+            div { class: "faders",
                 {(0..512).map(|i| {
                     rsx!{
                         Fader{
@@ -369,14 +330,10 @@ pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
 
     let mut size_e = use_signal(|| None);
     rsx! {
-        div {
-            class: "fader-container",
-            div {
-                class: "name",
-                {id}
-            },
+        div { class: "fader-container",
+            div { class: "name", {id} }
 
-            div{
+            div {
                 class: "range",
                 background: "linear-gradient(0deg, var(--color-gradient-start) 0%, var(--color-gradient-end) {(val() as f32 / 255.0) * 100.0}%, transparent {(val() as f32 / 255.0) * 100.0}%, transparent 100%)",
                 onmounted: move |e| {
@@ -385,7 +342,13 @@ pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
                 onmousemove: move |e| {
                     async move {
                         if e.held_buttons() == MouseButton::Primary {
-                            let size = size_e().unwrap().get_client_rect().await.unwrap().size.height;
+                            let size = size_e()
+                                .unwrap()
+                                .get_client_rect()
+                                .await
+                                .unwrap()
+                                .size
+                                .height;
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
@@ -397,7 +360,13 @@ pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
                 onmousedown: move |e| {
                     async move {
                         if e.data.held_buttons() == MouseButton::Primary {
-                            let size = size_e().unwrap().get_client_rect().await.unwrap().size.height;
+                            let size = size_e()
+                                .unwrap()
+                                .get_client_rect()
+                                .await
+                                .unwrap()
+                                .size
+                                .height;
                             let p = e.data.element_coordinates();
                             let x = (1.0 - p.y / size).min(1.0).max(0.0);
                             let v = (x * 255.0) as u8;
@@ -406,13 +375,9 @@ pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
                         }
                     }
                 }
-
-            },
-
-            div{
-                class: "value",
-                {make_three_digit(val() as u16)}
             }
+
+            div { class: "value", {make_three_digit(val() as u16)} }
         }
     }
 }
@@ -442,32 +407,26 @@ fn FixtureTypeExplorer() -> Element {
     });
 
     let info = use_context::<Signal<Info>>();
-    use_effect(move || match info() {
-        Info::FixtureTypesUpdated => {
+    use_effect(move || {
+        if info() == Info::FixtureTypesUpdated {
             fixture_query.restart();
         }
-        _ => {}
     });
 
     let mut detail_fixture = use_signal::<Option<FixtureInfo>>(|| None);
 
     rsx! {
         if let Some(f) = detail_fixture() {
-                DetailFixtureType {
-                    t: f,
-                    onclose: move |_| {
-                        detail_fixture.set(None);
-                    }
+            DetailFixtureType {
+                t: f,
+                onclose: move |_| {
+                    detail_fixture.set(None);
                 }
+            }
+        }
 
-        },
-
-        div {
-            class: "fixture-type-explorer",
-            h3 {
-                class: "header",
-                "Fixture Types",
-            },
+        div { class: "fixture-type-explorer",
+            h3 { class: "header", "Fixture Types" }
 
             match fixture_query.read_unchecked().as_ref().cloned() {
                 Some(infos) => {
@@ -539,39 +498,37 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
         utils::Overlay {
             title: inf().name.clone(),
             class: "fixture-type-detail",
-            icon: rsx!(icons::Blocks{}),
+            icon: rsx! {
+                icons::Blocks {}
+            },
             onclose: move |_| {
                 onclose.call(());
             },
-            div {
-                class: "settings",
-                span {
-                    "Create Additional Universes",
-                },
+            div { class: "settings",
+                span { "Create Additional Universes" }
                 utils::Checkbox {
                     init: create_new_universe().into(),
                     onchange: move |s: CheckboxState| {
                         create_new_universe.set(s.into());
                     }
                 }
-            },
-            div {
-                class: "modes",
+            }
+            div { class: "modes",
                 for mode in inf().modes {
                     div {
                         class: "mode {sel(mode.short_name == sel_mode())}",
                         onclick: move |e| {
-                            if e.trigger_button() == Some(MouseButton::Primary) && mode.short_name != sel_mode() {
+                            if e.trigger_button() == Some(MouseButton::Primary)
+                                && mode.short_name != sel_mode()
+                            {
                                 sel_mode.set(mode.short_name.clone());
                             }
                         },
                         {mode.short_name.clone()}
                     }
-
                 }
-            },
-            div {
-                class: "detail",
+            }
+            div { class: "detail",
                 {
                     if let Some(mode) = sel_mode_o() {
                         rsx!{
@@ -616,11 +573,8 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
                         rsx!("")
                     }
                 }
-            },
-            div {
-                class: "fix-id",
-                {inf().id.to_string()}
             }
+            div { class: "fix-id", {inf().id.to_string()} }
         }
     }
 }
@@ -674,23 +628,17 @@ fn UniverseExplorer() -> Element {
         Some(d) => {
             rsx! {
                 if let Some(f) = detail_fixture() {
-                        FixtureTester {
-                            info: f.clone(),
-                            onclose: move |_| {
-                                detail_fixture.set(None);
-                            }
+                    FixtureTester {
+                        info: f.clone(),
+                        onclose: move |_| {
+                            detail_fixture.set(None);
                         }
-
+                    }
                 }
 
-                h3 {
-                    class: "header",
-                    "Universe Explorer",
-                },
-                div {
-                    class: "universe-explorer-container",
-                    div {
-                        class: "tabs",
+                h3 { class: "header", "Universe Explorer" }
+                div { class: "universe-explorer-container",
+                    div { class: "tabs",
                         for id in d {
                             div {
                                 class: "tab {sel(selected() == id)}",
@@ -700,7 +648,7 @@ fn UniverseExplorer() -> Element {
                                 {id.0.to_string()}
                             }
                         }
-                    },
+                    }
                     match universe.value()() {
                         Some(Some(data)) => {
                             rsx!{
@@ -754,7 +702,6 @@ fn UniverseExplorer() -> Element {
                         None => utils::Loading()
                     }
                 }
-
             }
         }
         None => utils::Loading(),
@@ -831,88 +778,87 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
     let mut search = use_signal(|| "".to_string());
 
     rsx! {
-        utils::Overlay{
+        utils::Overlay {
             title: "Import Fixture Types",
             class: "upload-fixture",
-            icon: rsx!{icons::LampDesk {}},
+            icon: rsx! {
+                icons::LampDesk {}
+            },
             onclose: move |_| {
-              on_close.call(());
+                on_close.call(());
             },
 
-            div {
-                    class: "tabs",
-
-                    div {
-                        class: "tab {sel(source() == FixtureSource::Ofl)}",
-                        onclick: move |_| {
-                            source.set(FixtureSource::Ofl);
-                        },
-                        "OFL"
-                    },
-                    div {
-                        class: "tab {sel(source() == FixtureSource::Json)}",
-                        onclick: move |_| {
-                            source.set(FixtureSource::Json);
-                        },
-                        "RAW"
-                    }
-                },
+            div { class: "tabs",
 
                 div {
-                    class: "list-content",
-                    match source() {
-                        FixtureSource::Ofl => {
-                            rsx! {
-                            match available_fixtures.state()() {
+                    class: "tab {sel(source() == FixtureSource::Ofl)}",
+                    onclick: move |_| {
+                        source.set(FixtureSource::Ofl);
+                    },
+                    "OFL"
+                }
+                div {
+                    class: "tab {sel(source() == FixtureSource::Json)}",
+                    onclick: move |_| {
+                        source.set(FixtureSource::Json);
+                    },
+                    "RAW"
+                }
+            }
 
-                            UseResourceState::Pending => {
-                                    rsx!(utils::Loading {})
-                                }
-                                UseResourceState::Stopped | UseResourceState::Paused => {
-                                    rsx!{"Failed to query fixtures from ofl. Is your device connected to the internet?"}}
-                                UseResourceState::Ready => {
-                                    rsx! {
-                                        div {
-                                            class: "searchbar",
-                                            input {
-                                                r#type: "text",
-                                                onchange: move |e| {
-                                                    search.set(e.data.value());
-                                                },
-                                                oninput: move |e| {
-                                                    search.set(e.data.value());
-                                                }
+            div { class: "list-content",
+                match source() {
+                    FixtureSource::Ofl => {
+                        rsx! {
+                        match available_fixtures.state()() {
+
+                        UseResourceState::Pending => {
+                                rsx!(utils::Loading {})
+                            }
+                            UseResourceState::Stopped | UseResourceState::Paused => {
+                                rsx!{"Failed to query fixtures from ofl. Is your device connected to the internet?"}}
+                            UseResourceState::Ready => {
+                                rsx! {
+                                    div {
+                                        class: "searchbar",
+                                        input {
+                                            r#type: "text",
+                                            onchange: move |e| {
+                                                search.set(e.data.value());
+                                            },
+                                            oninput: move |e| {
+                                                search.set(e.data.value());
                                             }
-                                        },
-                                        div {
-                                            class: "results",
-                                            for available in filter_search(available_fixtures.read().clone().unwrap_or(vec![]), &search()) {
-                                                div {
-                                                    class: "result",
-                                                    p {
-                                                        class: "manufacturer",
-                                                        {available.manufacturer.clone()}
-                                                    },
-                                                    p {
-                                                        class: "name",
-                                                        {available.name.clone()}
-                                                    },
+                                        }
+                                    },
+                                    div {
+                                        class: "results",
+                                        for available in filter_search(available_fixtures.read().clone().unwrap_or(vec![]), &search()) {
+                                            div {
+                                                class: "result",
+                                                p {
+                                                    class: "manufacturer",
+                                                    {available.manufacturer.clone()}
+                                                },
+                                                p {
+                                                    class: "name",
+                                                    {available.name.clone()}
+                                                },
 
-                                                    button {
-                                                        class: "icon",
-                                                        title: "Import",
-                                                        onclick: move |_| {
-                                                            let m = available.manufacturer.clone();
-                                                            let n = available.name.clone();
-                                                            async move {
-                                                                log::info!("Import fixture");
-                                                                let _ = utils::fetch::<()>(&format!("/data/add/fixture-ofl/{}/{}", m, n)).await.map_err(|e| {
-                                                                    log::error!("Error importing: {:?}", e);
-                                                                });
-                                                            }
-                                                        },
-                                                        icons::Download {}
-                                                    }
+                                                button {
+                                                    class: "icon",
+                                                    title: "Import",
+                                                    onclick: move |_| {
+                                                        let m = available.manufacturer.clone();
+                                                        let n = available.name.clone();
+                                                        async move {
+                                                            log::info!("Import fixture");
+                                                            let _ = utils::fetch::<()>(&format!("/data/add/fixture-ofl/{}/{}", m, n)).await.map_err(|e| {
+                                                                log::error!("Error importing: {:?}", e);
+                                                            });
+                                                        }
+                                                    },
+                                                    icons::Download {}
                                                 }
                                             }
                                         }
@@ -920,12 +866,13 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                                 }
                             }
                         }
-                        }
-                        FixtureSource::Json => {rsx!{
-                            "Currently not available"
-                        }}
                     }
+                    }
+                    FixtureSource::Json => {rsx!{
+                        "Currently not available"
+                    }}
                 }
+            }
         }
     }
 }
@@ -978,16 +925,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
         let r = config().map(|c| {
             c.map(|(us, ep_config)| {
                 us.iter()
-                    .map(|u| {
-                        (
-                            *u,
-                            ep_config
-                                .endpoints
-                                .get(u)
-                                .map(|v| v.clone())
-                                .unwrap_or(vec![]),
-                        )
-                    })
+                    .map(|u| (*u, ep_config.endpoints.get(u).cloned().unwrap_or(vec![])))
                     .collect::<Vec<_>>()
             })
         });
@@ -1007,9 +945,11 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
         utils::Overlay {
             title: "Endpoint Mapping",
             class: "endpoint-mapping",
-            icon: rsx!(icons::Cable {}),
+            icon: rsx! {
+                icons::Cable {}
+            },
             onclose: move |_| {
-              onclose.call(());
+                onclose.call(());
             },
 
             match transformed_config() {
@@ -1306,7 +1246,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                             class: "btns",
                             button {
                                 onclick: move |_| {
-                                     async move {
+                                    async move {
                                         let w = transformed_config();
                                         if let Some(Some(c)) = w {
                                             let mut map = HashMap::new();

@@ -4,7 +4,7 @@ use rocket::fairing::AdHoc;
 use rocket::futures::{SinkExt, StreamExt};
 use rocket::serde::json::Json;
 use rocket::tokio::select;
-use rocket::tokio::sync::broadcast::{self, Receiver, Sender};
+use rocket::tokio::sync::broadcast::{self, Sender};
 use rocket::{get, Shutdown, State};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
@@ -23,7 +23,6 @@ use crate::project::ProjectHandle;
 use crate::runtime::effects::player::EffectPlayerUpdate;
 use crate::{module::Module, send};
 
-use self::baking::startup_effect_baker;
 use self::player::{startup_effect_player, EffectPlayerCmd, EffectPlayerHandle};
 
 use super::{decode_msg, RuntimeData};
@@ -187,7 +186,7 @@ async fn get_effect_player(
                     Ok(msg) = effect_player.update_receiver.recv() => {
                         let msg = match msg {
                             EffectPlayerUpdate::PlayingEffects(effects) => EffectPlayerMsg::PlayingEffects {
-                                effects: effects,
+                                effects,
                             }
                         };
 

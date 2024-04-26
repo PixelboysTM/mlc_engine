@@ -76,7 +76,7 @@ pub(crate) async fn bake(effect: &Effect, patched_fixtures: &BakedFixtureData) -
             }
             Track::FeatureTrack(cue) => {
                 let baked_cues: Vec<(FaderAddress, BakedEffectCue)> =
-                    bake_feature_track(cue, &effect.duration, &patched_fixtures).await;
+                    bake_feature_track(cue, &effect.duration, patched_fixtures).await;
                 for (address, baked_cue) in baked_cues {
                     faders.insert(address, baked_cue);
                 }

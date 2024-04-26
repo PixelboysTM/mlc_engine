@@ -79,7 +79,7 @@ pub fn EffectTimeline() -> Element {
                     class: "create-effect-track",
                     icon: rsx! {
                         icons::TrainTrack {}
-                    ,
+                    },
                     onclose: move |_| {
                         create_track_overlay.set(false);
                     },
@@ -338,8 +338,8 @@ fn CreateTrackDetailFeature(
             "/data/all_with_feature/{}",
             &feature_type
         ))
-            .await
-            .unwrap_or(vec![])
+        .await
+        .unwrap_or(vec![])
     });
 
     use_effect(use_reactive!(|feature_type| {
@@ -347,12 +347,12 @@ fn CreateTrackDetailFeature(
         all_features.restart();
     }));
 
-    let mut added_fixtures = use_signal(|| vec![]);
+    let mut added_fixtures = use_signal(Vec::new);
     let mut resolution = use_signal(|| 50);
 
-    match (&*all_features.read_unchecked()).clone() {
+    match (*all_features.read_unchecked()).clone() {
         None => {
-            rsx!( "Loading available fixtures..." )
+            rsx!("Loading available fixtures...")
         }
         Some(all) => {
             rsx! {
@@ -431,7 +431,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
 
     let mut track_context = use_signal(|| None);
 
-    let mut expanded = use_signal(|| HashSet::<usize>::new());
+    let mut expanded = use_signal(HashSet::<usize>::new);
 
     rsx! {
         if let Some(menu) = track_context() {
@@ -481,7 +481,10 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                         }
                     },
                     for i in 0..(effect().duration.num_milliseconds() / 100 + 1) {
-                        div { class: "sec", style: format!("--time-px: {}px", to_scaled_px_ms(i * 100, scale())) }
+                        div {
+                            class: "sec",
+                            style: format!("--time-px: {}px", to_scaled_px_ms(i * 100, scale()))
+                        }
                     }
                     div {
                         class: "time-marker",
@@ -523,7 +526,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                                                                             ft.values
                                                                                 .push(FaderKey {
                                                                                     value: 0,
-                                                                                    start_time: d.clone(),
+                                                                                    start_time: *d,
                                                                                 });
                                                                         }
                                                                         ft.values
@@ -535,7 +538,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                                                                     Track::FeatureTrack(ft) => {
                                                                         if ft.is_empty() {
                                                                             ft.insert_default_key(Duration::milliseconds(0));
-                                                                            ft.insert_default_key(d.clone());
+                                                                            ft.insert_default_key(*d);
                                                                         }
                                                                         ft.insert_default_key(time);
                                                                     }
@@ -744,10 +747,10 @@ fn draw_generic_keys<K, F, F2>(
     color_fn: F,
     mut update_fn: F2,
 ) -> Element
-    where
-        F: Fn(K::Value) -> (u8, u8, u8),
-        F2: FnMut(usize, K::Value) + 'static,
-        K: Key + DrawKeyWidget<K::Value> + Clone + 'static,
+where
+    F: Fn(K::Value) -> (u8, u8, u8),
+    F2: FnMut(usize, K::Value) + 'static,
+    K: Key + DrawKeyWidget<K::Value> + Clone + 'static,
 {
     let mut key_edit: Signal<Option<(K, f64, f64, usize)>> = use_signal(|| None);
 
@@ -936,7 +939,7 @@ fn with_d2rotation_track<F>(
     invalidator: Coroutine<EffectInvalidate>,
     mut closure: F,
 ) where
-    F: FnMut(&mut D2RotationTrack)
+    F: FnMut(&mut D2RotationTrack),
 {
     with_feature_track(e, track_index, invalidator, move |t, _, _| {
         match &mut t.detail {

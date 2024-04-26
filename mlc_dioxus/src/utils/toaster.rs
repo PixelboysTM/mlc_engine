@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap};
-use std::time::Duration;
-use dioxus::prelude::*;
 use crate::icons;
+use dioxus::prelude::*;
+use std::collections::BTreeMap;
+use std::time::Duration;
 
 pub struct Toaster {
     toasts: BTreeMap<usize, Toast>,
@@ -96,28 +96,21 @@ pub fn ToasterElement() -> Element {
     let mut r = use_context::<Signal<Toaster>>();
 
     rsx! {
-        div {
-            class: "toaster-provider",
+        div { class: "toaster-provider",
             for toast in r.read().toasts() {
                 div {
                     class: "toast-wrapper",
-                    class: if toast.level == ToastLevel::Info {"info"},
-                    class: if toast.level == ToastLevel::Warning {"warning"},
-                    class: if toast.level == ToastLevel::Error {"error"},
-                    class: if toast.level == ToastLevel::Log {"log"},
+                    class: if toast.level == ToastLevel::Info { "info" },
+                    class: if toast.level == ToastLevel::Warning { "warning" },
+                    class: if toast.level == ToastLevel::Error { "error" },
+                    class: if toast.level == ToastLevel::Log { "log" },
 
-                    h3 {
-                        class: "title",
-                        span {
-                            class: "dot"
-                        }
+                    h3 { class: "title",
+                        span { class: "dot" }
                         {toast.title.clone()}
-                    },
+                    }
 
-                    p {
-                        class: "content",
-                        {toast.msg.clone()}
-                    },
+                    p { class: "content", {toast.msg.clone()} }
 
                     button {
                         class: "close",
@@ -172,18 +165,22 @@ pub trait ToasterWriter {
 
 impl ToasterWriter for Signal<Toaster> {
     fn info(&mut self, title: impl Into<String>, msg: impl Into<String>) -> usize {
+        #[allow(clippy::explicit_auto_deref)]
         Toaster::info(&mut *self.write(), title, msg)
     }
 
     fn warning(&mut self, title: impl Into<String>, msg: impl Into<String>) -> usize {
+        #[allow(clippy::explicit_auto_deref)]
         Toaster::warning(&mut *self.write(), title, msg)
     }
 
     fn error(&mut self, title: impl Into<String>, msg: impl Into<String>) -> usize {
+        #[allow(clippy::explicit_auto_deref)]
         Toaster::error(&mut *self.write(), title, msg)
     }
 
     fn log(&mut self, title: impl Into<String>, msg: impl Into<String>) -> usize {
+        #[allow(clippy::explicit_auto_deref)]
         Toaster::log(&mut *self.write(), title, msg)
     }
 }

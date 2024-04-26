@@ -2,8 +2,8 @@ use dioxus::prelude::*;
 
 use mlc_common::{CreateProjectData, ProjectDefinition};
 
-use crate::{icons, utils};
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::{icons, utils};
 
 #[component]
 pub fn ProjectSelection() -> Element {
@@ -26,20 +26,19 @@ pub fn ProjectSelection() -> Element {
     let mut new_project_binary = use_signal(|| false);
 
     rsx! {
-        if create_project(){
+        if create_project() {
             utils::Overlay {
                 title: "Create New Project",
                 class: "new-project",
-                icon: rsx!(icons::PencilRuler{}),
+                icon: rsx! {
+                    icons::PencilRuler {}
+                },
                 onclose: move |_| {
                     create_project.set(false);
                     new_project_name.set("New Project".to_string());
                     new_project_binary.set(false);
                 },
-                p {
-                    class: "name-title",
-                    "Project Name:"
-                }
+                p { class: "name-title", "Project Name:" }
                 input {
                     class: "name",
                     r#type: "text",
@@ -49,50 +48,54 @@ pub fn ProjectSelection() -> Element {
                     oninput: move |e| {
                         new_project_name.set(e.value());
                     },
-                    value: new_project_name(),
-                },
-                p {
-                    class: "file",
-                    "Will be saved as: ",
-                    span {
-                        {mlc_common::to_save_file_name(&new_project_name())}
-                    }
-                },
-                p {
-                    class: "binary-toggle",
-                    "Binary format: ",
-                    utils::Toggle {
-                        value: new_project_binary(),
-                    }
+                    value: new_project_name()
                 }
-                div {
-                    class: "buttons",
+                p { class: "file",
+                    "Will be saved as: "
+                    span { {mlc_common::to_save_file_name(&new_project_name())} }
+                }
+                p { class: "binary-toggle",
+                    "Binary format: "
+                    utils::Toggle { value: new_project_binary() }
+                }
+                div { class: "buttons",
                     button {
                         class: "create-btn",
                         onclick: move |_| {
                             async move {
                                 if !new_project_name.peek().is_empty() {
-                                    let result = utils::fetch_post::<String, _>("/projects/create", CreateProjectData{
-                                        name: new_project_name.peek().clone(),
-                                        binary: *new_project_binary.peek(),
-                                    }).await;
-                                    if let Ok(_) = result {
+                                    let result = utils::fetch_post::<
+                                        String,
+                                        _,
+                                    >(
+                                            "/projects/create",
+                                            CreateProjectData {
+                                                name: new_project_name.peek().clone(),
+                                                binary: *new_project_binary.peek(),
+                                            },
+                                        )
+                                        .await;
+                                    if result.is_ok() {
                                         utils::toast_reload(toaster);
                                     } else {
                                         log::error!("{result:?}");
-                                        toaster.error("Project creation failed!", "Failed to create new project. See the console for more detailed information.");
+                                        toaster
+                                            .error(
+                                                "Project creation failed!",
+                                                "Failed to create new project. See the console for more detailed information.",
+                                            );
                                     }
                                 }
                             }
                         },
                         "Create"
-                    },
+                    }
                     button {
                         class: "cancel-btn",
                         onclick: move |_| {
                             create_project.set(false);
                             new_project_name.set("New Project".to_string());
-                    new_project_binary.set(false);
+                            new_project_binary.set(false);
                         },
                         "Cancel"
                     }
@@ -100,44 +103,42 @@ pub fn ProjectSelection() -> Element {
             }
         }
 
-        div {
-            class: "headbar project-bar",
+        div { class: "headbar project-bar",
             div {
                 class: "left",
                 onclick: move |_| {
-                   toaster.info("Hello", "**zwitscher**");
+                    toaster.info("Hello", "**zwitscher**");
                 },
                 img {
                     class: "iconMarvin",
                     src: "./images/icon.png",
-                    alt: "MLC",
-                },
-                h1 {
-                    "MLC"
+                    alt: "MLC"
                 }
+                h1 { "MLC" }
             }
 
-            div {
-                style: "display: flex; align-items: center;",
+            div { style: "display: flex; align-items: center;",
 
-                h2 {
-                    style: "margin: 0; padding: 0;margin-left: auto; margin-right: auto",
+                h2 { style: "margin: 0; padding: 0;margin-left: auto; margin-right: auto",
                     "Project Selection"
                 }
             }
 
-            div {
-                class: "tabs right",
+            div { class: "tabs right",
 
                 button {
                     class: "icon",
                     title: "Import Project",
                     onclick: move |_event| {
                         log::info!("Import Project");
-                        toaster.info("Unimplemented", "The Upload Project functionality is not yet implemented sorry!");
+                        toaster
+                            .info(
+                                "Unimplemented",
+                                "The Upload Project functionality is not yet implemented sorry!",
+                            );
                     },
-                    icons::FileUp {},
-                },
+                    icons::FileUp {}
+                }
 
                 button {
                     class: "icon",
@@ -146,17 +147,14 @@ pub fn ProjectSelection() -> Element {
                         log::info!("New Project");
                         create_project.set(true);
                     },
-                    icons::Plus {},
-                },
-
-                div {
-                    width: "0.25rem"
+                    icons::Plus {}
                 }
-            }
-        },
 
-        div {
-            class: "project-list",
+                div { width: "0.25rem" }
+            }
+        }
+
+        div { class: "project-list",
             match projects.value().read().clone() {
                 Some(Some(ps)) => {
                     rsx!{

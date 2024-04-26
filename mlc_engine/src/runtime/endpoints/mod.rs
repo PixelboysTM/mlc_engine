@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use rocket::tokio::sync::broadcast::{Receiver, Sender};
 
-use mlc_common::endpoints::{EndPointConfig, EPConfigItem};
+use crate::runtime::endpoints::usb::UsbEndpoint;
+use mlc_common::endpoints::{EPConfigItem, EndPointConfig};
 use mlc_common::patched::{UniverseAddress, UniverseId};
 use mlc_common::universe::UNIVERSE_SIZE;
-use crate::runtime::endpoints::usb::UsbEndpoint;
 
 use self::{artnet::ArtNetEndpoint, sacn::SacnEndpoint};
 
@@ -39,14 +39,15 @@ impl CreateEndpoints for EndPointConfig {
                     }
                     EPConfigItem::Sacn { universe, speed } => SacnEndpoint {
                         universe: *universe,
-                        speed: speed.clone(),
+                        speed: *speed,
                         ..Default::default()
                     }
                     .register(rx),
                     EPConfigItem::Usb { speed, port } => UsbEndpoint {
                         port: port.clone(),
                         speed: *speed,
-                    }.register(rx),
+                    }
+                    .register(rx),
                 }
                 point.push(tx);
             }

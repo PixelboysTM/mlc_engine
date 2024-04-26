@@ -38,7 +38,6 @@ impl Easing {
     }
 }
 
-
 impl EasingType {
     /// Value of right side of curve
     fn val_right(&self, t: f32) -> f32 {
@@ -112,7 +111,7 @@ impl EasingType {
                 } else if t >= 1.0 - f32::EPSILON {
                     1.0
                 } else {
-                    -2.0_f32.powf(10.0 * t - 10.0) * ((t * 10.0 - 10.75) * c4).sin()
+                    -(2.0_f32.powf(10.0 * t - 10.0)) * ((t * 10.0 - 10.75) * c4).sin()
                 }
             }
             EasingType::Quad => t * t,

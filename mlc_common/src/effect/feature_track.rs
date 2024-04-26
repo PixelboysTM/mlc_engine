@@ -8,8 +8,6 @@ use crate::effect::track_key::{D3PercentageKey, PercentageKey, RotationKey};
 use crate::patched::feature::FixtureFeatureType;
 use crate::patched::FixtureId;
 
-use super::Key;
-
 #[serde_as]
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub struct FeatureTrack {
