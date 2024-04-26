@@ -69,7 +69,7 @@ To run MLC on your local machine the following steps will help you:
     - [X] Effect Settings
     - [ ] Effect Timeline
         - [ ] Basic
-        - [ ] Fader Tracks
+        - [X] Fader Tracks
         - [ ] Feature Tracks
 - [ ] Async Project loading with progress stream and ui
 - [X] Enttec Usb Endpoint
