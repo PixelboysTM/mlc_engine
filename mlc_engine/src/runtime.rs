@@ -495,24 +495,26 @@ impl ToFaderValue for f32 {
     fn to_fader_value_range(&self, range: &DmxRange) -> u8 {
         let v = self.min(1.0).max(0.0);
         let val = lerp(range.start, range.end, Percentage::new(v));
-        (val.raw() * ValueResolution::U8.max() as f32) as u8
+        val.get_with_resolution(&ValueResolution::U8) as u8
     }
 
     fn to_fader_value_range_fine(&self, range: &DmxRange) -> (u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val = (lerp(range.start, range.end, Percentage::new(v)).raw()
-            * ValueResolution::U16.max() as f32) as u32;
+        let val = lerp(range.start, range.end, Percentage::new(v))
+            .get_with_resolution(&ValueResolution::U16);
         ((val >> 8) as u8, val as u8)
     }
 
     fn to_fader_value_range_grain(&self, range: &DmxRange) -> (u8, u8, u8) {
         let v = self.min(1.0).max(0.0);
-        let val = (lerp(range.start, range.end, Percentage::new(v)).raw()
-            * ValueResolution::U24.max() as f32) as u32;
+        let val = lerp(range.start, range.end, Percentage::new(v))
+            .get_with_resolution(&ValueResolution::U24);
         ((val >> 16) as u8, (val >> 8) as u8, val as u8)
     }
 }
 
 fn lerp(v0: Value, v1: Value, t: Percentage) -> Value {
-    Value::new(v0.raw() + t.raw() * (v1.raw() - v0.raw()))
+    Value::from_percentage(Percentage::new(
+        v0.get_percent().raw() + t.raw() * (v1.get_percent().raw() - v0.get_percent().raw()),
+    ))
 }

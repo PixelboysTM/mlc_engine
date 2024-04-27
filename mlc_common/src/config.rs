@@ -3,9 +3,67 @@ use std::collections::HashMap;
 use get_size::GetSize;
 use schemars::JsonSchema;
 
-pub type Value = Percentage;
+pub type Value = DMXValue;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, Copy, get_size::GetSize, JsonSchema)]
+#[derive(
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    PartialEq,
+    Clone,
+    Copy,
+    get_size::GetSize,
+    JsonSchema,
+)]
+pub enum DMXValue {
+    Percentage(Percentage),
+    DMX {
+        value: u32,
+        resolution: ValueResolution,
+    },
+}
+
+impl DMXValue {
+    pub fn from_percentage(percent: Percentage) -> Self {
+        Self::Percentage(percent)
+    }
+
+    pub fn from_dmx(value: u32, resolution: ValueResolution) -> Self {
+        Self::DMX { value, resolution }
+    }
+
+    pub fn get_percent(&self) -> Percentage {
+        match self {
+            DMXValue::Percentage(p) => *p,
+            DMXValue::DMX { value, resolution } => Percentage::dmx(*value as usize, *resolution),
+        }
+    }
+
+    pub fn get_with_resolution(&self, dest_resolution: &ValueResolution) -> u32 {
+        match self {
+            DMXValue::Percentage(p) => (dest_resolution.max() as f32 * p.0) as u32,
+            DMXValue::DMX { value, resolution } => {
+                if resolution == dest_resolution {
+                    *value
+                } else {
+                    let p = Percentage::dmx(*value as usize, *resolution);
+                    (dest_resolution.max() as f32 * p.0) as u32
+                }
+            }
+        }
+    }
+}
+
+#[derive(
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    PartialEq,
+    Clone,
+    Copy,
+    get_size::GetSize,
+    JsonSchema,
+)]
 pub struct Percentage(f32);
 
 impl Percentage {
@@ -31,7 +89,7 @@ impl Percentage {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct FixtureType {
     pub name: String,
@@ -55,7 +113,7 @@ impl FixtureType {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct FixtureChannel {
     pub default_value: Value,
@@ -65,14 +123,14 @@ pub struct FixtureChannel {
 }
 
 #[derive(
-Debug,
-serde::Deserialize,
-serde::Serialize,
-PartialEq,
-Clone,
-Copy,
-get_size::GetSize,
-JsonSchema,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    PartialEq,
+    Clone,
+    Copy,
+    get_size::GetSize,
+    JsonSchema,
 )]
 pub enum ValueResolution {
     U8,
@@ -93,12 +151,12 @@ impl ValueResolution {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct Maintenance {}
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct Intensity {
     pub brightness_start: Brightness,
@@ -106,7 +164,7 @@ pub struct Intensity {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub enum Brightness {
     Percentage(Percentage),
@@ -114,19 +172,19 @@ pub enum Brightness {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct ColorIntensity {
     pub color: DmxColor,
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct Effect {}
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct Rotation {
     pub speed_start: RotationSpeed,
@@ -134,13 +192,7 @@ pub struct Rotation {
 }
 
 #[derive(
-Debug,
-PartialEq,
-Clone,
-serde::Deserialize,
-serde::Serialize,
-get_size::GetSize,
-JsonSchema,
+    Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize, get_size::GetSize, JsonSchema,
 )]
 pub enum RotationSpeed {
     SlowCw,
@@ -151,7 +203,7 @@ pub enum RotationSpeed {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct PanTilt {
     pub angle_start: PanTiltRotation,
@@ -159,7 +211,7 @@ pub struct PanTilt {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub enum PanTiltRotation {
     Percentage(Percentage),
@@ -167,7 +219,7 @@ pub enum PanTiltRotation {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct PanTiltSpeed {
     speed_start: Speed,
@@ -175,7 +227,7 @@ pub struct PanTiltSpeed {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub enum Speed {
     Fast,
@@ -183,7 +235,7 @@ pub enum Speed {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct FixtureCapabilityCommon {
     pub dmx_range: DmxRange,
@@ -193,7 +245,7 @@ pub struct FixtureCapabilityCommon {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 #[serde(tag = "type")]
 pub enum FixtureCapability {
@@ -214,14 +266,14 @@ pub enum FixtureCapability {
 }
 
 #[derive(
-Debug,
-serde::Deserialize,
-serde::Serialize,
-PartialEq,
-Clone,
-Copy,
-get_size::GetSize,
-JsonSchema,
+    Debug,
+    serde::Deserialize,
+    serde::Serialize,
+    PartialEq,
+    Clone,
+    Copy,
+    get_size::GetSize,
+    JsonSchema,
 )]
 pub struct DmxRange {
     pub start: Value,
@@ -229,7 +281,7 @@ pub struct DmxRange {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub enum DmxColor {
     #[serde(alias = "#ff0000")]
@@ -245,7 +297,7 @@ pub enum DmxColor {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct Manufacturer {
     name: String,
@@ -253,11 +305,10 @@ pub struct Manufacturer {
 }
 
 #[derive(
-Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
 pub struct FixtureMode {
     pub name: String,
     pub short_name: String,
     pub channels: Vec<String>,
 }
-
