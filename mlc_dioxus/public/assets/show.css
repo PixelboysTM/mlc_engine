@@ -14,5 +14,37 @@
     .effect-player {
         grid-column: 1 / 13;
         grid-row: 1 / 13;
+        padding: 0.5rem;
+    }
+
+    .effect-list {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+
+        .effect {
+            width: 14rem;
+            /* height: 8rem; */
+            border: 1px solid var(--color-primary);
+            border-radius: 0.25rem;
+            padding: 0.2rem;
+
+            &.playing {
+                border: 1px solid var(--color-secondary);
+            }
+
+            p {
+                padding: 0;
+                padding-bottom: 0.2rem;
+                margin: 0;
+                text-align: center;
+                border-bottom: 1px solid var(--color-accent);
+            }
+
+            button {
+                width: 100%;
+                height: auto;
+            }
+        }
     }
 }

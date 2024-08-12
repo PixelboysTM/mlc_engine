@@ -42,6 +42,7 @@ pub enum EffectPlayerCmd {
     EffectChanged { id: EffectId },
     EffectsChanged,
     StopPlayer,
+    GetPlayingEffects,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -282,6 +283,11 @@ impl EffectPlayer {
                 self.playing_effects.clear();
             }
             EffectPlayerCmd::StopPlayer => *should_exit = true,
+            EffectPlayerCmd::GetPlayingEffects => {
+                let _ = self.update_sender.send(EffectPlayerUpdate::PlayingEffects(
+                    self.playing_effects.keys().cloned().collect::<Vec<_>>(),
+                ));
+            }
         }
     }
 

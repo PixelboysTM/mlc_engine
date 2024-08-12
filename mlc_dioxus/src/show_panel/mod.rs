@@ -6,7 +6,10 @@ use mlc_common::effect::{
     EffectId,
 };
 
-use crate::utils::{self, Loading, ToWebSocketMessage};
+use crate::{
+    icons::{Pause, Play},
+    utils::{self, Loading, ToWebSocketMessage},
+};
 
 #[component]
 pub fn ShowPanel() -> Element {
@@ -80,22 +83,39 @@ fn EffectPlayer() -> Element {
     );
 
     rsx! {
-        match all_effects() {
-            Some(effects) => {
-                rsx!{
-                    for e in effects {
-                        div {
-                            class: "effect",
-                            p {
-                                {e.0}
+        div { class: "effect-list",
+            match all_effects() {
+                Some(effects) => {
+                    rsx!{
+                        for e in effects {
+                            div {
+                                class: "effect",
+                                class: if playing_effects.read().contains(&e.1) {"playing"} else {""},
+                                p {
+                                    {e.0}
+                                },
+                                button {
+                                    onclick: move |_| {
+                                        effect_player.send(if playing_effects.read().contains(&e.1) {
+                                            EffectPlayerRequest::Stop {effect: e.1}
+                                        } else {
+                                            EffectPlayerRequest::Play{effect: e.1}
+                                        });
+                                    },
+                                    if playing_effects.read().contains(&e.1) {
+                                        Pause{}
+                                    } else {
+                                        Play{}
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            },
+                },
             None => rsx!{
                 Loading {}
             },
+            }
         }
     }
 }

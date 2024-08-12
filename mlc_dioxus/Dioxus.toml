@@ -17,6 +17,7 @@ style = [
     "./assets/program.css",
     "./assets/show.css",
     "./assets/project_selection.css",
+    "./assets/viewer.css",
 ]
 script = ["./assets/viewer_starter.js"]
 

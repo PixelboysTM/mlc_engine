@@ -28,6 +28,10 @@
     --number-border-radius: 0.2rem;
 }
 
+iframe {
+    border: 0;
+}
+
 a {
     font-weight: 500;
     color: var(--color-text);

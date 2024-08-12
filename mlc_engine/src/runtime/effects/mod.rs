@@ -14,10 +14,8 @@ use rocket_ws::stream::DuplexStream;
 use rocket_ws::WebSocket;
 
 use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
-use mlc_common::effect::{Effect, EffectId};
+use mlc_common::effect::Effect;
 use mlc_common::Info;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::data_serving::ProjectGuard;
 use crate::project::ProjectHandle;
@@ -119,6 +117,8 @@ async fn get_effect_handler<'a>(
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
+
+
             loop {
                 select! {
                     Some(msg) = stream.next() => {
@@ -171,6 +171,7 @@ async fn get_effect_player(
     let mut effect_player = tx.inner().clone();
     ws.channel(move |mut stream| {
         Box::pin(async move {
+            let _ = effect_player.cmd_sender.send(EffectPlayerCmd::GetPlayingEffects).await;
             loop {
                 select! {
                     Ok(msg) = effect_player.update_receiver.recv() => {
