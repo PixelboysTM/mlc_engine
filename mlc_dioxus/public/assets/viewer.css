@@ -1,0 +1,8 @@
+#viewer-frame {
+    &:focus-visible {
+        outline: none;
+    }
+
+    width: calc(100vw - 5px) !important;
+    height: calc(100vh - 5px) !important;
+}

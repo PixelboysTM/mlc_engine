@@ -18,5 +18,6 @@ style = [
     "./assets/show.css",
     "./assets/project_selection.css",
 ]
+script = ["./assets/viewer_starter.js"]
 
 [web.resource.dev]

@@ -200,7 +200,13 @@ fn provide_info() {
 
 #[component]
 fn Viewer() -> Element {
+    // rsx! {
+    //     iframe { src: "/iviewer", style: "width: 100vw; height: 100vh" }
+    // }
+    // eval("start_viewer();");
+
     rsx! {
-        iframe { src: "/iviewer", style: "width: 100vw; height: 100vh" }
+        script { r#type: "module", src: "./assets/viewer_starter.js" }
+        canvas { id: "viewer-frame" }
     }
 }
