@@ -6,6 +6,8 @@ use schemars::JsonSchema;
 
 use crate::config::DmxRange;
 use crate::fixture::FaderAddress;
+use crate::utils::bounds::{NegOne, One, Zero};
+use crate::utils::BoundedValue;
 
 #[derive(
     Debug, serde::Serialize, serde::Deserialize, Clone, get_size::GetSize, JsonSchema, PartialEq,
@@ -165,17 +167,32 @@ pub enum FeatureTile {
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq)]
 pub enum FeatureSetRequest {
     // 0.0 -> 1.0
-    Dimmer { value: f32 },
+    Dimmer {
+        value: BoundedValue<f64, Zero, One>,
+    },
     // (0.0, 0.0, 0.0) -> (1.0, 1.0, 1.0)
-    Rgb { red: f32, green: f32, blue: f32 },
+    Rgb {
+        red: BoundedValue<f64, Zero, One>,
+        green: BoundedValue<f64, Zero, One>,
+        blue: BoundedValue<f64, Zero, One>,
+    },
     // 0.0 -> 1.0
-    White { value: f32 },
+    White {
+        value: BoundedValue<f64, Zero, One>,
+    },
     // 0.0 -> 1.0
-    Amber { value: f32 },
+    Amber {
+        value: BoundedValue<f64, Zero, One>,
+    },
     // -1.0 -> 1.0  TODO: Needs an update in naming etc. is not clear what is meant (is it speed, value, ...)
-    Rotation { value: f32 },
+    Rotation {
+        value: BoundedValue<f64, NegOne, One>,
+    },
     // (0.0, 0.0) -> (1.0, 1.0)
-    PanTilt { pan: f32, tilt: f32 },
+    PanTilt {
+        pan: BoundedValue<f64, Zero, One>,
+        tilt: BoundedValue<f64, Zero, One>,
+    },
     GetAvailableFeatures,
 }
 

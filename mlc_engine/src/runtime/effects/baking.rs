@@ -177,10 +177,10 @@ async fn bake_feature_track_single_percent(
     let vals = get_valid_keys_sorted(t.values.iter(), max_time);
 
     let time_steps = build_time_steps(resolution, max_time, &vals, 0.0, 0.0, |in_v, out_v, val| {
-        in_v + (out_v - in_v) * val
+        in_v + (out_v - in_v) * val as f32
     });
 
-    convert_to_cues::<PercentageKey, _, 1>(&time_steps, |v| [to_raw(feature_tile, v)])
+    convert_to_cues::<PercentageKey, _, 1>(&time_steps, |v| [to_raw(feature_tile, &(*v as f64))])
 }
 
 async fn bake_feature_track_single_rotation(
@@ -203,14 +203,14 @@ async fn bake_feature_track_single_rotation(
     let vals = get_valid_keys_sorted(t.values.iter(), max_time);
 
     let time_steps = build_time_steps(resolution, max_time, &vals, 0.0, 0.0, |in_v, out_v, val| {
-        in_v + (out_v - in_v) * val
+        in_v + (out_v - in_v) * val as f32
     });
 
     convert_to_cues::<RotationKey, _, 1>(&time_steps, |v| {
         [if v >= &0.0 {
-            to_raw(feature_tile_cw, &(*v / 1.0))
+            to_raw(feature_tile_cw, &(*v / 1.0).into())
         } else {
-            to_raw(feature_tile_ccw, &(v.abs() / 1.0))
+            to_raw(feature_tile_ccw, &(v.abs() / 1.0).into())
         }]
     })
 }
@@ -241,11 +241,16 @@ async fn bake_feature_track_d2_rotation(
         (0.0, 0.0),
         (0.0, 0.0),
         |(in_x, in_y), (out_x, out_y), val| {
-            (in_x + (out_x - in_x) * val, in_y + (out_y - in_y) * val)
+            (
+                in_x + (out_x - in_x) * val as f32,
+                in_y + (out_y - in_y) * val as f32,
+            )
         },
     );
 
-    convert_to_cues::<D2RotationKey, _, 2>(&time_steps, |v| [to_raw(pan, &v.0), to_raw(tilt, &v.1)])
+    convert_to_cues::<D2RotationKey, _, 2>(&time_steps, |v| {
+        [to_raw(pan, &v.0.into()), to_raw(tilt, &v.1.into())]
+    })
 }
 
 async fn bake_feature_track_three_percent(
@@ -275,15 +280,19 @@ async fn bake_feature_track_three_percent(
         (0.0, 0.0, 0.0),
         |(in_x, in_y, in_z), (out_x, out_y, out_z), val| {
             (
-                in_x + (out_x - in_x) * val,
-                in_y + (out_y - in_y) * val,
-                in_z + (out_z - in_z) * val,
+                in_x + (out_x - in_x) * val as f32,
+                in_y + (out_y - in_y) * val as f32,
+                in_z + (out_z - in_z) * val as f32,
             )
         },
     );
 
     convert_to_cues::<D3PercentageKey, _, 3>(&time_steps, |v| {
-        [to_raw(d1, &v.0), to_raw(d2, &v.1), to_raw(d3, &v.2)]
+        [
+            to_raw(d1, &v.0.into()),
+            to_raw(d2, &v.1.into()),
+            to_raw(d3, &v.2.into()),
+        ]
     })
 }
 
@@ -352,11 +361,11 @@ fn split_out_key<K: Key>(
         ))
 }
 
-fn get_t(in_t: Duration, out_t: Duration, time: Duration) -> f32 {
+fn get_t(in_t: Duration, out_t: Duration, time: Duration) -> f64 {
     let range = (out_t - in_t).num_milliseconds();
     let time_point = (time - in_t).num_milliseconds();
 
-    time_point as f32 / range as f32
+    time_point as f64 / range as f64
 }
 
 fn convert_to_cues<K, F, const N: usize>(
@@ -409,7 +418,7 @@ fn build_time_steps<K: Key, F>(
     value_producer_fn: F,
 ) -> Vec<(Duration, K::Value)>
 where
-    F: Fn(K::Value, K::Value, f32) -> K::Value,
+    F: Fn(K::Value, K::Value, f64) -> K::Value,
 {
     let mut time_steps = Vec::new();
 

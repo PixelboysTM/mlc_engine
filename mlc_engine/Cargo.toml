@@ -30,6 +30,11 @@ sacn = "0.4.4"
 artnet_protocol = "0.4.2"
 open_dmx = "1.1.1"
 # Doku
-rocket_okapi = { path = "../../okapi/rocket-okapi", features = ["rocket_ws", "swagger", "uuid", "rapidoc"] } #TODO: Only until pull request is merged and release is made
+rocket_okapi = { path = "../../okapi/rocket-okapi", features = [
+    "rocket_ws",
+    "swagger",
+    "uuid",
+    "rapidoc",
+] } #TODO: Only until pull request is merged and release is made
 schemars = { version = "0.8.16", features = ["derive", "uuid1", "chrono"] }
 get-size = { version = "0.1.4", features = ["derive"] }

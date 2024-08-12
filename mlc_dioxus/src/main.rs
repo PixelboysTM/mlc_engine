@@ -11,16 +11,16 @@ use mlc_common::Info;
 use crate::configure_panel::ConfigurePanel;
 use crate::head_bar::{Headbar, Pane};
 use crate::program_panel::ProgramPanel;
-use crate::utils::context_menu::ContextMenu;
-use crate::utils::Loading;
-use crate::utils::popover::Popover;
+use crate::show_panel::ShowPanel;
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::utils::Loading;
 
 pub(crate) mod configure_panel;
-pub(crate) mod program_panel;
 mod head_bar;
 pub mod icons;
+pub(crate) mod program_panel;
 mod project_selection;
+pub(crate) mod show_panel;
 mod utils;
 
 fn main() {
@@ -31,7 +31,7 @@ fn main() {
 fn root() -> Element {
     utils::toaster::init_toaster();
     rsx! {
-        utils::toaster::ToasterElement {},
+        utils::toaster::ToasterElement {}
         Router::<Route> {}
     }
 }
@@ -43,14 +43,14 @@ enum Route {
     #[route("/projects")]
     Projects {},
     #[route("/viewer")]
-    Viewer {}
+    Viewer {},
 }
 
 #[allow(non_snake_case)]
 fn Projects() -> Element {
     provide_info();
     rsx! {
-        project_selection::ProjectSelection{}
+        project_selection::ProjectSelection {}
     }
 }
 
@@ -66,25 +66,16 @@ fn Index() -> Element {
     });
 
     rsx! {
-        DisconnectHelper {},
-        Headbar{
-            pane,
-        },
-        IndexContent {
-            pane,
-        }
-
+        DisconnectHelper {}
+        Headbar { pane }
+        IndexContent { pane }
     }
 }
 
 #[component]
 fn IndexContent(pane: Signal<Pane>) -> Element {
-    let mut c_menu = use_signal(|| None);
-    let mut popover = use_signal(|| false);
     rsx! {
-        div {
-            width: "100vw",
-            height: "calc(100vh - 3rem)",
+        div { width: "100vw", height: "calc(100vh - 3rem)",
             match pane() {
                 Pane::Configure => {
                     rsx! {
@@ -98,44 +89,7 @@ fn IndexContent(pane: Signal<Pane>) -> Element {
                 }
                 Pane::Show => {
                     rsx!{
-                        "Show",
-                        button {
-                            onclick: move |e| {
-                                let p = e.data().page_coordinates();
-                                c_menu.set(Some(ContextMenu::new(p.x, p.y).add("Item 1 mit Action", |_| {log::info!("Item 1 Clicked"); true}).add("Item 2", |_| {log::info!("Item 2 Clicked"); true})));
-                            },
-                            "Context",
-                            if let Some(m) = c_menu() {
-                                ContextMenu {
-                                    menu: m,
-                                    onclose: move |_| {
-                                        log::info!("Context Menu closing");
-                                        c_menu.set(None);
-                                    }
-                                }
-                            }
-                        },
-                        button {
-                            onclick: move |_| {
-                                popover.set(true);
-                            },
-                            "Popover",
-                            if popover() {
-                                Popover {
-                                    class: "test-popover",
-                                    onclose: move |_| {
-                                        popover.set(false);
-                                    },
-                                    "Popover",
-                                    button {
-                                        onclick: move |_| {
-                                            log::info!("CLike die click")
-                                        },
-                                        "Blip"
-                                    }
-                                }
-                            }
-                        }
+                        ShowPanel {}
                     }
                 }
             }
@@ -171,14 +125,10 @@ fn DisconnectHelper() -> Element {
 
     if active() {
         rsx! {
-            div {
-                class: "disconnect-helper overlay",
-                div {
-                    class: "overlay-content",
-                    h3 {
-                        "Backend shutdown please restart and reload!"
-                    },
-                    Loading {},
+            div { class: "disconnect-helper overlay",
+                div { class: "overlay-content",
+                    h3 { "Backend shutdown please restart and reload!" }
+                    Loading {}
                     button {
                         onclick: move |_| {
                             utils::reload_window().expect("");
@@ -189,9 +139,7 @@ fn DisconnectHelper() -> Element {
             }
         }
     } else {
-        rsx! {
-            ""
-        }
+        rsx! { "" }
     }
 }
 
@@ -253,9 +201,6 @@ fn provide_info() {
 #[component]
 fn Viewer() -> Element {
     rsx! {
-        iframe {
-            src: "/iviewer",
-            style: "width: 100vw; height: 100vh",
-        }
+        iframe { src: "/iviewer", style: "width: 100vw; height: 100vh" }
     }
 }
