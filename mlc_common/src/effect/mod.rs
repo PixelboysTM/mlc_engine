@@ -8,6 +8,7 @@ pub use track_key::*;
 use crate::fixture::FaderAddress;
 
 mod feature_track;
+pub mod player;
 pub mod rest;
 mod track_key;
 

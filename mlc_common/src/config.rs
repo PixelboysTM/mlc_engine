@@ -3,7 +3,12 @@ use std::collections::HashMap;
 use get_size::GetSize;
 use schemars::JsonSchema;
 
-pub type Value = DMXValue;
+use crate::utils::{
+    bounds::{One, Zero},
+    BoundedValue,
+};
+
+pub type Value = Percentage;
 
 #[derive(
     Debug,
@@ -15,76 +20,30 @@ pub type Value = DMXValue;
     get_size::GetSize,
     JsonSchema,
 )]
-pub enum DMXValue {
-    Percentage(Percentage),
-    DMX {
-        value: u32,
-        resolution: ValueResolution,
-    },
-}
-
-impl DMXValue {
-    pub fn from_percentage(percent: Percentage) -> Self {
-        Self::Percentage(percent)
-    }
-
-    pub fn from_dmx(value: u32, resolution: ValueResolution) -> Self {
-        Self::DMX { value, resolution }
-    }
-
-    pub fn get_percent(&self) -> Percentage {
-        match self {
-            DMXValue::Percentage(p) => *p,
-            DMXValue::DMX { value, resolution } => Percentage::dmx(*value as usize, *resolution),
-        }
-    }
-
-    pub fn get_with_resolution(&self, dest_resolution: &ValueResolution) -> u32 {
-        match self {
-            DMXValue::Percentage(p) => (dest_resolution.max() as f32 * p.0) as u32,
-            DMXValue::DMX { value, resolution } => {
-                if resolution == dest_resolution {
-                    *value
-                } else {
-                    let p = Percentage::dmx(*value as usize, *resolution);
-                    (dest_resolution.max() as f32 * p.0) as u32
-                }
-            }
-        }
-    }
-}
-
-#[derive(
-    Debug,
-    serde::Deserialize,
-    serde::Serialize,
-    PartialEq,
-    Clone,
-    Copy,
-    get_size::GetSize,
-    JsonSchema,
-)]
-pub struct Percentage(f32);
+pub struct Percentage(BoundedValue<f64, Zero, One>);
 
 impl Percentage {
-    pub fn new(p: f32) -> Percentage {
-        if p > 1.0 {
-            println!("Capping percentage to 100%");
-            Percentage(1.0)
-        } else if p < 0.0 {
-            println!("Capping percentage to 0%");
-            Percentage(0.0)
-        } else {
-            Percentage(p)
-        }
+    pub fn new(p: f64) -> Percentage {
+        Percentage(BoundedValue::create(p))
     }
 
-    pub fn dmx(dmx: usize, resolution: ValueResolution) -> Percentage {
-        Percentage::new(dmx as f32 / (resolution.max() as f32))
+    pub fn from_dmx(dmx: usize, resolution: ValueResolution) -> Percentage {
+        Percentage::new(dmx as f64 / (resolution.max() as f64))
     }
 
-    pub fn raw(&self) -> f32 {
-        self.0
+    pub fn to_dmx(&self, resolution: ValueResolution) -> u32 {
+        (resolution.max() as f64 * *self.0) as u32
+    }
+
+    pub fn raw(&self) -> f64 {
+        *self.0
+    }
+
+    pub fn zero() -> Self {
+        Self::new(0.0)
+    }
+    pub fn full() -> Self {
+        Self::new(1.0)
     }
 }
 
@@ -276,8 +235,17 @@ pub enum FixtureCapability {
     JsonSchema,
 )]
 pub struct DmxRange {
-    pub start: Value,
-    pub end: Value,
+    pub start: Percentage,
+    pub end: Percentage,
+}
+
+impl DmxRange {
+    pub fn full() -> Self {
+        DmxRange {
+            start: Percentage::zero(),
+            end: Percentage::full(),
+        }
+    }
 }
 
 #[derive(

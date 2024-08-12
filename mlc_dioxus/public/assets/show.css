@@ -1,0 +1,18 @@
+.show-panel {
+    width: calc(100% - 1rem);
+    height: calc(100% - 1rem);
+    display: grid;
+    padding: 0.5rem;
+
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    gap: 0.5rem;
+
+    min-width: 0;
+    min-height: 0;
+
+    .effect-player {
+        grid-column: 1 / 13;
+        grid-row: 1 / 13;
+    }
+}

@@ -1,6 +1,6 @@
 use crate::fixture::fixture_parser::units::{Brightness, RotationAngle, Unit};
 use mlc_common::config::{
-    ColorIntensity, DMXValue, DmxRange, FixtureCapability, FixtureCapabilityCommon, FixtureChannel,
+    ColorIntensity, DmxRange, FixtureCapability, FixtureCapabilityCommon, FixtureChannel,
     FixtureMode, FixtureType, Intensity, Percentage, ValueResolution,
 };
 use serde_json::{Map, Value};
@@ -143,8 +143,8 @@ fn parse_channel(channel_raw: &Value) -> Option<FixtureChannel> {
     let default_value = raw
         .get("defaultValue")
         .and_then(|v| v.as_u64())
-        .map(|v| DMXValue::from_dmx(v as u32, value_resolution))
-        .unwrap_or(DMXValue::from_percentage(Percentage::new(0.0)));
+        .map(|v| Percentage::from_dmx(v as usize, value_resolution))
+        .unwrap_or(Percentage::new(0.0));
 
     let capabilities = parse_capabilities(raw, value_resolution)?;
 
@@ -164,10 +164,7 @@ fn parse_capabilities(
         let detail = parse_detail_capability(raw_cap)?;
 
         return Some(vec![FixtureCapabilityCommon {
-            dmx_range: DmxRange {
-                start: DMXValue::from_dmx(0, value_resolution),
-                end: DMXValue::from_dmx(value_resolution.max(), value_resolution),
-            },
+            dmx_range: DmxRange::full(),
             detail,
         }]);
     }
@@ -205,8 +202,8 @@ fn parse_dmx_range(
     let end = range[1];
 
     Some(DmxRange {
-        start: DMXValue::from_dmx(start as u32, value_resolution),
-        end: DMXValue::from_dmx(end as u32, value_resolution),
+        start: Percentage::from_dmx(start as usize, value_resolution),
+        end: Percentage::from_dmx(end as usize, value_resolution),
     })
 }
 
@@ -403,8 +400,8 @@ mod units {
                     PanTiltRotation::Angle(end as u32),
                 ),
                 "%" => (
-                    PanTiltRotation::Percentage(Percentage::new(start)),
-                    PanTiltRotation::Percentage(Percentage::new(end)),
+                    PanTiltRotation::Percentage(Percentage::new(start as f64)),
+                    PanTiltRotation::Percentage(Percentage::new(end as f64)),
                 ),
                 _ => unreachable!("Why here units does not match"),
             };
@@ -439,8 +436,8 @@ mod units {
             let (s, e) = match unit {
                 "lm" => (Br::Lumen(start), Br::Lumen(end)),
                 "%" => (
-                    Br::Percentage(Percentage::new(start)),
-                    Br::Percentage(Percentage::new(end)),
+                    Br::Percentage(Percentage::new(start as f64)),
+                    Br::Percentage(Percentage::new(end as f64)),
                 ),
                 _ => unreachable!("Why here units does not match"),
             };

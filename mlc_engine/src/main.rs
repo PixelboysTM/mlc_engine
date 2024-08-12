@@ -68,7 +68,7 @@ impl Module for MainModule {
             ..Default::default()
         };
 
-        let (routes, s) = openapi_get_routes_spec![heart_beat, create_empty];
+        let (routes, s) = openapi_get_routes_spec![heart_beat];
         merge_specs(spec, &"/util".to_string(), &s).expect("Merging OpenApi spec failed");
 
         let p = pollster::block_on(async {
@@ -115,15 +115,4 @@ impl Module for MainModule {
 #[catch(404)]
 fn catch_404() -> &'static str {
     "Resource not available"
-}
-
-/// # Debug Create Project
-/// Creates a default project and saves it to disk with the specified name.
-///
-/// Be careful we don't perform any checks or validations!
-#[openapi(tag = "Util")]
-#[get("/dCreate/<name>")]
-async fn create_empty(name: &str, info: &State<Sender<Info>>) {
-    let project = ProjectHandle::default();
-    project.save_as(name, name, info).await.unwrap();
 }

@@ -4,17 +4,14 @@ use gloo_net::websocket::Message;
 
 use mlc_common::patched::feature::{FeatureSetRequest, FixtureFeatureType};
 use mlc_common::patched::PatchedFixture;
+use mlc_common::utils::BoundedValue;
 
-use crate::{icons, utils};
 use crate::utils::Overlay;
+use crate::{icons, utils};
 
 #[component]
 pub fn FixtureTester(info: PatchedFixture, onclose: EventHandler) -> Element {
-    let features = info
-        .features
-        .iter()
-        .map(|f| f.name())
-        .collect::<Vec<_>>();
+    let features = info.features.iter().map(|f| f.name()).collect::<Vec<_>>();
     let updater = use_coroutine(|mut rx: UnboundedReceiver<FeatureSetRequest>| {
         let fix_id = info.id;
         async move {
@@ -36,33 +33,25 @@ pub fn FixtureTester(info: PatchedFixture, onclose: EventHandler) -> Element {
         }
     });
 
-
     rsx! {
-        Overlay{
+        Overlay {
             title: "Fixture Tester".to_owned(),
             class: "fixture-tester".to_owned(),
             onclose: move |_| {
                 onclose.call(());
             },
-            icon: rsx!(icons::Lamp {}),
+            icon: rsx! {
+                icons::Lamp {}
+            },
 
-            p {
-                class: "info",
-                "Name: ",
-                span {
-                    class: "name",
-                    {info.name}
-                },
-                " Id: ",
-                span {
-                    class: "id",
-                    {info.id.to_string()}
-                }
-
+            p { class: "info",
+                "Name: "
+                span { class: "name", {info.name} }
+                " Id: "
+                span { class: "id", {info.id.to_string()} }
             }
 
-            div {
-                class: "features",
+            div { class: "features",
                 for feature in features {
                     match feature {
                         FixtureFeatureType::Dimmer => {rsx!{DimmerTester {
@@ -91,17 +80,15 @@ pub fn FixtureTester(info: PatchedFixture, onclose: EventHandler) -> Element {
 #[component]
 fn DimmerTester(updater: Coroutine<FeatureSetRequest>) -> Element {
     rsx! {
-        div {
-            class: "feature-tester dimmer",
-            h3 {
-                "Dimmer"
-            }
-            utils::Slider{
+        div { class: "feature-tester dimmer",
+            h3 { "Dimmer" }
+            utils::Slider {
                 initial: 0.0,
                 onchange: move |v| {
-                    updater.send(FeatureSetRequest::Dimmer {
-                        value: v,
-                    });
+                    updater
+                        .send(FeatureSetRequest::Dimmer {
+                            value: BoundedValue::create(v as f64),
+                        });
                 }
             }
         }
@@ -111,17 +98,15 @@ fn DimmerTester(updater: Coroutine<FeatureSetRequest>) -> Element {
 #[component]
 fn WhiteTester(updater: Coroutine<FeatureSetRequest>) -> Element {
     rsx! {
-        div {
-            class: "feature-tester dimmer",
-            h3 {
-                "White"
-            }
-            utils::Slider{
+        div { class: "feature-tester dimmer",
+            h3 { "White" }
+            utils::Slider {
                 initial: 0.0,
                 onchange: move |v| {
-                    updater.send(FeatureSetRequest::White {
-                        value: v,
-                    });
+                    updater
+                        .send(FeatureSetRequest::White {
+                            value: BoundedValue::create(v as f64),
+                        });
                 }
             }
         }
@@ -131,17 +116,15 @@ fn WhiteTester(updater: Coroutine<FeatureSetRequest>) -> Element {
 #[component]
 fn AmberTester(updater: Coroutine<FeatureSetRequest>) -> Element {
     rsx! {
-        div {
-            class: "feature-tester dimmer",
-            h3 {
-                "Amber"
-            }
-            utils::Slider{
+        div { class: "feature-tester dimmer",
+            h3 { "Amber" }
+            utils::Slider {
                 initial: 0.0,
                 onchange: move |v| {
-                    updater.send(FeatureSetRequest::White {
-                        value: v,
-                    });
+                    updater
+                        .send(FeatureSetRequest::White {
+                            value: BoundedValue::create(v as f64),
+                        });
                 }
             }
         }
@@ -151,44 +134,40 @@ fn AmberTester(updater: Coroutine<FeatureSetRequest>) -> Element {
 #[component]
 fn RgbTester(updater: Coroutine<FeatureSetRequest>) -> Element {
     rsx! {
-        div {
-           class: "feature-tester rgb",
-            h3 {
-                "Rgb"
-            },
+        div { class: "feature-tester rgb",
+            h3 { "Rgb" }
 
-            utils::RgbWidget{
-                initial: (0.42,0.420,0.69),
-                onchange: move |(r,g,b)| {
-                    updater.send(FeatureSetRequest::Rgb {
-                        red: r,
-                        green: g,
-                        blue: b,
-                    });
+            utils::RgbWidget {
+                initial: (0.42, 0.420, 0.69),
+                onchange: move |(r, g, b)| {
+                    updater
+                        .send(FeatureSetRequest::Rgb {
+                            red: BoundedValue::create(r as f64),
+                            green: BoundedValue::create(g as f64),
+                            blue: BoundedValue::create(b as f64),
+                        });
                 }
             }
-        },
+        }
     }
 }
 
 #[component]
 fn PanTiltTester(updater: Coroutine<FeatureSetRequest>) -> Element {
     rsx! {
-        div {
-           class: "feature-tester pan-tilt",
-            h3 {
-                "Pan/Tilt"
-            },
+        div { class: "feature-tester pan-tilt",
+            h3 { "Pan/Tilt" }
 
             utils::PanTiltWidget {
-                initial: (0.5,0.5),
-                onchange: move |(p,t)| {
-                    updater.send(FeatureSetRequest::PanTilt {
-                        pan: p,
-                        tilt: t,
-                    });
+                initial: (0.5, 0.5),
+                onchange: move |(p, t)| {
+                    updater
+                        .send(FeatureSetRequest::PanTilt {
+                            pan: BoundedValue::create(p as f64),
+                            tilt: BoundedValue::create(t as f64),
+                        });
                 }
             }
-        },
+        }
     }
 }

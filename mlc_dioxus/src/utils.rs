@@ -84,7 +84,9 @@ pub fn Loading() -> Element {
 
     if l() {
         rsx! {
-            div { class: "loading-spinner", div { class: "inner" } }
+            div { class: "loading-spinner",
+                div { class: "inner" }
+            }
         }
     } else {
         rsx!("")
@@ -629,7 +631,9 @@ pub fn PanTiltWidget(initial: (f32, f32), onchange: EventHandler<(f32, f32)>) ->
                 }
             }
 
-            div { class: "cross-btn", icons::Plus { width: "100%", height: "100%" } }
+            div { class: "cross-btn",
+                icons::Plus { width: "100%", height: "100%" }
+            }
         }
     }
 }

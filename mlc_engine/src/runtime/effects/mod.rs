@@ -1,4 +1,5 @@
 use chrono::Duration;
+use mlc_common::effect::player::{EffectPlayerMsg, EffectPlayerRequest};
 use pollster::FutureExt;
 use rocket::fairing::AdHoc;
 use rocket::futures::{SinkExt, StreamExt};
@@ -154,17 +155,6 @@ async fn get_effect_handler<'a>(
             Ok(())
         })
     })
-}
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub enum EffectPlayerMsg {
-    PlayingEffects { effects: Vec<EffectId> },
-}
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub enum EffectPlayerRequest {
-    Play { effect: EffectId },
-    Stop { effect: EffectId },
 }
 
 /// # Get Effect Player
