@@ -35,3 +35,6 @@ viewer:
 install:
     cargo install --upgrade wasm-bindgen-cli
     cargo install --upgrade dioxus-cli
+
+lines:
+    tokei ./
