@@ -109,10 +109,10 @@ fn DisconnectHelper() -> Element {
 
     let _guard = use_future(move || async move {
         let mut failed = 0;
-        while failed <= 3 && !active() {
+        while failed <= 6 && !active() {
             let r = utils::fetch::<String>("/util/heartbeat").await;
             if r.is_ok() {
-                async_std::task::sleep(Duration::from_secs(5)).await;
+                async_std::task::sleep(Duration::from_secs(10)).await;
                 failed = 0;
             } else {
                 failed += 1;
@@ -200,10 +200,8 @@ fn provide_info() {
 
 #[component]
 fn Viewer() -> Element {
-    // rsx! {
-    //     iframe { src: "/iviewer", style: "width: 100vw; height: 100vh" }
-    // }
-    // eval("start_viewer();");
+    let mut toaster = use_context::<Signal<Toaster>>();
+    toaster.warning("Caution", "Viewer is still in development.");
 
     rsx! {
         script { r#type: "module", src: "./assets/viewer_starter.js" }

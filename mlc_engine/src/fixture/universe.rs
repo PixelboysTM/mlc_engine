@@ -36,9 +36,9 @@ pub fn patch(
     universe: &mut FixtureUniverse,
     fixture: &FixtureType,
     mode_index: usize,
-) -> Result<UniverseAddress, &'static str> {
+) -> Result<UniverseAddress, String> {
     if !can_patch(universe, fixture, mode_index) {
-        return Err("Can't fit the fixture in the Universe.");
+        return Err("Can't fit the fixture in the Universe.".to_string());
     }
 
     let mode = &fixture.get_modes()[mode_index];
@@ -85,9 +85,9 @@ fn create_patched_fixture(
     mode_index: usize,
     start_index: usize,
     mode: &FixtureMode,
-) -> Result<PatchedFixture, &'static str> {
+) -> Result<PatchedFixture, String> {
     let mut resolution: ValueResolution = ValueResolution::U8;
-    let mut cs = (0..len).map(|i| -> Result<_, &'static str> {
+    let mut cs = (0..len).map(|i| -> Result<_, String> {
         let c = fixture.get_available_channels().find(
             &fixture.get_modes()[mode_index].channels[i],
             &mut resolution,
@@ -120,13 +120,12 @@ fn create_patched_fixture(
     })
 }
 
-
 trait FindChannelConfig {
-    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, &'static str>;
+    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, String>;
 }
 
 impl FindChannelConfig for HashMap<String, FixtureChannel> {
-    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, &'static str> {
+    fn find(&self, name: &str, fine: &mut ValueResolution) -> Result<FixtureChannel, String> {
         if let Some(d) = self.get(name) {
             *fine = ValueResolution::U8;
             Ok(d.clone())
@@ -143,12 +142,12 @@ impl FindChannelConfig for HashMap<String, FixtureChannel> {
                 0 => ValueResolution::U16,
                 1 => ValueResolution::U24,
                 _ => {
-                    return Err("More than two fine channels! Unknown resolution");
+                    return Err("More than two fine channels! Unknown resolution".to_string());
                 }
             };
             Ok(d.clone())
         } else {
-            Err("Unknown Channel Name")
+            Err(format!("Unknown Channel Name: {name}"))
         }
     }
 }

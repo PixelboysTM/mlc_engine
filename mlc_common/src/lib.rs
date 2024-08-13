@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local};
 use schemars::JsonSchema;
+use serde::Serialize;
 pub use uuid;
 
 use crate::config::FixtureMode;
@@ -107,8 +108,16 @@ pub fn to_save_file_name(file: &str) -> String {
     new_name
 }
 
-#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize, JsonSchema, )]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize, JsonSchema)]
 pub struct CreateProjectData {
     pub name: String,
     pub binary: bool,
+}
+
+#[derive(serde::Deserialize, Serialize, JsonSchema)]
+pub enum PatchResult {
+    IdInvalid(String),
+    ModeInvalid(String),
+    Failed(String),
+    Success(String),
 }

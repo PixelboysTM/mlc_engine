@@ -208,7 +208,7 @@ impl<'de, T: PartialOrd + Debug + Deserialize<'de>, MIN: Bounds<T>, MAX: Bounds<
     }
 }
 
-impl<'de, T: PartialOrd + Debug + Serialize, MIN: Bounds<T>, MAX: Bounds<T>> Serialize
+impl<T: PartialOrd + Debug + Serialize, MIN: Bounds<T>, MAX: Bounds<T>> Serialize
     for BoundedValue<T, MIN, MAX>
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

@@ -10,20 +10,20 @@ use rocket::{
     response::status::{BadRequest, Custom},
     serde::json::Json,
     tokio::{select, sync::broadcast::Sender},
-    Data, Request, Responder, Route, State,
+    Data, Request, Route, State,
 };
-use rocket_okapi::gen::OpenApiGenerator;
 use rocket_okapi::okapi::merge::merge_specs;
-use rocket_okapi::okapi::openapi3::{OpenApi, Responses};
-use rocket_okapi::response::OpenApiResponderInner;
-use rocket_okapi::util::add_default_response_schema;
+use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_okapi::{openapi, openapi_get_routes_spec, JsonSchema, OpenApiFromRequest};
 use rocket_ws::WebSocket;
 use uuid::Uuid;
 
-use mlc_common::patched::feature::{FixtureFeatureType, HasFixtureFeature};
 use mlc_common::patched::UniverseId;
 use mlc_common::universe::FixtureUniverse;
+use mlc_common::{
+    patched::feature::{FixtureFeatureType, HasFixtureFeature},
+    PatchResult,
+};
 use mlc_common::{FixtureInfo, Info};
 
 use crate::fixture::UniverseIdParam;
@@ -211,29 +211,6 @@ async fn save_project(
         .map_err(|e| Custom(rocket::http::Status::InternalServerError, e))
 }
 
-#[derive(Responder, JsonSchema)]
-enum PatchResult {
-    #[response(status = 400)]
-    IdInvalid(String),
-
-    #[response(status = 400)]
-    ModeInvalid(String),
-
-    #[response(status = 409)]
-    Failed(String),
-
-    #[response(status = 200)]
-    Success(String),
-}
-
-impl OpenApiResponderInner for PatchResult {
-    fn responses(gen: &mut OpenApiGenerator) -> rocket_okapi::Result<Responses> {
-        let mut r = Responses::default();
-        add_default_response_schema(&mut r, "text/plain", gen.json_schema::<PatchResult>());
-        Ok(r)
-    }
-}
-
 /// # Patch Fixture
 /// Will be extended and Documented when done so
 ///
@@ -248,10 +225,10 @@ fn patch_fixture(
     mode: usize,
     create: bool,
     _g: ProjectGuard,
-) -> PatchResult {
+) -> Json<PatchResult> {
     let f_id = Uuid::from_str(id); //.map_err(|_| "Id is not valid".to_string())?;
     if f_id.is_err() {
-        return PatchResult::IdInvalid("Id is not valid".to_string());
+        return Json(PatchResult::IdInvalid("Id is not valid".to_string()));
     }
 
     pollster::block_on(async {
@@ -263,23 +240,27 @@ fn patch_fixture(
             .find(|f| f.id == f_id)
             .cloned();
         if fixture.is_none() {
-            return PatchResult::IdInvalid("Id is not a valid FixtureType".to_string());
+            return Json(PatchResult::IdInvalid(
+                "Id is not a valid FixtureType".to_string(),
+            ));
         }
 
         let fixture = fixture.expect("Must be some");
 
         if mode >= fixture.get_modes().len() {
-            return PatchResult::ModeInvalid("Mode is not available".to_string());
+            return Json(PatchResult::ModeInvalid(
+                "Mode is not available".to_string(),
+            ));
         }
 
         let r = project
             .try_patch(&fixture, mode, create, info, runtime)
             .await;
         if r.is_some() {
-            return PatchResult::Success("Patching successful".to_string());
+            return Json(PatchResult::Success("Patching successful".to_string()));
         }
 
-        PatchResult::Failed("Patching failed".to_owned())
+        Json(PatchResult::Failed("Patching failed".to_owned()))
     })
 }
 

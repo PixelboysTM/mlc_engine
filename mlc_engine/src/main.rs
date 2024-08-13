@@ -1,9 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr};
 
-use rocket::{
-    catch, catchers, config::Ident, get, launch, serde::json::Json, tokio::sync::broadcast::Sender,
-    Config, State,
-};
+use rocket::{catch, catchers, config::Ident, get, launch, serde::json::Json, Config};
 use rocket_okapi::okapi::merge::merge_specs;
 use rocket_okapi::okapi::openapi3::OpenApi;
 use rocket_okapi::rapidoc::{GeneralConfig, HideShowConfig, RapiDocConfig};
@@ -68,7 +65,7 @@ impl Module for MainModule {
             ..Default::default()
         };
 
-        let (routes, s) = openapi_get_routes_spec![heart_beat];
+        let (routes, s) = openapi_get_routes_spec![heart_beat, test_ofl_importer];
         merge_specs(spec, &"/util".to_string(), &s).expect("Merging OpenApi spec failed");
 
         let p = pollster::block_on(async {
@@ -115,4 +112,47 @@ impl Module for MainModule {
 #[catch(404)]
 fn catch_404() -> &'static str {
     "Resource not available"
+}
+
+#[openapi(tag = "Util")]
+#[get("/ofltest")]
+async fn test_ofl_importer() -> String {
+    const B: &str = "{\"searchQuery\": \"\", \"categoriesQuery\": [], \"manufacturersQuery\": []}";
+
+    let c = reqwest::Client::new();
+    let r: Vec<String> = c
+        .post("https://open-fixture-library.org/api/v1/get-search-results")
+        .header("Content-Type", "application/json")
+        .body(B)
+        .send()
+        .await
+        .expect("")
+        .json()
+        .await
+        .expect("");
+
+    let i = r.iter().map(|e| {
+        let mut s = e.split('/');
+        (s.next().unwrap(), s.next().unwrap())
+    });
+
+    let mut errors = Vec::new();
+    for (man, name) in i {
+        let data = reqwest::get(format!(
+            "https://open-fixture-library.org/{}/{}.json",
+            man, name
+        ))
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+        let res = fixture::parse_fixture(&data);
+        match res {
+            Ok(_) => {} //println!("Sucess: {} {}", man, name),
+            Err(e) => errors.push(format!("({man}/{name}): {e}")),
+        }
+    }
+
+    format!("{errors:#?}")
 }

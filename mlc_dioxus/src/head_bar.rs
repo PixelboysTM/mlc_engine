@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 
-use crate::{configure_panel, utils};
 use crate::icons::{
     ExternalLink, LightBulb, Pencil, Save, Settings, TabletSmartphone, UploadCloud,
 };
 use crate::utils::context_menu::ContextMenu;
 use crate::utils::toaster::{Toaster, ToasterWriter};
+use crate::{configure_panel, utils};
 
 #[derive(Copy, Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Pane {
@@ -39,37 +39,51 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
             }
         }
 
-        div {
-            class: "headbar",
+        div { class: "headbar",
             div {
                 class: "left",
                 onclick: move |e| {
                     let p = e.data().page_coordinates();
-                    context.set(Some(
-                        ContextMenu::new(p.x, p.y)
-                            .add("Marvin Light Control", |_| {true})
-                            .add("Settings", move |_| {toaster.info("Unimplemented", "The User settings are not implemented yet."); false})
-                            .add("Close project", move |_| {
-                            let _ = spawn(
-                                 async {let _ = utils::fetch::<String>("/projects/close").await;}).poll_now();
-
-                            true})
-                    ));
+                    context
+                        .set(
+                            Some(
+                                ContextMenu::new(p.x, p.y)
+                                    .add("Marvin Light Control", |_| { true })
+                                    .add(
+                                        "Settings",
+                                        move |_| {
+                                            toaster
+                                                .info(
+                                                    "Unimplemented",
+                                                    "The User settings are not implemented yet.",
+                                                );
+                                            false
+                                        },
+                                    )
+                                    .add(
+                                        "Close project",
+                                        move |_| {
+                                            let _ = spawn(async {
+                                                    let _ = utils::fetch::<String>("/projects/close").await;
+                                                })
+                                                .poll_now();
+                                            true
+                                        },
+                                    ),
+                            ),
+                        );
                 },
                 img {
                     class: "iconMarvin",
                     src: "./images/icon.png",
-                    alt: "MLC",
-                },
-                h1 {
-                    "MLC"
+                    alt: "MLC"
                 }
+                h1 { "MLC" }
             }
-            div {
-                class: "tabs",
+            div { class: "tabs",
                 button {
                     class: "icon configure",
-                    class: if pane() == Pane::Configure {"sel"},
+                    class: if pane() == Pane::Configure { "sel" },
                     title: "Configure",
                     onclick: move |_event| {
                         pane.set(Pane::Configure);
@@ -78,7 +92,7 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                 }
                 button {
                     class: "icon program",
-                    class: if pane() == Pane::Program {"sel"},
+                    class: if pane() == Pane::Program { "sel" },
                     title: "Program",
                     onclick: move |_event| {
                         pane.set(Pane::Program);
@@ -87,7 +101,7 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                 }
                 button {
                     class: "icon show",
-                    class: if pane() == Pane::Show {"sel"},
+                    class: if pane() == Pane::Show { "sel" },
                     title: "Show",
                     onclick: move |_event| {
                         pane.set(Pane::Show);
@@ -96,17 +110,16 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                     LightBulb {}
                 }
             }
-            div {
-                class: "tabs right",
+            div { class: "tabs right",
 
                 if pane() == Pane::Configure {
                     button {
                         class: "icon",
                         title: "Upload Fixture",
                         onclick: move |_event| {
-                                upload_fixture.set(true);
+                            upload_fixture.set(true);
                         },
-                        UploadCloud {},
+                        UploadCloud {}
                     }
                 }
 
@@ -115,22 +128,20 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                         class: "icon",
                         title: "Open 3D Viewer",
                         onclick: move |_event| {
-                            log::info!("Clicked Save")
+                            let _ = utils::move_to("/viewer");
                         },
-                        ExternalLink {},
+                        ExternalLink {}
                     }
                 }
 
                 if pane() == Pane::Show {
                     button {
                         class: "icon",
-                        title: "Open 3D Viewer",
-                        onclick: move |_event| {
-                            log::info!("Clicked Save")
-                        },
-                        TabletSmartphone {},
+                        title: "Open Mobile",
+                        onclick: move |_event| { log::info!("Clicked Save") },
+                        TabletSmartphone {}
                     }
-                },
+                }
 
                 button {
                     class: "icon",
@@ -141,10 +152,8 @@ pub fn Headbar(pane: Signal<Pane>) -> Element {
                         }
                     },
                     Save {}
-                },
-                div {
-                  width: "0.25rem",
-                },
+                }
+                div { width: "0.25rem" }
             }
         }
     }

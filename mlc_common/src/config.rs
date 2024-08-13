@@ -57,8 +57,18 @@ pub struct FixtureType {
     pub fixture_key: String,
     pub modes: Vec<FixtureMode>,
     pub available_channels: HashMap<String, FixtureChannel>,
+    pub matrix: Matrix,
     #[get_size(ignore)]
     pub id: uuid::Uuid,
+}
+
+#[derive(
+    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
+)]
+// 3D Array of Vec of group names
+pub struct Matrix {
+    pub mat: Vec<Vec<Vec<Vec<String>>>>,
+    pub dimensions: [usize; 3],
 }
 
 impl FixtureType {
@@ -112,11 +122,6 @@ impl ValueResolution {
 #[derive(
     Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
 )]
-pub struct Maintenance {}
-
-#[derive(
-    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
-)]
 pub struct Intensity {
     pub brightness_start: Brightness,
     pub brightness_end: Brightness,
@@ -136,11 +141,6 @@ pub enum Brightness {
 pub struct ColorIntensity {
     pub color: DmxColor,
 }
-
-#[derive(
-    Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
-)]
-pub struct Effect {}
 
 #[derive(
     Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone, get_size::GetSize, JsonSchema,
@@ -209,12 +209,11 @@ pub struct FixtureCapabilityCommon {
 #[serde(tag = "type")]
 pub enum FixtureCapability {
     NoFunction,
-    Maintenance(Maintenance),
+    Maintenance,
     Intensity(Intensity),
     ColorIntensity(ColorIntensity),
     ColorPreset,
     ShutterStrobe,
-    Effect(Effect),
     EffectSpeed,
     Rotation(Rotation),
     Pan(PanTilt),
@@ -262,6 +261,16 @@ pub enum DmxColor {
     White,
     #[serde(alias = "#ffbf00")]
     Amber,
+    Cyan,
+    Magenta,
+    Yellow,
+    #[serde(alias = "Warm White")]
+    WarmWhite,
+    #[serde(alias = "Cold White")]
+    ColdWhite,
+    UV,
+    Lime,
+    Indigo,
 }
 
 #[derive(

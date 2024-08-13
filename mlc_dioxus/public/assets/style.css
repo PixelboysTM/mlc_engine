@@ -210,7 +210,7 @@ select:hover {
     display: flex;
     align-items: center;
     place-content: center;
-    animation: overlay-in-b 80ms normal;
+    animation: overlay-in-b 120ms normal;
 
     .overlay-content {
         position: relative;

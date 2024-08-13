@@ -12,7 +12,8 @@ use mlc_common::endpoints::{EPConfigItem, EndPointConfig, Speed};
 use mlc_common::patched::{PatchedFixture, UniverseAddress, UniverseId};
 use mlc_common::universe::FixtureUniverse;
 use mlc_common::{
-    FaderUpdateRequest, FixtureInfo, Info, ProjectDefinition, ProjectSettings, RuntimeUpdate,
+    FaderUpdateRequest, FixtureInfo, Info, PatchResult, ProjectDefinition, ProjectSettings,
+    RuntimeUpdate,
 };
 
 use crate::utils::toaster::{Toaster, ToasterWriter};
@@ -127,7 +128,7 @@ fn ProjectSettings() -> Element {
                                     }
                                 }
                             }
-
+                
                     }
                     Some(Err(_s)) => {rsx!("Error Fetching settings")}
                     None => {utils::Loading()}
@@ -447,7 +448,7 @@ fn FixtureTypeExplorer() -> Element {
                                 },
                                 div {
                                     class: "modes",
-
+            
                                     for mode in &info.modes {
                                         li {
                                             class: "mode",
@@ -463,14 +464,6 @@ fn FixtureTypeExplorer() -> Element {
             }
         }
     }
-}
-
-#[derive(serde::Deserialize)]
-enum PatchResult {
-    IdInvalid(String),
-    ModeInvalid(String),
-    Failed(String),
-    Success(String),
 }
 
 #[component]
@@ -548,6 +541,7 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
                                     onclick: move |_| {
                                         let mode = mode.clone();
                                         async move {
+                                            let mut toaster = use_context::<Signal<Toaster>>();
                                             let id = inf().id;
                                             let i = inf().modes
                                             .iter()
@@ -556,7 +550,22 @@ fn DetailFixtureType(t: FixtureInfo, onclose: EventHandler) -> Element {
                                             .map(|(i, _)| i)
                                             .unwrap_or(0);
                                             onclose.call(());
-                                            let _ = utils::fetch::<PatchResult>(&format!("/data/patch/{}/{}?create={}",id,i,create_new_universe())).await;
+                                            let e = utils::fetch::<PatchResult>(&format!("/data/patch/{}/{}?create={}",id,i,create_new_universe())).await;
+                                            match e {
+                                                Ok(PatchResult::Failed(msg)) => {
+                                                    let _ = toaster.error("Failed patching", format!("Failed to patch fixtures.\n{msg}"));
+                                                },
+                                                Ok(PatchResult::Success(msg)) => {
+                                                    let _ = toaster.info("Patched", format!("Successful.\n{msg}"));
+                                                },
+                                                Ok(PatchResult::ModeInvalid(msg)) => {
+                                                    let _ = toaster.error("Failed patching", format!("The specified mode is not valid.\n{msg}"));
+                                                },
+                                                Ok(PatchResult::IdInvalid(msg)) => {
+                                                    let _ = toaster.error("Failed patching", format!("The specified FixtureId is not valid.\n{msg}"));
+                                                },
+                                                Err(e) => {let _ = toaster.error("WTF", format!("I don't even know what happened good luck!\n{e:?}"));}
+                                            }
                                         }
                                     },
                                     "Patch"
@@ -811,7 +820,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                     FixtureSource::Ofl => {
                         rsx! {
                         match available_fixtures.state()() {
-
+                
                         UseResourceState::Pending => {
                                 rsx!(utils::Loading {})
                             }
@@ -844,7 +853,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                                                     class: "name",
                                                     {available.name.clone()}
                                                 },
-
+                
                                                 button {
                                                     class: "icon",
                                                     title: "Import",
@@ -1241,7 +1250,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                 }
                             }
                         }
-
+            
                         div {
                             class: "btns",
                             button {

@@ -31,7 +31,8 @@ impl Easing {
     }
 
     pub fn eval(&self, t: f64) -> f64 {
-        let t = t.max(0.0).min(1.0);
+        //TODO: Maybe make to BoundedValue
+        let t = t.clamp(0.0, 1.0);
         if t < 0.5 {
             self.in_type.val_left(t * 2.0) * 0.5
         } else {
@@ -43,7 +44,7 @@ impl Easing {
 impl EasingType {
     /// Value of right side of curve
     fn val_right(&self, t: f64) -> f64 {
-        let t = t.max(0.0).min(1.0);
+        let t = t.clamp(0.0, 1.0);
 
         match self {
             EasingType::Linear => t,
@@ -95,7 +96,8 @@ impl EasingType {
 
     /// Value of left side of curve
     fn val_left(&self, t: f64) -> f64 {
-        let t = t.max(0.0).min(1.0);
+        // TODO: Maybe make into BoundedValue
+        let t = t.clamp(0.0, 1.0);
 
         match self {
             EasingType::Linear => t,

@@ -61,6 +61,13 @@ pub fn reload_window() -> Result<(), String> {
         .map_err(|e| format!("{e:?}"))
 }
 
+pub fn move_to(p: &str) -> Result<(), String> {
+    gloo_utils::window()
+        .location()
+        .set_pathname(p)
+        .map_err(|e| format!("{e:?}"))
+}
+
 pub fn toast_reload(mut toaster: Signal<Toaster>) {
     let _ = reload_window().map_err(|e| {
         log::error!("{e}");

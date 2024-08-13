@@ -9,8 +9,8 @@ use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use dioxus::web::WebEventExt;
 use mlc_common::effect::{
-    D2RotationKey, D2RotationTrack, D3PercentTrack, Effect, FaderKey, FaderTrack, FeatureTrack,
-    FeatureTrackDetail, Key, PercentTrack, RotationKey, RotationTrack, Track,
+    D2RotationTrack, D3PercentTrack, Effect, FaderKey, FaderTrack, FeatureTrack,
+    FeatureTrackDetail, Key, PercentTrack, RotationTrack, Track,
 };
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeatureType;
@@ -352,7 +352,7 @@ fn CreateTrackDetailFeature(
 
     match (*all_features.read_unchecked()).clone() {
         None => {
-            rsx!("Loading available fixtures...")
+            rsx!( "Loading available fixtures..." )
         }
         Some(all) => {
             rsx! {

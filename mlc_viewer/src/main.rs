@@ -29,7 +29,7 @@ fn setup(
     // cube
     commands.spawn(PbrBundle {
         mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
-        material: materials.add(Color::rgb(124.0 / 255.0, 144.0 / 255.0, 255.0 / 255.0)),
+        material: materials.add(Color::rgb(124.0 / 255.0, 144.0 / 255.0, 1.0)),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..default()
     });
