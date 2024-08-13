@@ -76,7 +76,11 @@ fn EffectPlayer() -> Element {
                                 match m {
                                     Some(msg) => {
                                         match msg {
-                                            EffectPlayerMsg::PlayingEffects{effects} => playing_effects.set(effects),
+                                            EffectPlayerMsg::PlayingEffects{effects} => {
+                                                let mut w = effect_progresses.write();
+                                                w.retain(|&l| effects.contains(&l.0));
+                                                playing_effects.set(effects);
+                                            },
                                             EffectPlayerMsg::EffectProgresses(updates) => effect_progresses.set(updates),
                                         }
                                     }
