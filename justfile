@@ -2,6 +2,8 @@ alias d := dioxus
 alias d-r := dioxus-release
 alias r := run
 alias v := viewer
+alias i := install
+alias update := install
 
 set shell := ["cmd.exe", "/c"]
 
@@ -33,8 +35,8 @@ viewer:
     wasm-bindgen --no-typescript --out-name mlc_viewer --out-dir out/ --target web target/wasm32-unknown-unknown/release/mlc_viewer.wasm
 
 install:
-    cargo install --upgrade wasm-bindgen-cli
-    cargo install --upgrade dioxus-cli
+    cargo install wasm-bindgen-cli
+    cargo install dioxus-cli
 
 lines:
     tokei ./
