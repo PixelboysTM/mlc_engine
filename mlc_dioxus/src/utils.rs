@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub use overlay::*;
+pub use progress::*;
 
 use crate::icons;
 use crate::utils::toaster::{Toaster, ToasterWriter};
@@ -17,6 +18,7 @@ use crate::utils::toaster::{Toaster, ToasterWriter};
 pub mod context_menu;
 mod overlay;
 pub mod popover;
+mod progress;
 pub mod toaster;
 
 pub async fn fetch<T>(url: &str) -> Result<T, gloo_net::Error>
@@ -89,7 +91,7 @@ pub fn Loading() -> Element {
             }
         }
     } else {
-        rsx!("")
+        rsx!( "" )
     }
 }
 

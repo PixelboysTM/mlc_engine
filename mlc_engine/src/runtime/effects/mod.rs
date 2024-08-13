@@ -176,9 +176,8 @@ async fn get_effect_player(
                 select! {
                     Ok(msg) = effect_player.update_receiver.recv() => {
                         let msg = match msg {
-                            EffectPlayerUpdate::PlayingEffects(effects) => EffectPlayerMsg::PlayingEffects {
-                                effects,
-                            }
+                            EffectPlayerUpdate::PlayingEffects(effects) => EffectPlayerMsg::PlayingEffects{effects},
+                            EffectPlayerUpdate::EffectProgresses(updates) => EffectPlayerMsg::EffectProgresses(updates), 
                         };
 
                         let _ = stream.send(make_msg(&msg)).await;

@@ -1,5 +1,11 @@
 use chrono::Duration;
-use mlc_common::effect::EffectId;
+use mlc_common::{
+    effect::EffectId,
+    utils::{
+        bounds::{One, Zero},
+        BoundedValue,
+    },
+};
 use rocket::{
     futures::{
         channel::mpsc::{self, Receiver, Sender},
@@ -48,6 +54,7 @@ pub enum EffectPlayerCmd {
 #[derive(Debug, Clone, PartialEq)]
 pub enum EffectPlayerUpdate {
     PlayingEffects(Vec<EffectId>),
+    EffectProgresses(Vec<(EffectId, BoundedValue<f32, Zero, One>)>),
 }
 
 struct EffectPlayer {
@@ -223,6 +230,30 @@ impl EffectPlayer {
 
         if !universes.is_empty() {
             self.runtime.set_values(universes, channels, values).await;
+        }
+
+        if !self.playing_effects.is_empty() {
+            let _ = self
+                .update_sender
+                .send(EffectPlayerUpdate::EffectProgresses(
+                    self.playing_effects
+                        .iter()
+                        .map(|(e, t)| {
+                            (
+                                *e,
+                                BoundedValue::create(
+                                    self.baked_effects
+                                        .get(e)
+                                        .map(|b| {
+                                            t.num_milliseconds() as f32
+                                                / b.max_time.num_milliseconds() as f32
+                                        })
+                                        .unwrap_or(0.0),
+                                ),
+                            )
+                        })
+                        .collect(),
+                ));
         }
     }
 

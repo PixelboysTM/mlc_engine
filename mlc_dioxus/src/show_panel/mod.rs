@@ -1,14 +1,20 @@
 use dioxus::prelude::*;
 use futures::{select, SinkExt, StreamExt};
 use gloo_net::websocket::Message;
-use mlc_common::effect::{
-    player::{EffectPlayerMsg, EffectPlayerRequest},
-    EffectId,
+use mlc_common::{
+    effect::{
+        player::{EffectPlayerMsg, EffectPlayerRequest},
+        EffectId,
+    },
+    utils::{
+        bounds::{One, Zero},
+        BoundedValue,
+    },
 };
 
 use crate::{
     icons::{Pause, Play},
-    utils::{self, Loading, ToWebSocketMessage},
+    utils::{self, Loading, Progress, ToWebSocketMessage},
 };
 
 #[component]
@@ -29,6 +35,8 @@ fn EffectPlayer() -> Element {
             .unwrap_or_else(Vec::new)
     });
     let mut playing_effects: Signal<Vec<EffectId>> = use_signal(Vec::new);
+    let mut effect_progresses: Signal<Vec<(EffectId, BoundedValue<f32, Zero, One>)>> =
+        use_signal(Vec::new);
     let effect_player = use_coroutine(
         |mut rx: UnboundedReceiver<EffectPlayerRequest>| async move {
             let ws = utils::ws("/effects/effectPlayer").await;
@@ -68,7 +76,8 @@ fn EffectPlayer() -> Element {
                                 match m {
                                     Some(msg) => {
                                         match msg {
-                                            EffectPlayerMsg::PlayingEffects { effects } => playing_effects.set(effects),
+                                            EffectPlayerMsg::PlayingEffects{effects} => playing_effects.set(effects),
+                                            EffectPlayerMsg::EffectProgresses(updates) => effect_progresses.set(updates),
                                         }
                                     }
                                     None => break,
@@ -106,6 +115,13 @@ fn EffectPlayer() -> Element {
                                         Pause{}
                                     } else {
                                         Play{}
+                                    }
+                                }
+                                Progress {
+                                    // value: if let Some(t) = effect_progresses.read().iter().find(|(f,_)|&e.1 == f) && playing_effects.read().contains(&e.1) {t.1} else {BoundedValue::create(0.0)}
+                                    value: match effect_progresses.read().iter().find(|(f,_)|&e.1 == f) {
+                                        Some(t) if playing_effects.read().contains(&e.1) => t.1,
+                                        _ => BoundedValue::create(0.0)
                                     }
                                 }
                             }

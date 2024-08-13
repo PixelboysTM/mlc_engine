@@ -303,4 +303,31 @@ pub mod bounds {
             -1.0
         }
     }
+
+    impl Bounds<f32> for Zero {
+        fn get() -> f32 {
+            0.0
+        }
+    }
+    impl Bounds<f32> for One {
+        fn get() -> f32 {
+            1.0
+        }
+    }
+    impl Bounds<f32> for NegOne {
+        fn get() -> f32 {
+            -1.0
+        }
+    }
+
+    impl Bounds<u32> for Zero {
+        fn get() -> u32 {
+            0
+        }
+    }
+    impl Bounds<u32> for One {
+        fn get() -> u32 {
+            1
+        }
+    }
 }
