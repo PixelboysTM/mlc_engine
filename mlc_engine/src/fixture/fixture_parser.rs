@@ -3,9 +3,8 @@ use mlc_common::config::{
     ColorIntensity, DmxRange, FixtureCapability, FixtureCapabilityCommon, FixtureChannel,
     FixtureMode, FixtureType, Intensity, Matrix, Percentage, ValueResolution,
 };
-use rocket::http::hyper::body::HttpBody;
 use serde_json::{Map, Value};
-use std::{arch::x86_64, collections::HashMap, ops::Range};
+use std::{collections::HashMap, ops::Range};
 
 trait NoneLogger {
     fn log<F>(self, f: F) -> Self
@@ -259,15 +258,15 @@ fn parse_matrix(matrix_raw: Option<&Value>) -> Option<Matrix> {
             if let Some(o) = v.as_object() {
                 let x_range = o
                     .get("x")
-                    .map(|e| parse_range(e.as_array().expect("Must be array")))
+                    .map(|e| parse_range(e.as_array().expect("Must be array"), mat.dimensions[0]))
                     .unwrap_or_else(|| 0..mat.dimensions[0]);
                 let y_range = o
                     .get("y")
-                    .map(|e| parse_range(e.as_array().expect("Must be array")))
+                    .map(|e| parse_range(e.as_array().expect("Must be array"), mat.dimensions[1]))
                     .unwrap_or_else(|| 0..mat.dimensions[1]);
                 let z_range = o
                     .get("z")
-                    .map(|e| parse_range(e.as_array().expect("Must be array")))
+                    .map(|e| parse_range(e.as_array().expect("Must be array"), mat.dimensions[2]))
                     .unwrap_or_else(|| 0..mat.dimensions[2]);
 
                 for x in x_range {
@@ -288,9 +287,9 @@ fn parse_matrix(matrix_raw: Option<&Value>) -> Option<Matrix> {
     Some(mat)
 }
 
-fn parse_range(ranges: &Vec<Value>) -> Range<usize> {
+fn parse_range(ranges: &Vec<Value>, m: usize) -> Range<usize> {
     let mut min = 0;
-    let mut max = 0;
+    let mut max = m;
 
     for r in ranges {
         let rs = r.as_str().expect("Must be");
@@ -561,6 +560,8 @@ fn parse_modes(modes: Option<&Value>) -> Option<Vec<FixtureMode>> {
             }
         }
     }
+
+    mds.retain(|e| !e.channels.is_empty());
 
     Some(mds)
 }
