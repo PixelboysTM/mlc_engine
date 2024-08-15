@@ -7,19 +7,19 @@ edition = "2021"
 
 [dependencies]
 # HTTP
-rocket = { version = "0.5.0", features = ["json"] }
-rocket_ws = { version = "0.1.0" }
-reqwest = { version = "0.12.2", features = ["json"] }
+rocket = { version = "0.5.1", features = ["json"] }
+rocket_ws = { version = "0.1.1" }
+reqwest = { version = "0.12.5", features = ["json"] }
 # Serde
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0.108"
-serde_with = { version = "3.4.0", features = ["chrono_0_4"] }
+serde = { version = "1.0.207", features = ["derive"] }
+serde_json = "1.0.125"
+serde_with = { version = "3.9.0", features = ["chrono_0_4"] }
 ciborium = { version = "0.2.2", features = ["std"] }
 # Misc
 directories = "5.0.1"
-uuid = { version = "1.6.1", features = ["v4", "serde"] }
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
 chrono = { version = "*", features = ["serde"] }
-regex = { version = "1.10.4" }
+regex = { version = "1.10.6" }
 tap = "*"
 mlc_common = { path = "../mlc_common" }
 # Async
@@ -36,5 +36,5 @@ rocket_okapi = { path = "../../okapi/rocket-okapi", features = [
     "uuid",
     "rapidoc",
 ] } #TODO: Only until pull request is merged and release is made
-schemars = { version = "0.8.16", features = ["derive", "uuid1", "chrono"] }
+schemars = { version = "0.8.21", features = ["derive", "uuid1", "chrono"] }
 get-size = { version = "0.1.4", features = ["derive"] }

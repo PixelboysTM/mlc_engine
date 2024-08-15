@@ -15,7 +15,8 @@ use mlc_common::effect::{
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeatureType;
 use mlc_common::patched::{FixtureId, UniverseAddress, UniverseId};
-use mlc_common::utils::{FormatEffectDuration, IntRange};
+use mlc_common::utils::bounds::{DynamicI64, Zero};
+use mlc_common::utils::{BoundedValue, FormatEffectDuration};
 use std::collections::HashSet;
 
 use super::key_editor::DrawKeyWidget;
@@ -295,9 +296,15 @@ fn CreateTrackDetailFader(onclose: EventHandler<Track>) -> Element {
                 r#type: "number",
                 min: 0,
                 max: 511,
-                value: sel_address().range(0, 511),
+                // value: sel_address().range(0, 511),
+                value: BoundedValue::<_, Zero, DynamicI64<511>>::create(sel_address()).take(),
                 oninput: move |e| {
-                    let val = e.value().parse::<i64>().unwrap_or(0).range(0, 511);
+                    let val = BoundedValue::<
+                        _,
+                        Zero,
+                        DynamicI64<511>,
+                    >::create(e.value().parse().expect("Must be"))
+                        .take();
                     sel_address.set(val);
                 }
             }
@@ -305,7 +312,12 @@ fn CreateTrackDetailFader(onclose: EventHandler<Track>) -> Element {
         button {
             class: "create-button",
             onclick: move |_| {
-                let address = sel_address.peek().range(0, 511) as u16;
+                let address = BoundedValue::<
+                    _,
+                    Zero,
+                    DynamicI64<511>,
+                >::create(*sel_address.peek())
+                    .take() as u16;
                 let universe = sel_universe.peek().clone().parse::<u16>();
                 if let Ok(u) = universe {
                     onclose
