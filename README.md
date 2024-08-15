@@ -43,36 +43,43 @@ To run MLC on your local machine the following steps will help you:
     - You then can run then run MLC by moving back up into the parent dir and running ``cargo run --bin mlc_engine``
       from there.
 
-## Todo
+## Roadmap
 
-- [X] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name` (Requires local
-  copy of my fork until merged)
-- [X] Write a real Readme
-- [X] Add a License
-- [X] Reorganize mlc_common code and cleanup empty modules in mlc_engine
-- [X] Decouple FixtureType Data Structure from AGLight and built separate importer
-- [X] Add a new binary more kompakt file format for projects
-- [X] Update Dioxus to 0.5
-- [X] Fix things that broke with dioxus update
-- [X] Save extension in file name to make naming and loading unique
-- [ ] Ui
-    - [X] Fixture Details/Patch Modal
-    - [X] Endpoint Mapping Modal
-    - [X] New Project Modal
-    - [ ] Widgets
-        - [X] Color
-        - [X] 2D Vec
-        - [X] Slider
-        - [ ] Knob
-    - [X] Project Panel Layout
-    - [X] Effect Browser
-    - [X] Effect Settings
-    - [ ] Effect Timeline
-        - [ ] Basic
-        - [X] Fader Tracks
-        - [ ] Feature Tracks
+### V0.1.1
+
+- [ ] Relayout Programm panel
+- [ ] update effect timeline
+- [ ] make keyframe edits not janky anymore (in seperate section no popover)
+- [ ] make keyframes dragable
+
+### V0.1.2
+
+- [ ] Add more features
+- [ ] support matrix features
 - [ ] Async Project loading with progress stream and ui
-- [X] Enttec Usb Endpoint
+- [ ] revisit all TODOs in code
+
+### V0.1.3
+
+- [ ] start a basic 3d viewer
+- [ ] improve layout of show panel
+- [ ] add push to play option on show panel
+
+### V0.1.4
+
+- [ ] add support for variable values in channels
+- [ ] improve 3d viewer
+- [ ] add mobile playback
+
+### V0.1.5
+
+- [ ] add a fixture type creator
+- [ ] Write an actual license
+- [ ] work on a  deploy pipeline
+
+### Misc
+
+- [X] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name` (Requires local copy of my fork until merged)
 
 ## Feature requests / Contribution
 
