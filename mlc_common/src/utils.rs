@@ -65,6 +65,12 @@ impl<T: Debug> OutOfBoundsHandler<T> for OOBPanicer {
     }
 }
 
+pub struct OOBIgnorer;
+
+impl<T> OutOfBoundsHandler<T> for OOBIgnorer {
+    fn handle(_: T, _: T, _: ExceededBound) {}
+}
+
 #[derive(Debug)]
 pub struct BoundedValue<T, MIN, MAX, H = ()> {
     value: T,
@@ -98,6 +104,10 @@ impl<T: PartialOrd + Debug, MIN: Bounds<T>, MAX: Bounds<T>, H: OutOfBoundsHandle
 
     pub fn take(self) -> T {
         self.value
+    }
+
+    pub fn once(val: T) -> T {
+        Self::create(val).take()
     }
 }
 

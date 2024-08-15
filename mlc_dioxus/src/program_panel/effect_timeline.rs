@@ -297,14 +297,13 @@ fn CreateTrackDetailFader(onclose: EventHandler<Track>) -> Element {
                 min: 0,
                 max: 511,
                 // value: sel_address().range(0, 511),
-                value: BoundedValue::<_, Zero, DynamicI64<511>>::create(sel_address()).take(),
+                value: BoundedValue::<_, Zero, DynamicI64<511>>::once(sel_address()),
                 oninput: move |e| {
                     let val = BoundedValue::<
                         _,
                         Zero,
                         DynamicI64<511>,
-                    >::create(e.value().parse().expect("Must be"))
-                        .take();
+                    >::once(e.value().parse().expect("Must be"));
                     sel_address.set(val);
                 }
             }
@@ -312,12 +311,8 @@ fn CreateTrackDetailFader(onclose: EventHandler<Track>) -> Element {
         button {
             class: "create-button",
             onclick: move |_| {
-                let address = BoundedValue::<
-                    _,
-                    Zero,
-                    DynamicI64<511>,
-                >::create(*sel_address.peek())
-                    .take() as u16;
+                let address = BoundedValue::<_, Zero, DynamicI64<511>>::once(*sel_address.peek())
+                    as u16;
                 let universe = sel_universe.peek().clone().parse::<u16>();
                 if let Ok(u) = universe {
                     onclose
@@ -364,7 +359,7 @@ fn CreateTrackDetailFeature(
 
     match (*all_features.read_unchecked()).clone() {
         None => {
-            rsx!( "Loading available fixtures..." )
+            rsx!("Loading available fixtures...")
         }
         Some(all) => {
             rsx! {
