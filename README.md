@@ -54,13 +54,15 @@ To run MLC on your local machine the following steps will help you:
 
 ### V0.1.2
 
-- [ ] Add more features
+- [ ] Support more fixture features
 - [ ] support matrix features
 - [ ] Async Project loading with progress stream and ui
 - [ ] revisit all TODOs in code
+- [ ] revisit sliders to make dragging more suitable
 
 ### V0.1.3
 
+- [ ] Support easing between keyframes
 - [ ] start a basic 3d viewer
 - [ ] improve layout of show panel
 - [ ] add push to play option on show panel
