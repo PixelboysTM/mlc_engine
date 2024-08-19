@@ -128,7 +128,7 @@ fn ProjectSettings() -> Element {
                                     }
                                 }
                             }
-                
+
                     }
                     Some(Err(_s)) => {rsx!("Error Fetching settings")}
                     None => {utils::Loading()}
@@ -383,7 +383,7 @@ pub fn Fader(value: u8, id: String, onchange: EventHandler<u8>) -> Element {
     }
 }
 
-fn make_three_digit(u: u16) -> String {
+pub fn make_three_digit(u: u16) -> String {
     format!("{:03}", u)
 }
 
@@ -448,7 +448,7 @@ fn FixtureTypeExplorer() -> Element {
                                 },
                                 div {
                                     class: "modes",
-            
+
                                     for mode in &info.modes {
                                         li {
                                             class: "mode",
@@ -820,7 +820,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                     FixtureSource::Ofl => {
                         rsx! {
                         match available_fixtures.state()() {
-                
+
                         UseResourceState::Pending => {
                                 rsx!(utils::Loading {})
                             }
@@ -853,7 +853,7 @@ pub fn UploadFixturePopup(on_close: EventHandler<()>) -> Element {
                                                     class: "name",
                                                     {available.name.clone()}
                                                 },
-                
+
                                                 button {
                                                     class: "icon",
                                                     title: "Import",
@@ -1250,7 +1250,7 @@ fn EndPointMapping(onclose: EventHandler) -> Element {
                                 }
                             }
                         }
-            
+
                         div {
                             class: "btns",
                             button {

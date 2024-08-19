@@ -1,6 +1,6 @@
 use chrono::Duration;
-use serde_with::{DurationSecondsWithFrac, formats::Flexible};
 use serde_with::serde_as;
+use serde_with::{formats::Flexible, DurationSecondsWithFrac};
 
 use crate::easing::{Easing, EasingType};
 
@@ -55,7 +55,7 @@ pub struct D2RotationKey {
 }
 
 pub trait Key {
-    type Value: Clone;
+    type Value: Clone + PartialEq + 'static;
     fn time(&self) -> Duration;
     fn value(&self) -> Self::Value;
 

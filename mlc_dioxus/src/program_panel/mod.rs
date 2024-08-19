@@ -7,6 +7,7 @@ use dioxus::prelude::*;
 use futures::{select, SinkExt, StreamExt};
 use gloo_net::websocket::Message;
 use gloo_storage::Storage;
+use key_editor::KeyFrameInspector;
 use log::{info, warn};
 
 use mlc_common::effect::rest::{EffectHandlerRequest, EffectHandlerResponse};
@@ -30,6 +31,8 @@ struct EffectInvalidate;
 #[component]
 pub fn ProgramPanel() -> Element {
     let mut current_effect = use_context_provider::<Signal<Option<Effect>>>(|| Signal::new(None));
+    let _current_keyframe =
+        use_context_provider::<Signal<Option<(usize, usize)>>>(|| Signal::new(None));
 
     let mut toaster = use_context::<Signal<Toaster>>();
 
@@ -179,7 +182,7 @@ pub fn ProgramPanel() -> Element {
                 EffectInfo {}
             }
             div { class: "panel timeline", EffectTimeline {} }
-            div { class: "panel visualizer", "Visualizer" }
+            div { class: "panel inspector", KeyFrameInspector {} }
         }
     }
 }

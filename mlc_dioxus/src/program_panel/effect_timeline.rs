@@ -1,5 +1,4 @@
 use crate::configure_panel::Fader;
-use crate::program_panel::key_editor::KeyEditor;
 use crate::program_panel::EffectInvalidate;
 use crate::utils::context_menu::ContextMenu;
 use crate::utils::toaster::{Toaster, ToasterWriter};
@@ -439,6 +438,7 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
     let mut track_context = use_signal(|| None);
 
     let mut expanded = use_signal(HashSet::<usize>::new);
+    let mut current_keyframe: Signal<Option<(usize, usize)>> = use_context();
 
     rsx! {
         if let Some(menu) = track_context() {
@@ -502,6 +502,9 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                     div {
                         class: "track",
                         class: if expanded().contains(&i) { "expanded" },
+                        onclick: move |_| {
+                            current_keyframe.set(None);
+                        },
                         oncontextmenu: move |e| {
                             if e.trigger_button() == Some(MouseButton::Secondary) {
                                 let x_pos = e.element_coordinates().x;
@@ -604,7 +607,7 @@ fn FaderTrackBody(
     invalidate: Coroutine<EffectInvalidate>,
     scale: ReadOnlySignal<f32>,
 ) -> Element {
-    let mut key_edit = use_signal(|| None);
+    let mut current_keyframe = use_context::<Signal<Option<(usize, usize)>>>();
 
     rsx! {
         for (i , key) in track.values.into_iter().enumerate() {
@@ -618,44 +621,13 @@ fn FaderTrackBody(
                 ),
                 onclick: move |e| {
                     log::info!("Context");
-                    key_edit
-                        .set(
-                            Some((
-                                key.clone(),
-                                e.client_coordinates().x,
-                                e.client_coordinates().y,
-                                i,
-                            )),
-                        );
+                    current_keyframe.set(Some((track_index, i)));
+                    e.stop_propagation();
                 },
                 oncontextmenu: move |e| {
                     e.stop_propagation();
                 },
                 icons::DiamondFilled { width: "1rem", height: "1rem" }
-            }
-        }
-
-        if let Some(key) = key_edit() {
-            KeyEditor {
-                px: key.1,
-                py: key.2,
-                onclose: move |_| {
-                    key_edit.set(None);
-                },
-                Fader {
-                    value: key.0.value,
-                    id: "FDR".to_string(),
-                    onchange: move |v| {
-                        with_fader_track(
-                            current_effect,
-                            track_index,
-                            invalidate,
-                            move |t, _, _| {
-                                t.values[key.3].value = v;
-                            },
-                        );
-                    }
-                }
             }
         }
     }
@@ -673,41 +645,27 @@ fn FeatureTrackBody(
         match track.detail {
             FeatureTrackDetail::SinglePercent(t) => rsx!{ {draw_generic_keys(
                 &t.values,
-            current_effect,
             track_index,
-            invalidate,
             scale,
             |v| {
                 let val = (v * 255.0) as u8;
                 (val, val, val)
             },
-            move |i, v| {
-                with_percentage_track(current_effect, track_index, invalidate, |t| {
-                    t.values[i].value = v;
-                });
-            },
+
         )}},
         FeatureTrackDetail::SingleRotation(t) => rsx!{ {draw_generic_keys(
             &t.values,
-            current_effect,
             track_index,
-            invalidate,
             scale,
             |v| {
                 let val = ((v / 2.0 + 0.5) * 255.0) as u8;
                 (val, val, val)
             },
-            move |i, v| {
-                with_rotation_track(current_effect, track_index, invalidate, |t| {
-                    t.values[i].value = v;
-                });
-            },
+
         )}},
         FeatureTrackDetail::D3Percent(t) => rsx!{ {draw_generic_keys(
             &t.values,
-            current_effect,
             track_index,
-            invalidate,
             scale,
             |v| {
                 let r = (v.0 * 255.0) as u8;
@@ -715,64 +673,35 @@ fn FeatureTrackBody(
                 let b = (v.2 * 255.0) as u8;
                 (r, g, b)
             },
-            move |i, v| {
-                with_d3percent_track(current_effect, track_index, invalidate, |t| {
-                    t.values[i].x = v.0;
-                    t.values[i].y = v.1;
-                    t.values[i].z = v.2;
-                });
-            },
+
         )}},
         FeatureTrackDetail::D2Rotation(t) => rsx!{ {draw_generic_keys(
             &t.values,
-            current_effect,
             track_index,
-            invalidate,
             scale,
             |v| {
                 let u = (v.0 * 255.0) as u8;
                 let v = (v.1 * 255.0) as u8;
                 (u, v, 0)
             },
-            move |i, v| {
-                with_d2rotation_track(current_effect, track_index, invalidate, |t| {
-                    t.values[i].x = v.0;
-                    t.values[i].y = v.1;
-                });
-            },
+
         )}},
         }
     }
 }
 
-fn draw_generic_keys<K, F, F2>(
+fn draw_generic_keys<K, F>(
     keys: &[K],
-    current_effect: Signal<Option<Effect>>,
     track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
     scale: ReadOnlySignal<f32>,
     color_fn: F,
-    mut update_fn: F2,
 ) -> Element
 where
     F: Fn(K::Value) -> (u8, u8, u8),
-    F2: FnMut(usize, K::Value) + 'static,
     K: Key + DrawKeyWidget<K::Value> + Clone + 'static,
 {
-    let mut key_edit: Signal<Option<(K, f64, f64, usize)>> = use_signal(|| None);
-
+    let mut current_keyframe = use_context::<Signal<Option<(usize, usize)>>>();
     rsx! {
-        if let Some(key) = key_edit() {
-            KeyEditor {
-                px: key.1,
-                py: key.2,
-                onclose: move |_| {
-                    key_edit.set(None);
-                },
-                {key.0.draw_widget(move |v| update_fn(key.3, v))}
-            }
-        }
-
         for (i , key) in keys.iter().cloned().enumerate() {
             div {
                 class: "key feature",
@@ -784,15 +713,8 @@ where
                 ),
                 onclick: move |e| {
                     log::info!("Context");
-                    key_edit
-                        .set(
-                            Some((
-                                key.clone(),
-                                e.client_coordinates().x,
-                                e.client_coordinates().y,
-                                i,
-                            )),
-                        )
+                    current_keyframe.set(Some((track_index, i)));
+                    e.stop_propagation();
                 },
                 oncontextmenu: move |e| {
                     e.stop_propagation();
