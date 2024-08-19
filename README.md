@@ -59,6 +59,7 @@ To run MLC on your local machine the following steps will help you:
 - [ ] Async Project loading with progress stream and ui
 - [ ] revisit all TODOs in code
 - [ ] revisit sliders to make dragging more suitable
+- [ ] improve patch overlay
 
 ### V0.1.3
 
