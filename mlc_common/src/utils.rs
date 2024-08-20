@@ -22,6 +22,9 @@ impl FormatEffectDuration for chrono::Duration {
     }
 }
 
+pub type DmxValue<H = ()> = BoundedValue<u32, bounds::Zero, bounds::DynamicU32<511>, H>;
+pub type ZeroOne<T, H = ()> = BoundedValue<T, bounds::Zero, bounds::One, H>;
+
 pub trait Bounds<T>: Debug {
     fn get() -> T;
 }

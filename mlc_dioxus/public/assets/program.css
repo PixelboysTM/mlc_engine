@@ -162,6 +162,11 @@
             &.fader {
                 height: calc(100% - 1rem);
             }
+
+            &.feature {
+                height: calc(100% - 2rem);
+                max-width: 24rem;
+            }
         }
     }
 }

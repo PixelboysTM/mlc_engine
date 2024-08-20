@@ -1,4 +1,3 @@
-use crate::configure_panel::Fader;
 use crate::program_panel::EffectInvalidate;
 use crate::utils::context_menu::ContextMenu;
 use crate::utils::toaster::{Toaster, ToasterWriter};
@@ -8,8 +7,7 @@ use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use dioxus::web::WebEventExt;
 use mlc_common::effect::{
-    D2RotationTrack, D3PercentTrack, Effect, FaderKey, FaderTrack, FeatureTrack,
-    FeatureTrackDetail, Key, PercentTrack, RotationTrack, Track,
+    Effect, FaderKey, FaderTrack, FeatureTrack, FeatureTrackDetail, Key, Track,
 };
 use mlc_common::fixture::FaderAddress;
 use mlc_common::patched::feature::FixtureFeatureType;
@@ -17,8 +15,6 @@ use mlc_common::patched::{FixtureId, UniverseAddress, UniverseId};
 use mlc_common::utils::bounds::{DynamicI64, Zero};
 use mlc_common::utils::{BoundedValue, FormatEffectDuration};
 use std::collections::HashSet;
-
-use super::key_editor::DrawKeyWidget;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum CreateTrackType {
@@ -480,11 +476,17 @@ fn EffectTracks(current_effect: Signal<Option<Effect>>, scale: ReadOnlySignal<f3
                     onclick: move |e| {
                         current_duration
                             .set(from_scaled_px(e.element_coordinates().x.max(0.0), scale()));
+                        if current_keyframe.read().is_some() {
+                            current_keyframe.set(None);
+                        }
                     },
                     onmousemove: move |e| {
                         if e.held_buttons() == MouseButton::Primary {
                             current_duration
                                 .set(from_scaled_px(e.element_coordinates().x.max(0.0), scale()));
+                            if current_keyframe.read().is_some() {
+                                current_keyframe.set(None);
+                            }
                         }
                     },
                     for i in 0..(effect().duration.num_milliseconds() / 100 + 1) {
@@ -698,7 +700,7 @@ fn draw_generic_keys<K, F>(
 ) -> Element
 where
     F: Fn(K::Value) -> (u8, u8, u8),
-    K: Key + DrawKeyWidget<K::Value> + Clone + 'static,
+    K: Key + Clone + 'static,
 {
     let mut current_keyframe = use_context::<Signal<Option<(usize, usize)>>>();
     rsx! {
@@ -752,136 +754,4 @@ fn with_track<F>(
     let t = &mut e.tracks[track_index];
     closure(t, &e.duration, &e.looping);
     invalidator.send(EffectInvalidate);
-}
-
-fn with_fader_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut FaderTrack, &Duration, &bool),
-{
-    with_track(e, track_index, invalidator, |t, d, l| match t {
-        Track::FaderTrack(f) => {
-            closure(f, d, l);
-        }
-        Track::FeatureTrack(_) => {
-            log::error!("with_fader_track was called but track is a FeatureTrack!");
-        }
-    });
-}
-
-fn with_feature_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut FeatureTrack, &Duration, &bool),
-{
-    with_track(e, track_index, invalidator, |t, d, l| match t {
-        Track::FaderTrack(_) => {
-            log::error!("with_feature_track was called but track is a FaderTrack!");
-        }
-        Track::FeatureTrack(f) => {
-            closure(f, d, l);
-        }
-    });
-}
-
-fn with_percentage_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut PercentTrack),
-{
-    with_feature_track(e, track_index, invalidator, move |t, _, _| {
-        match &mut t.detail {
-            FeatureTrackDetail::SinglePercent(t) => closure(t),
-            FeatureTrackDetail::SingleRotation(_) => {
-                log::error!("with_percentage_track was called but SingleRotation was supplied!")
-            }
-            FeatureTrackDetail::D3Percent(_) => {
-                log::error!("with_percentage_track was called but D3Percent was supplied!")
-            }
-            FeatureTrackDetail::D2Rotation(_) => {
-                log::error!("with_percentage_track was called but D2Rotation was supplied!")
-            }
-        }
-    });
-}
-
-fn with_d3percent_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut D3PercentTrack),
-{
-    with_feature_track(e, track_index, invalidator, move |t, _, _| {
-        match &mut t.detail {
-            FeatureTrackDetail::D3Percent(t) => closure(t),
-            FeatureTrackDetail::SingleRotation(_) => {
-                log::error!("with_d3percent_track was called but SingleRotation was supplied!")
-            }
-            FeatureTrackDetail::SinglePercent(_) => {
-                log::error!("with_d3percent_track was called but SinglePercent was supplied!")
-            }
-            FeatureTrackDetail::D2Rotation(_) => {
-                log::error!("with_d3percent_track was called but D2Rotation was supplied!")
-            }
-        }
-    });
-}
-
-fn with_rotation_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut RotationTrack),
-{
-    with_feature_track(e, track_index, invalidator, move |t, _, _| {
-        match &mut t.detail {
-            FeatureTrackDetail::SingleRotation(t) => closure(t),
-            FeatureTrackDetail::D3Percent(_) => {
-                log::error!("with_rotation_track was called but D3Rotation was supplied!")
-            }
-            FeatureTrackDetail::SinglePercent(_) => {
-                log::error!("with_rotation_track was called but SinglePercent was supplied!")
-            }
-            FeatureTrackDetail::D2Rotation(_) => {
-                log::error!("with_rotation_track was called but D2Rotation was supplied!")
-            }
-        }
-    });
-}
-
-fn with_d2rotation_track<F>(
-    e: Signal<Option<Effect>>,
-    track_index: usize,
-    invalidator: Coroutine<EffectInvalidate>,
-    mut closure: F,
-) where
-    F: FnMut(&mut D2RotationTrack),
-{
-    with_feature_track(e, track_index, invalidator, move |t, _, _| {
-        match &mut t.detail {
-            FeatureTrackDetail::D2Rotation(t) => closure(t),
-            FeatureTrackDetail::D3Percent(_) => {
-                log::error!("with_d2rotation_track was called but D3Percent was supplied!")
-            }
-            FeatureTrackDetail::SinglePercent(_) => {
-                log::error!("with_d2rotation_track was called but SinglePercent was supplied!")
-            }
-            FeatureTrackDetail::SingleRotation(_) => {
-                log::error!("with_d2rotation_track was called but SingleRotation was supplied!")
-            }
-        }
-    });
 }

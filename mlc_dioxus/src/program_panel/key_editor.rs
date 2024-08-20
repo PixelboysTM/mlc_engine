@@ -1,15 +1,10 @@
-use std::fmt::Display;
-use std::thread::Scope;
-
 use dioxus::prelude::*;
-use dioxus::web::WebEventExt;
 use mlc_common::effect::{
-    D2RotationKey, D3PercentageKey, FaderKey, Key, PercentageKey, RotationKey, Track,
+    D2RotationKey, D2RotationTrack, D3PercentTrack, D3PercentageKey, FaderKey, FeatureTrack, Key,
+    PercentTrack, PercentageKey, RotationKey, RotationTrack, Track,
 };
 use mlc_common::effect::{Effect as FEffect, FeatureTrackDetail};
 use mlc_common::fixture::FaderAddress;
-use web_sys::wasm_bindgen::JsCast;
-use web_sys::HtmlElement;
 
 use crate::configure_panel::{make_three_digit, Fader};
 use crate::program_panel::EffectInvalidate;
@@ -44,10 +39,46 @@ pub fn KeyFrameInspector() -> Element {
                     }
                     Track::FeatureTrack(track) => {
                         match track.detail {
-                            FeatureTrackDetail::SinglePercent(_) => rsx!{FeatureTrackEditor{}},
-                            FeatureTrackDetail::SingleRotation(_) => rsx!(""),
-                            FeatureTrackDetail::D3Percent(_) => rsx!(""),
-                            FeatureTrackDetail::D2Rotation(_) => rsx!(""),
+                            FeatureTrackDetail::SinglePercent(s) => rsx!{
+                                FeatureTrackEditor{track_key: s.values[key].clone(), change: move |v| {let mut oe = current_effect.write();
+                                    let e = oe.as_mut().expect("Must be");
+                                    match &mut e.tracks[track_index] {
+                                        Track::FeatureTrack(FeatureTrack{detail: FeatureTrackDetail::SinglePercent(PercentTrack{values}), ..}) => values[key].value = v,
+                                        Track::FaderTrack(_) => unreachable!(),
+                                        Track::FeatureTrack(_) => unreachable!(),
+                                    }
+                                    effect_invalidator.send(EffectInvalidate);}}
+                                },
+                            FeatureTrackDetail::SingleRotation(s) => rsx!{
+                                FeatureTrackEditor{track_key: s.values[key].clone(), change: move |v| {let mut oe = current_effect.write();
+                                    let e = oe.as_mut().expect("Must be");
+                                    match &mut e.tracks[track_index] {
+                                        Track::FeatureTrack(FeatureTrack{detail: FeatureTrackDetail::SingleRotation(RotationTrack{values}), ..}) => values[key].value = v,
+                                        Track::FaderTrack(_) => unreachable!(),
+                                        Track::FeatureTrack(_) => unreachable!(),
+                                    }
+                                    effect_invalidator.send(EffectInvalidate);}}
+                                },
+                            FeatureTrackDetail::D3Percent(s) => rsx!{
+                                FeatureTrackEditor{track_key: s.values[key].clone(), change: move |(x,y,z)| {let mut oe = current_effect.write();
+                                    let e = oe.as_mut().expect("Must be");
+                                    match &mut e.tracks[track_index] {
+                                        Track::FeatureTrack(FeatureTrack{detail: FeatureTrackDetail::D3Percent(D3PercentTrack{values}), ..}) => {values[key].x = x;values[key].y = y;values[key].z = z;},
+                                        Track::FaderTrack(_) => unreachable!(),
+                                        Track::FeatureTrack(_) => unreachable!(),
+                                    }
+                                    effect_invalidator.send(EffectInvalidate);}}
+                                },
+                            FeatureTrackDetail::D2Rotation(s) => rsx!{
+                                FeatureTrackEditor{track_key: s.values[key].clone(), change: move |(x,y)| {let mut oe = current_effect.write();
+                                    let e = oe.as_mut().expect("Must be");
+                                    match &mut e.tracks[track_index] {
+                                        Track::FeatureTrack(FeatureTrack{detail: FeatureTrackDetail::D2Rotation(D2RotationTrack{values}), ..}) => {values[key].x = x; values[key].y = y;},
+                                        Track::FaderTrack(_) => unreachable!(),
+                                        Track::FeatureTrack(_) => unreachable!(),
+                                    }
+                                    effect_invalidator.send(EffectInvalidate);}}
+                                },
                         }
                     }
                 }
@@ -80,116 +111,99 @@ fn FaderTrackEditor(fader_key: FaderKey, change: EventHandler<u8>, addr: FaderAd
 }
 
 #[component]
-fn FeatureTrackEditor<K: Clone + Key + PartialEq + 'static>(
+fn FeatureTrackEditor<K: DrawKeyWidget + Clone + PartialEq + 'static>(
     track_key: K,
-    onchnage: EventHandler<K::Value>,
+    change: EventHandler<K::Value>,
 ) -> Element {
-}
-
-#[component]
-fn KeyEditorOld(px: f64, py: f64, children: Element, onclose: EventHandler) -> Element {
     rsx! {
-        div {
-            class: "key-edit",
-            style: "--px: {px}px; --py: {py}px;",
-            tabindex: -1,
-            onmounted: move |e| {
-                let _ = e.set_focus(true);
-            },
-            onfocusout: move |e| {
-                let we = e.web_event();
-                if let Some(current_target) = we
-                    .current_target()
-                    .and_then(|c| c.dyn_ref::<HtmlElement>().cloned())
-                {
-                    if let Some(related_target) = we
-                        .related_target()
-                        .and_then(|c| c.dyn_ref::<HtmlElement>().cloned())
-                    {
-                        let c = current_target.contains(Some(&related_target));
-                        if c {
-                            return;
-                        }
-                    }
-                }
-                onclose.call(());
-            },
-            onclick: move |e| {
-                e.stop_propagation();
-            },
-            oncontextmenu: move |e| {
-                e.stop_propagation();
-            },
-            {children}
-        }
-    }
-}
-
-pub trait DrawKeyWidget<T> {
-    fn draw_widget<F>(&self, onchange: F) -> Element
-    where
-        F: FnMut(T) + 'static;
-}
-
-impl DrawKeyWidget<<PercentageKey as mlc_common::effect::Key>::Value> for PercentageKey {
-    fn draw_widget<F>(&self, mut onchange: F) -> Element
-    where
-        F: FnMut(<PercentageKey as mlc_common::effect::Key>::Value) + 'static,
-    {
-        rsx! {
-            div { style: "min-height: 12rem; min-width: 3rem",
-                utils::Slider {
-                    initial: self.value(),
-                    onchange: move |v| {
-                        onchange(v);
-                    }
+        div { class: "editor feature",
+            K::draw_widget {
+                value: track_key.value(),
+                change: move |v| {
+                    change.call(v);
                 }
             }
         }
     }
 }
 
-impl DrawKeyWidget<<D3PercentageKey as mlc_common::effect::Key>::Value> for D3PercentageKey {
-    fn draw_widget<F>(&self, mut onchange: F) -> Element
+#[derive(Props, Clone)]
+pub struct DKWProps<K: Key + Clone + PartialEq + 'static, F: Fn(K::Value) + 'static> {
+    value: K::Value,
+    change: F,
+}
+
+impl<K, F1, F2> PartialEq<DKWProps<K, F2>> for DKWProps<K, F1>
+where
+    K: Key + Clone + PartialEq + 'static,
+    F1: Fn(K::Value) + 'static,
+    F2: Fn(K::Value) + 'static,
+{
+    fn eq(&self, other: &DKWProps<K, F2>) -> bool {
+        self.value == other.value
+    }
+}
+
+pub trait DrawKeyWidget: Key + Clone + PartialEq + 'static {
+    fn draw_widget<F>(props: DKWProps<Self, F>) -> Element
     where
-        F: FnMut(<D3PercentageKey as mlc_common::effect::Key>::Value) + 'static,
+        F: Fn(Self::Value) + 'static;
+}
+
+impl DrawKeyWidget for PercentageKey {
+    fn draw_widget<F>(props: DKWProps<Self, F>) -> Element
+    where
+        F: Fn(Self::Value) + 'static,
     {
         rsx! {
-            div { style: "min-width: 12rem; min-height: 12rem;",
-                utils::RgbWidget {
-                    initial: self.value(),
-                    onchange: move |v| {
-                        onchange(v);
-                    }
+            utils::Slider {
+                initial: props.value,
+                onchange: move |v| {
+                    (props.change)(v);
                 }
             }
         }
     }
 }
 
-impl DrawKeyWidget<<D2RotationKey as mlc_common::effect::Key>::Value> for D2RotationKey {
-    fn draw_widget<F>(&self, mut onchange: F) -> Element
+impl DrawKeyWidget for RotationKey {
+    fn draw_widget<F>(_props: DKWProps<Self, F>) -> Element
     where
-        F: FnMut(<D2RotationKey as mlc_common::effect::Key>::Value) + 'static,
+        F: Fn(Self::Value) + 'static,
+    {
+        rsx! { "UNIMPLEMENTED" }
+    }
+}
+
+impl DrawKeyWidget for D2RotationKey {
+    fn draw_widget<F>(props: DKWProps<Self, F>) -> Element
+    where
+        F: Fn(Self::Value) + 'static,
     {
         rsx! {
-            div { style: "min-width: 14rem; min-height: 14rem;",
-                utils::PanTiltWidget {
-                    initial: self.value(),
-                    onchange: move |v| {
-                        onchange(v);
-                    }
+            utils::PanTiltWidget {
+                initial: props.value,
+                onchange: move |v| {
+                    (props.change)(v);
                 }
             }
         }
     }
 }
 
-impl DrawKeyWidget<<RotationKey as mlc_common::effect::Key>::Value> for RotationKey {
-    fn draw_widget<F>(&self, _onchange: F) -> Element
+impl DrawKeyWidget for D3PercentageKey {
+    fn draw_widget<F>(props: DKWProps<Self, F>) -> Element
     where
-        F: FnMut(<RotationKey as mlc_common::effect::Key>::Value) + 'static,
+        F: Fn(Self::Value) + 'static,
     {
-        rsx! { "Unimplemented" }
+        log::info!("Updating value: {:?}", props.value);
+        rsx! {
+            utils::RgbWidget {
+                initial: props.value,
+                onchange: move |v| {
+                    (props.change)(v);
+                }
+            }
+        }
     }
 }

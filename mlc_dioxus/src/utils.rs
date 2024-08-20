@@ -98,7 +98,7 @@ pub fn Loading() -> Element {
             }
         }
     } else {
-        rsx!( "" )
+        rsx!("")
     }
 }
 
@@ -107,6 +107,10 @@ pub fn RgbWidget(initial: (f32, f32, f32), onchange: EventHandler<(f32, f32, f32
     let mut color = use_signal(|| {
         Color::from_rgb(initial.0 * 255.0, initial.1 * 255.0, initial.2 * 255.0).unwrap()
     });
+
+    use_effect(use_reactive((&initial,), move |(i,)| {
+        color.set(Color::from_rgb(i.0 * 255.0, i.1 * 255.0, i.2 * 255.0).unwrap())
+    }));
 
     let hsv = use_memo(move || {
         let c = color();
@@ -474,6 +478,10 @@ pub fn RgbWidget(initial: (f32, f32, f32), onchange: EventHandler<(f32, f32, f32
 pub fn PanTiltWidget(initial: (f32, f32), onchange: EventHandler<(f32, f32)>) -> Element {
     let mut pt = use_signal(|| initial);
 
+    use_effect(use_reactive((&initial,), move |(i,)| {
+        pt.set(i);
+    }));
+
     let pan = use_memo(move || pt().0);
 
     let tilt = use_memo(move || pt().1);
@@ -650,6 +658,8 @@ pub fn PanTiltWidget(initial: (f32, f32), onchange: EventHandler<(f32, f32)>) ->
 #[component]
 pub fn Slider(initial: f32, onchange: EventHandler<f32>) -> Element {
     let mut val = use_signal(|| 1.0 - initial);
+
+    use_effect(use_reactive((&initial,), move |(i,)| val.set(1.0 - i)));
 
     let mut size_e = use_signal(|| None);
 
