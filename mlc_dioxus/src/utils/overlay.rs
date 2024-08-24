@@ -14,7 +14,7 @@ pub fn Overlay(
         div {
             class: "overlay",
             onclick: move |_| {
-              onclose.call(());
+                onclose.call(());
             },
             div {
                 class: "overlay-content {class}",
@@ -22,32 +22,19 @@ pub fn Overlay(
                     e.stop_propagation();
                 },
 
-                div {
-                    class: "header",
-                    div {
-                        class: "icon-holder",
-                        {icon}
-                    },
-                    h3 {
-                        class: "title",
-                        {title.clone()}
-                    },
+                div { class: "header",
+                    div { class: "icon-holder", {icon} }
+                    h3 { class: "title", {title.clone()} }
                     button {
                         class: "icon close-btn",
                         onclick: move |_| {
                             onclose.call(());
                         },
-                        icons::X {
-                            width: "2.5rem",
-                            height: "2.5rem",
-                        },
-                    },
-                },
-                div {
-                    class: "overlay-body",
-                    {children}
-                },
-            },
-        },
+                        icons::X { width: "2.5rem", height: "2.5rem" }
+                    }
+                }
+                div { class: "overlay-body", {children} }
+            }
+        }
     }
 }

@@ -83,6 +83,7 @@ To run MLC on your local machine the following steps will help you:
 ### Misc
 
 - [X] Fix Okapi openapi to handle lifetimes properly `openapi_attr\mod.rs get_add_operation_fn_name` (Requires local copy of my fork until merged)
+- [ ] As soon as it gets reöeased implement modal and popover via popover api
 
 ## Feature requests / Contribution
 
