@@ -51,6 +51,7 @@ To run MLC on your local machine the following steps will help you:
 - [ ] update effect timeline
 - [ ] make keyframe edits not janky anymore (in seperate section no popover)
 - [ ] make keyframes dragable
+- [ ] Actually test 
 
 ### V0.1.2
 
