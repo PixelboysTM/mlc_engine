@@ -8,7 +8,7 @@ The Dmx protocol with its wide use cases and Network adaptions makes it highly c
 fixtures.
 Currently, the usage of Endpoints
 via [sACN](https://en.wikipedia.org/wiki/Architecture_for_Control_Networks#External_extensions)
-, [ArtNet](https://art-net.org.uk/) (untested) and Entec enabled USB-Interfaces.
+, [ArtNet](https://art-net.org.uk/) (untested) and Entec enabled USB-Interfaces is supported.
 
 **Note:** MLC is in a pre-alpha state most of its features are only partially implemented, if at all, and the api and
 data
