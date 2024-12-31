@@ -1,0 +1,18 @@
+[package]
+name = "mlc_interface"
+version = "0.1.0"
+authors = ["Tim Fritzen <fritzentim10@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.6.0", features = ["router"] }
+dioxus-toast = { version = "0.5.0", features = ["web"], default-features = false }
+dioxus-free-icons = { version = "*", features = ["lucide"] }
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]

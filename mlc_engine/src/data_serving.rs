@@ -368,7 +368,7 @@ impl<'r> FromRequest<'r> for ProjectGuard {
         if t.0.lock().await.is_some() {
             request::Outcome::Success(ProjectGuard)
         } else {
-            request::Outcome::Error((Status::Unauthorized, "No project loaded!".to_string()))
+            request::Outcome::Error((Status::ExpectationFailed, "No project loaded!".to_string()))
         }
     }
 }

@@ -1,0 +1,169 @@
+:root {
+    /* Colors */
+    --c-bg: #242424;
+    --c-bg-t: #242424e5;
+    --c-pnl: #151111;
+
+    --c-p: #ff3e3e;
+    --c-s: #3eff41;
+    --c-t: #3e88ff;
+    --c-txt: #fff;
+    --c-info: #44a44a;
+    --c-warn: #ffa83e;
+    --c-err: #d62525;
+
+    --c-btn: #1a1a1a;
+    --c-disabled: #5a5a5a;
+
+    /* Numbers */
+    --br: 0.15rem;
+    --space: 0.2rem;
+
+    /* Other */
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.25;
+    font-weight: 400;
+
+    color-scheme: dark;
+    color: #fff;
+    background-color: var(--c-bg);
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    background-color: var(--c-bg);
+    color: var(--c-txt);
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.mlcBranding {
+    height: 3rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space);
+
+    img {
+        height: 2.8rem;
+        padding-top: 0.1rem;
+        width: 2.8rem;
+        padding-left: 0.1rem;
+    }
+
+    h1 {
+        padding: 0;
+        margin: 0;
+        height: max-content;
+        text-align: left;
+        font-size: 2rem;
+        background-image: linear-gradient(90deg,
+                #007f46 0%,
+                var(--c-p) 100%);
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        user-select: none;
+    }
+}
+
+button {
+    background-color: var(--c-btn);
+    outline: none;
+    border: none;
+    border-radius: calc(2 * var(--br));
+    margin: 0.2rem;
+    padding: 0.2rem 0.5rem;
+    box-shadow: 2px 2px 10px 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    border: 2px solid transparent;
+
+    transition: color, border 150ms;
+
+    &:hover {
+        /* color: var(--c-p); */
+
+        border: 2px solid var(--c-p);
+    }
+}
+
+.dialog:popover-open {
+    /* width: 60vw;
+    height: 80vh; */
+    min-width: 25vw;
+    min-height: 5vh;
+    padding: 0;
+    border: none;
+    border-radius: var(--br);
+    background-color: var(--c-pnl);
+
+    display: grid;
+    grid-template-rows: 2rem 1fr 2rem;
+
+    animation-name: dialog-in;
+    animation-duration: 150ms;
+    animation-iteration-count: 1;
+
+    .heading {
+        height: 2rem;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 2rem 1fr 2rem;
+        border-bottom: 1px solid var(--c-p);
+        gap: var(--space);
+        align-items: center;
+        place-items: center;
+
+        .icon {
+            padding-right: 0.2rem;
+            border-right: 1px solid var(--c-p);
+        }
+
+        .close {
+            width: 1.5rem;
+            height: 1.5rem;
+            padding: 0;
+        }
+
+
+        h2 {
+            margin: 0;
+            text-align: center;
+        }
+    }
+
+    .content {
+        padding: 0.5rem;
+        overflow-y: scroll;
+    }
+
+    .footer {
+        display: flex;
+        flex-direction: row;
+    }
+
+    &::backdrop {
+        background-color: #0000005c;
+    }
+}
+
+@keyframes dialog-in {
+    0% {
+        scale: 0;
+    }
+
+    100% {
+        scale: 100%;
+    }
+}

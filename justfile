@@ -10,10 +10,14 @@ set shell := ["cmd.exe", "/c"]
 default: dioxus-release
 
 dioxus:
-    cd ./mlc_dioxus && dx build
+    cd ./mlc_interface && dx build --platform web
+    del out /f /s /q
+    xcopy /s target\dx\mlc_interface\debug\web\public out
     
 dioxus-release:
-    cd ./mlc_dioxus && dx build --release
+    cd ./mlc_interface && dx build --release --platform web
+    del out /f /s /q
+    xcopy /s target\dx\mlc_interface\release\web\public out
 
 make-icon ICON:
     cd ./mlc_dioxus/public/icons && dx translate --file {{ICON}}.svg

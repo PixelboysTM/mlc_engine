@@ -1,0 +1,29 @@
+.projectsPage {
+    width: 100%;
+    height: 100%;
+
+    nav {
+        width: 100%;
+        height: 3rem;
+        background-color: var(--c-pnl);
+
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+
+        align-items: center;
+
+        .title {
+            width: 100%;
+            text-align: center;
+            user-select: none;
+        }
+
+        .actions {
+            height: 2.8rem;
+            width: calc(100% - 0.1rem);
+            padding-right: 0.1rem;
+            display: flex;
+            flex-direction: row-reverse;
+        }
+    }
+}
