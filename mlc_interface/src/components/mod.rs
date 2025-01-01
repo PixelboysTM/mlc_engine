@@ -28,6 +28,13 @@ pub fn IconButton<I: IconShape + Clone + PartialEq + 'static>(
     }
 }
 
+#[component]
+pub fn Spinner(class: Option<String>) -> Element {
+    rsx! {
+        div { class: format!("cmpSpinner {}", class.unwrap_or_default()) }
+    }
+}
+
 #[allow(dead_code)]
 pub trait ToastAdditions {
     fn success<T1: AsRef<str>, T2: AsRef<str>>(&mut self, heading: T1, message: T2);

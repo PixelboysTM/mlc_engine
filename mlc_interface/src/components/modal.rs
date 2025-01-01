@@ -26,6 +26,8 @@ pub fn Modal<
     icon: I,
     onconfirm: Option<EventHandler>,
     oncancel: Option<EventHandler>,
+    confirm_text: Option<String>,
+    cancel_text: Option<String>,
 ) -> Element {
     rsx! {
         div {
@@ -57,7 +59,7 @@ pub fn Modal<
                                     e.call(());
                                 }
                             },
-                            "Okay"
+                            {confirm_text.unwrap_or("Okay".to_string())}
                         }
                     },
                     ModalLayout::ConfirmCancel => rsx! {
@@ -69,7 +71,7 @@ pub fn Modal<
                                     e.call(());
                                 }
                             },
-                            "Okay"
+                            {confirm_text.unwrap_or("Okay".to_string())}
                         }
                         button {
                             popovertarget: id.clone(),
@@ -79,7 +81,7 @@ pub fn Modal<
                                     e.call(());
                                 }
                             },
-                            "Cancel"
+                            {cancel_text.unwrap_or("Cancel".to_string())}
                         }
                     },
                 }
