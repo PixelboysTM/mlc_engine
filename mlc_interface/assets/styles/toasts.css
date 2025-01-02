@@ -50,7 +50,7 @@
             box-shadow: 2px 2px 10px 5px rgba(0, 0, 0, 0.1);
 
             animation-name: toast-in;
-            animation-duration: 150ms;
+            animation-duration: 250ms;
             animation-iteration-count: 1;
 
             h2 {

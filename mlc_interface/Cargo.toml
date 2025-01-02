@@ -19,6 +19,8 @@ serde_json = "1.0.115"
 # Web
 gloo = { version = "0.11.0", features = ["futures"] }
 futures = "*"
+web-sys = { version = "*", features = ["HtmlDialogElement"] }
+wasm-timer = "*"
 
 [features]
 default = ["web"]

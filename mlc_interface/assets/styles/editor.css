@@ -1,0 +1,74 @@
+.editorPage {
+    width: 100%;
+    height: 100%;
+
+    nav {
+        width: 100%;
+        height: 3rem;
+        background-color: var(--c-pnl);
+
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+
+        align-items: center;
+
+        .tabs {
+            height: 2.8rem;
+            width: 100%;
+            display: flex;
+            place-content: center;
+        }
+
+        .actions {
+            height: 2.8rem;
+            width: calc(100% - 0.2rem);
+            padding-right: 0.2rem;
+            display: flex;
+            place-content: end;
+        }
+    }
+
+    .content {
+        width: calc(100vw - 1rem);
+        height: calc(100vh - 5rem);
+
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: repeat(12, 1fr);
+        gap: 0.5rem;
+
+        padding: 0.5rem;
+    }
+
+
+    footer {
+        width: 100%;
+        height: 1rem;
+        background-color: var(--c-pnl);
+
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        place-items: center;
+
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
+
+        code {
+            font-size: 0.8rem;
+            color: var(--c-disabled);
+            width: 100%;
+        }
+
+        .dissconnectHelper {
+            width: 100%;
+            height: 0.8rem;
+            display: flex;
+            flex-flow: row-reverse;
+
+            svg {
+                /* width: 100%; */
+                height: 100%;
+            }
+        }
+    }
+}

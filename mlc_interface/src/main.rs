@@ -1,9 +1,10 @@
-use components::{IconButton, Modal, ToastAdditions};
+use components::{DissconnetHelper, IconButton, Modal, ToastAdditions, LATENCY};
 use components::{ModalMode, Spinner};
+use configure::ConfigurePage;
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::ld_icons::{
-    LdClock, LdFileArchive, LdFileJson, LdFilePlus, LdLamp, LdLightbulb, LdPencil, LdSave,
-    LdSettings, LdSquarePlus,
+    LdClock, LdFileArchive, LdFileJson, LdFilePlus, LdLightbulb, LdPencil, LdSave, LdSettings,
+    LdSquarePlus,
 };
 use dioxus_free_icons::Icon;
 use dioxus_toast::{ToastFrame, ToastManager};
@@ -12,6 +13,7 @@ use mlc_common::{to_save_file_name, CreateProjectData, Info, ProjectDefinition};
 use serde::{Deserialize, Serialize};
 use utils::{fetch, post, reload_window, subscribe_ws, ToErrToast};
 pub mod components;
+mod configure;
 pub mod utils;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -76,7 +78,7 @@ fn App() -> Element {
 
 const EDITOR_SYTLES: Asset = asset!("/assets/styles/editor.css");
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 enum Tab {
     Configure,
     Program,
@@ -87,6 +89,21 @@ const TAB_STORAGE_KEY: &str = "lastTab";
 
 #[component]
 pub fn Index() -> Element {
+    let r = use_resource(|| async move {
+        fetch::<ProjectDefinition>("/projects/current")
+            .await
+            .expect("Why no data?")
+    });
+    let mut data = use_context_provider(|| r);
+
+    let info: Signal<Info> = use_context();
+
+    use_effect(move || {
+        if info() == Info::ProjectSaved || info() == Info::ProjectLoaded {
+            data.restart();
+        }
+    });
+
     let mut tab = use_signal(|| {
         gloo::storage::LocalStorage::get::<Tab>(TAB_STORAGE_KEY).unwrap_or(Tab::Configure)
     });
@@ -103,14 +120,17 @@ pub fn Index() -> Element {
                 div { class: "tabs",
                     IconButton {
                         icon: LdSettings,
+                        style: if tab() == Tab::Configure { "color: var(--c-p" },
                         onclick: move |_| tab.set(Tab::Configure),
                     }
                     IconButton {
                         icon: LdPencil,
+                        style: if tab() == Tab::Program { "color: var(--c-s" },
                         onclick: move |_| tab.set(Tab::Program),
                     }
                     IconButton {
                         icon: LdLightbulb,
+                        style: if tab() == Tab::Show { "color: var(--c-t" },
                         onclick: move |_| tab.set(Tab::Show),
                     }
                 }
@@ -120,8 +140,36 @@ pub fn Index() -> Element {
                         Tab::Program => rsx! {},
                         Tab::Show => rsx! {},
                     }
-                    IconButton { icon: LdSave }
+                    IconButton {
+                        icon: LdSave,
+                        onclick: move |_| async move {
+                            let _ = fetch::<()>("/data/save").await;
+                        },
+                    }
                 }
+            }
+
+            div { class: "content",
+                match tab() {
+                    Tab::Configure => rsx! {
+                        ConfigurePage {}
+                    },
+                    Tab::Program => rsx! { "Program" },
+                    Tab::Show => rsx! { "Show" },
+                }
+            }
+
+            footer {
+                code { style: "text-align: left;", "Latency {LATENCY()}ms" }
+                match data() {
+                    None => rsx! {
+                        code { style: "text-align: center;", "..." }
+                    },
+                    Some(d) => rsx! {
+                        code { style: "text-align: center;", {d.name.clone()} }
+                    },
+                }
+                DissconnetHelper {}
             }
         }
     }
@@ -162,6 +210,7 @@ fn Projects() -> Element {
                 id: "create-project",
                 heading: "Create Project",
                 icon: LdSquarePlus,
+                mode: ModalMode::Manual,
                 confirm_text: "Create",
                 onconfirm: move |_| async move {
                     let _ = post::<
@@ -243,7 +292,7 @@ fn ProjectList() -> Element {
                         let n = project.file_name.clone();
                         async move {
                             let u = fetch::<String>(&format!("/projects/load/{}", n)).await;
-                            if let Err(e) = u {
+                            if let Err(_) = u {
                                 toast
                                     .error(
                                         "Project Loading",
