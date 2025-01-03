@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Display};
 
-use dioxus::prelude::*;
+use dioxus::{logger::tracing, prelude::*};
 use dioxus_toast::ToastManager;
-use gloo::net::websocket::futures::WebSocket;
+use gloo::net::websocket::{futures::WebSocket, Message};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::components::ToastAdditions;
@@ -47,10 +47,13 @@ pub async fn ws(url: &str) -> Result<WebSocket, String> {
     WebSocket::open(&format!("ws://{host}{url}")).to_err()
 }
 
-pub fn subscribe_ws<T: DeserializeOwned + 'static>(url: &str, handler: EventHandler<T>) {
-    use futures::StreamExt;
+pub fn subscribe_ws<T: DeserializeOwned + 'static, MSG: Serialize + 'static>(
+    url: &str,
+    handler: EventHandler<T>,
+) -> Coroutine<MSG> {
+    use futures::{select, SinkExt, StreamExt};
     let url = url.to_string();
-    use_future(move || {
+    use_coroutine(move |mut rx: UnboundedReceiver<MSG>| {
         let url = url.clone();
         async move {
             let ws = match ws(&url).await.to_err() {
@@ -60,19 +63,43 @@ pub fn subscribe_ws<T: DeserializeOwned + 'static>(url: &str, handler: EventHand
                     return;
                 }
             };
-            let mut ws = ws;
-            while let Some(Ok(msg)) = ws.next().await {
-                let msg = match msg {
-                    gloo::net::websocket::Message::Text(t) => t,
-                    gloo::net::websocket::Message::Bytes(vec) => {
-                        String::from_utf8(vec).expect("No valid Json encoded data")
+            let mut ws = ws.fuse();
+            // while let Some(Ok(msg)) = ws.next().await {
+            //     let msg = match msg {
+            //         gloo::net::websocket::Message::Text(t) => t,
+            //         gloo::net::websocket::Message::Bytes(vec) => {
+            //             String::from_utf8(vec).expect("No valid Json encoded data")
+            //         }
+            //     };
+            //     let data = serde_json::from_str::<T>(&msg).expect("No valid Json");
+            //     handler.call(data);
+            // }
+            'm: loop {
+                select! {
+                    m = ws.next() => {
+                        if let Some(Ok(msg)) = m {
+                            let msg = match msg {
+                                gloo::net::websocket::Message::Text(t) => t,
+                                gloo::net::websocket::Message::Bytes(vec) => {
+                                    String::from_utf8(vec).expect("No valid Json encoded data")
+                                }
+                            };
+                            let data = serde_json::from_str::<T>(&msg).expect("No valid Json");
+                            handler.call(data);
+                        } else {
+                            tracing::warn!("Websocket connection closed!");
+                            break 'm;
+                        }
                     }
+                    m = rx.next() => {
+                        if let Some(msg) = m {
+                            let _ = ws.send(Message::Text(serde_json::to_string(&msg).expect("Must be"))).await;
+                        }
+                    },
                 };
-                let data = serde_json::from_str::<T>(&msg).expect("No valid Json");
-                handler.call(data);
             }
         }
-    });
+    })
 }
 
 pub fn reload_window() -> Result<(), String> {

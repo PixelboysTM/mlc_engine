@@ -40,7 +40,7 @@ fn main() {
 fn App() -> Element {
     let mut toast = use_context_provider(|| Signal::new(ToastManager::new(10)));
     let mut info = use_context_provider(|| Signal::new(Info::None));
-    subscribe_ws::<Info>(
+    subscribe_ws::<Info, ()>(
         "/data/info",
         EventHandler::new(move |i| {
             match i {

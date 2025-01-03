@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use dioxus::prelude::*;
 use dioxus_free_icons::{icons::ld_icons::LdClock, Icon};
-use mlc_common::{universe::UNIVERSE_SIZE, ProjectDefinition, RuntimeUpdate};
+use mlc_common::{
+    patched::UniverseId, universe::UNIVERSE_SIZE, FaderUpdateRequest, ProjectDefinition,
+    RuntimeUpdate,
+};
 
 use crate::{
     components::{Fader, Panel, TabOrientation, Tabs},
@@ -113,7 +116,7 @@ fn Faders() -> Element {
 #[component]
 fn FaderContainer(universe_id: u16) -> Element {
     let mut fader_values = use_signal(|| [0_u8; UNIVERSE_SIZE]);
-    subscribe_ws::<RuntimeUpdate>(
+    subscribe_ws::<RuntimeUpdate, ()>(
         "/runtime/fader-values/get",
         EventHandler::new(move |u| match u {
             RuntimeUpdate::Universe {
@@ -145,12 +148,21 @@ fn FaderContainer(universe_id: u16) -> Element {
             }
         }),
     );
+    let ws = subscribe_ws::<(), FaderUpdateRequest>(
+        "/runtime/fader-values/set",
+        EventHandler::new(|_| {}),
+    );
     rsx! {
         for i in 0..UNIVERSE_SIZE {
             Fader {
                 value: fader_values.map(move |v| &v[i]),
                 onchange: move |v| {
                     fader_values.write()[i] = v;
+                    ws.send(FaderUpdateRequest {
+                        universe: UniverseId(universe_id),
+                        channel: i.into(),
+                        value: v,
+                    });
                 },
             }
         }
