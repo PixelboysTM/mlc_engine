@@ -7,8 +7,10 @@ use dioxus_free_icons::{
 };
 use dioxus_toast::{ToastInfo, ToastManager};
 
+mod fader;
 mod modal;
 mod tabs;
+pub use fader::*;
 use mlc_common::Info;
 pub use modal::*;
 pub use tabs::*;

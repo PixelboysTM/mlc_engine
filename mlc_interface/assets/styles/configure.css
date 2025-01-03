@@ -1,1 +1,6 @@
-.panel.info {}
+.panel.faders .tabContent {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.2rem;
+}

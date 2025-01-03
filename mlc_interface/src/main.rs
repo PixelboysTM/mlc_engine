@@ -32,6 +32,7 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const TOAST_CSS: Asset = asset!("/assets/styles/toasts.css");
 
 fn main() {
+    dioxus::logger::init(dioxus::logger::tracing::Level::WARN).expect("Failed to init logging");
     dioxus::launch(App);
 }
 
