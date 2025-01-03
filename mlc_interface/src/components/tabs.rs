@@ -5,6 +5,7 @@ pub enum TabOrientation {
     #[default]
     Horizontal,
     Vertical,
+    VerticalText,
 }
 
 #[derive(Debug, Clone, PartialEq, Props)]
@@ -30,6 +31,7 @@ where
             class: "tabContainer",
             class: if orient == TabOrientation::Horizontal { "horizontal" },
             class: if orient == TabOrientation::Vertical { "vertical" },
+            class: if orient == TabOrientation::VerticalText { "vertical v-text" },
             div { class: "tabs",
                 for (i , tab) in props.keys.clone().into_iter().enumerate() {
                     button {

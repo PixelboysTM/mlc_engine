@@ -4,13 +4,13 @@ use dioxus::prelude::*;
 use dioxus_free_icons::{icons::ld_icons::LdClock, Icon};
 use mlc_common::ProjectDefinition;
 
-use crate::components::{Panel, Tabs};
+use crate::components::{Panel, TabOrientation, Tabs};
 
-// const CONFIGURE_CSS: Asset = asset!("/assets/styles/configure.css");
+const CONFIGURE_CSS: Asset = asset!("/assets/styles/configure.css");
 #[component]
 pub fn ConfigurePage() -> Element {
     rsx! {
-        // document::Stylesheet { href: CONFIGURE_CSS }
+        document::Stylesheet { href: CONFIGURE_CSS }
         Panel {
             pos_x: (1, 4),
             pos_y: (1, 4),
@@ -66,15 +66,26 @@ fn InfoPanel() -> Element {
 fn UniverseExplorer() -> Element {
     let mut data = use_signal(|| HashMap::new());
     use_future(move || async move {
-        data.write().insert("A", "Ananans");
-        data.write().insert("B", "Banane");
-        data.write().insert("C", "Chikoreh");
-        data.write().insert("D", "Donauwelle");
+        data.write().insert("A (Yes)", "Ananans");
+        data.write().insert("B (No)", "Banane");
+        data.write().insert("C (Really)", "Chikoreh");
+        data.write().insert("D (Why) 1", "Donauwelle");
+        data.write().insert("D (Why) 2", "Donauwelle");
+        data.write().insert("D (Why) 3", "Donauwelle");
+        data.write().insert("D (Why) 4", "Donauwelle");
+        data.write().insert("D (Why) 5", "Donauwelle");
+        data.write().insert("D (Why) 6", "Donauwelle");
+        data.write().insert("D (Why) 7", "Donauwelle");
+        data.write().insert("D (Why) 8", "Donauwelle");
+        data.write().insert("D (Why) 9", "Donauwelle");
+        data.write().insert("D (Why) A", "Donauwelle");
+        data.write().insert("D (Why) B", "Donauwelle");
     });
     let keys = use_memo(move || data.read().keys().cloned().collect::<Vec<_>>());
     rsx! {
         Tabs {
             keys: keys(),
+            orientation: TabOrientation::VerticalText,
             key_display: move |k: &str| k.to_string(),
             content: move |k| {
                 rsx! {
