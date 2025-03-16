@@ -1,5 +1,8 @@
 # Marvin Light Control
 
+> [!IMPORTANT]
+> This version is not the active delveloped one. To see where MLC now lives visit [marvin_light_control](https://github.com/PixelboysTM/marvin_light_control/)
+
 ![MLC](/images/mlc_configure_page.png)
 
 Marvin Light Control (MLC for short) is a DmxShow Creation and Playback tool.
